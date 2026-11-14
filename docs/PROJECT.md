@@ -53,22 +53,21 @@ model data, and answer with evidence:
 Spain. Default analysis extent: Peninsula + Balearic Islands, bbox `-9.5, 35.9, 4.4, 43.9`
 (lon/lat, WGS84). Canary Islands (`-18.3, 27.6, ...`) are OPEN — see `DECISIONS.md`.
 
-## Core scientific requirements
+## Scientific good practice
 
-- Every result is traceable to dataset (short name, version, DOI/concept ID), extent, period and
-  method.
-- Units, QA filtering and missing-data handling are explicit.
-- Significance is only reported with a documented, validated test; otherwise the result is
-  "insufficient evidence".
-- Correlation is never presented as causation.
+Recommended (they help the *Validity* score):
+
+- Show which dataset, period and method a result comes from.
+- Mention units and how missing data was handled.
+- Report significance with the test used, or say "insufficient evidence".
+- Prefer "associated with" over causal wording.
 
 ## MVP boundaries
 
 **In:** one environmental variable · one validated NASA dataset · Spain · one trend method · a map, a
 time-series chart and a provenance panel.
 
-**Out (for now):** multiple variables, forecasting, attribution/causal claims, user accounts,
-real-time ingestion, in-browser computation.
+**Later, if time allows:** multiple variables, forecasting, user accounts, real-time ingestion.
 
 ## Success criteria
 

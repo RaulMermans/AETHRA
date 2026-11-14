@@ -1,6 +1,6 @@
 # Team Workflow
 
-Hackathon pace: keep it simple. Applies to every developer and every AI agent.
+Recommended for everyone, so we don't step on each other's work.
 
 ## Rules
 

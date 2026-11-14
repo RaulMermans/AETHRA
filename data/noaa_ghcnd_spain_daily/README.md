@@ -10,6 +10,7 @@
 | 🧾 Rows | ~880,000 |
 | 📏 Units | °C and mm |
 | 📁 Files | one CSV per 3 years: `ghcnd_spain_daily_<from>-<to>_metric.csv` |
+| 🛠️ Tool | [`harmonize_ghcnd_spain.py`](harmonize_ghcnd_spain.py): converts °F→°C and merges files into one schema |
 
 ## What's in a row
 
