@@ -250,23 +250,12 @@ export function destinationById(id: string): GeographicDestination | undefined {
   return DESTINATIONS.find((d) => d.id === id);
 }
 
+/** Judge mode: landmarks + research cases. Plant 3D / register destinations stay exploratory. */
+export function destinationAllowedInJudgeMode(dest: GeographicDestination): boolean {
+  return dest.type !== "existing_energy_installation";
+}
+
 export function destinationsOfType(type: DestinationType): readonly GeographicDestination[] {
   return DESTINATIONS.filter((d) => d.type === type);
 }
 
-export function destinationTypeLabel(type: DestinationType): string {
-  switch (type) {
-    case "natural_landmark":
-      return "Natural landmark";
-    case "geographic_research_area":
-      return "Overview";
-    case "existing_energy_installation":
-      return "Registered installation";
-    case "scientific_case_study_region":
-      return "Research case";
-    default: {
-      const exhaustive: never = type;
-      return exhaustive;
-    }
-  }
-}

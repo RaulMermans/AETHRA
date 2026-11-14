@@ -38,9 +38,10 @@ export function ScaleThermometer({
   const fillPct = t === undefined ? 100 : t * 100;
   const ticksOnRight = thin;
 
+  const hideMid = t !== undefined && Math.abs(t - 0.5) < 0.14;
   const ticks = (
     <div
-      className={`flex flex-col justify-between py-0.5 font-mono leading-none tabular-nums ${
+      className={`flex min-w-[2.75rem] flex-col justify-between py-0.5 font-mono leading-none tabular-nums ${
         ticksOnRight
           ? "text-left text-[12px] font-medium text-ink drop-shadow-[0_1px_2px_rgb(0_0_0/0.9)]"
           : "text-right text-[9px] text-faint"
@@ -50,7 +51,7 @@ export function ScaleThermometer({
         {tickLabel(hi)}
         <span className={ticksOnRight ? "ml-1 text-[11px] font-normal text-muted" : "ml-0.5 text-[8px]"}>{units}</span>
       </span>
-      <span>{tickLabel(mid)}</span>
+      <span className={hideMid ? "invisible" : undefined}>{tickLabel(mid)}</span>
       <span>{tickLabel(lo)}</span>
     </div>
   );
@@ -62,9 +63,9 @@ export function ScaleThermometer({
           {label}
         </p>
       )}
-      <div className={`flex items-stretch ${thin ? "gap-1.5" : "gap-1.5"}`}>
+      <div className="flex items-stretch gap-2">
         {!ticksOnRight && ticks}
-        <div className={thin ? "relative w-1.5" : "relative w-4"} style={{ height }}>
+        <div className={thin ? "relative w-1.5 shrink-0" : "relative w-4 shrink-0"} style={{ height }}>
           <div
             className={
               thin
@@ -73,7 +74,7 @@ export function ScaleThermometer({
             }
             role="img"
             aria-label={`${label ?? "Scale"} ${tickLabel(lo)} to ${tickLabel(hi)} ${units}${
-              value !== undefined ? `, ${tickLabel(value)} ${units}` : ""
+              value !== undefined ? `, ${tickLabel(value, 1)} ${units}` : ""
             }`}
           >
             <div className="absolute inset-x-0 bottom-0 overflow-hidden" style={{ height: `${fillPct}%` }}>
@@ -83,20 +84,27 @@ export function ScaleThermometer({
               />
             </div>
             {!thin && <div className="pointer-events-none absolute inset-y-1 left-[3px] w-[3px] rounded-full bg-white/25" />}
-            {t2 !== undefined && (
+            {t2 !== undefined && compare && (
               <span
                 className="absolute right-0 left-0 h-px bg-white/70"
                 style={{ bottom: `${t2 * 100}%` }}
-                title={compare!.label}
+                title={compare.label}
               />
             )}
           </div>
           {t !== undefined && (
             <span
+              aria-hidden
+              className="pointer-events-none absolute -left-1 h-0.5 w-3.5 rounded-full bg-white shadow-[0_0_0_1px_rgb(0_0_0/0.45)]"
+              style={{ bottom: `${t * 100}%`, transform: "translateY(50%)" }}
+            />
+          )}
+          {t !== undefined && !thin && value !== undefined && (
+            <span
               className="absolute left-full z-[1] ml-1.5 whitespace-nowrap font-mono text-[11px] font-semibold tabular-nums text-ink"
               style={{ top: `calc(${(1 - t) * 100}% - 0.55rem)` }}
             >
-              {tickLabel(value!, 1)}
+              {tickLabel(value, 1)}
             </span>
           )}
         </div>

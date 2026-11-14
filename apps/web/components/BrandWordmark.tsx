@@ -1,15 +1,18 @@
-import { BRAND_DESCRIPTOR, BRAND_MISSION, BRAND_NAME } from "@/lib/brand";
+import { BRAND_ASSETS, BRAND_NAME } from "@/lib/brand";
 
-/** Temporary typographic wordmark. Final logo is deferred (D55). */
+/** Header lockup from the AETHRA raster kit (D58). */
 export function BrandWordmark() {
   return (
-    <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-      <span className="flex min-w-0 flex-col leading-none">
-        <span className="text-[13px] font-medium tracking-[0.2em] text-ink sm:text-sm">{BRAND_NAME}</span>
-        <span className="mt-1 hidden text-[8px] tracking-[0.22em] text-nav uppercase sm:block">{BRAND_DESCRIPTOR}</span>
-      </span>
-      <span className="hidden h-6 w-px bg-nav/35 sm:block" aria-hidden />
-      <span className="hidden font-mono text-[9px] tracking-[0.14em] text-faint tabular-nums sm:inline">{BRAND_MISSION}</span>
+    <span className="flex min-w-0 items-center">
+      {/* Native img: lockup is a static public PNG, not a data-bound asset. */}
+      <img
+        src={BRAND_ASSETS.lockupOnDark}
+        alt={BRAND_NAME}
+        width={1616}
+        height={382}
+        className="h-7 w-auto max-w-[min(42vw,11.5rem)] object-contain object-left sm:h-8 sm:max-w-[13.5rem]"
+        decoding="async"
+      />
     </span>
   );
 }

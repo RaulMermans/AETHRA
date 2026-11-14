@@ -2,24 +2,26 @@
 
 import { useState } from "react";
 import { formatDegrees, formatElevation } from "@/lib/format";
+import { useLocale } from "@/lib/i18n/locale";
+import type { Messages } from "@/lib/i18n/messages";
 import type { GeoCoordinate, OverlayFeature } from "@/lib/globe/types";
 import { Icon } from "./Icon";
 
-function overlayKindLabel(kind: OverlayFeature["kind"]): string {
-  if (kind === "station") return "NOAA GHCN-Daily station";
-  if (kind === "basin-hub") return "River basin hub";
-  if (kind === "reservoir") return "Reservoir";
-  if (kind === "lake") return "Lake";
-  if (kind === "lagoon") return "Coastal lagoon";
-  if (kind === "installation") return "Registered installation · JCyL";
-  return "River";
+function overlayKindLabel(kind: OverlayFeature["kind"], copy: Messages): string {
+  if (kind === "station") return copy.coords.station;
+  if (kind === "basin-hub") return copy.coords.basinHub;
+  if (kind === "reservoir") return copy.coords.reservoir;
+  if (kind === "lake") return copy.coords.lake;
+  if (kind === "lagoon") return copy.coords.lagoon;
+  if (kind === "installation") return copy.coords.installation;
+  return copy.coords.river;
 }
 
-function OverlayCard({ feature }: { feature: OverlayFeature }) {
+function OverlayCard({ feature, copy }: { feature: OverlayFeature; copy: Messages }) {
   const title = feature.name.replace(/, SP$/i, "");
   return (
     <div className="rounded-md border border-nav/30 bg-nav/10 px-2 py-1.5">
-      <p className="text-[10px] uppercase tracking-[0.12em] text-nav">{overlayKindLabel(feature.kind)}</p>
+      <p className="text-[10px] uppercase tracking-[0.12em] text-nav">{overlayKindLabel(feature.kind, copy)}</p>
       <p className="mt-0.5 text-xs font-medium text-ink">{title}</p>
       <p className="mt-0.5 font-mono text-[11px] text-muted">
         {feature.kind === "station" ? feature.id : feature.detail ?? feature.basin ?? feature.id}
@@ -35,7 +37,7 @@ function OverlayCard({ feature }: { feature: OverlayFeature }) {
   );
 }
 
-function Row({ label, value }: { label: string; value: GeoCoordinate | null }) {
+function Row({ label, value, copy, locale }: { label: string; value: GeoCoordinate | null; copy: Messages; locale: "en" | "es" }) {
   return (
     <div className="grid grid-cols-[4.25rem_1fr] items-baseline gap-x-2">
       <dt className="text-[10px] uppercase tracking-[0.12em] text-faint">{label}</dt>
@@ -48,11 +50,11 @@ function Row({ label, value }: { label: string; value: GeoCoordinate | null }) {
               <span
                 className="text-muted"
                 title={`Terrain elevation from ${value.elevation.source}${
-                  value.elevation.approximate ? " (rendered mesh, approximate)" : " (most detailed sample)"
-                }. ${value.elevation.datum === "orthometric" ? "Above sea level." : "Height above the WGS84 ellipsoid."}`}
+                  value.elevation.approximate ? ` (${copy.coords.mesh})` : ` (${copy.coords.sample})`
+                }. ${value.elevation.datum === "orthometric" ? copy.coords.aboveSea : copy.coords.ellipsoid}`}
               >
                 {" "}
-                {formatElevation(value.elevation)}
+                {formatElevation(value.elevation, locale)}
               </span>
             )}
           </>
@@ -74,6 +76,7 @@ export function CoordinateReadout({
   overlay: OverlayFeature | null;
   onClear: () => void;
 }) {
+  const { locale, m } = useLocale();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     if (!selected) return;
@@ -91,12 +94,12 @@ export function CoordinateReadout({
   if (!selected && !overlay) return null;
 
   return (
-    <section aria-label="Selection" className="panel pointer-events-auto px-2.5 py-2">
+    <section aria-label={m.coords.selection} className="panel pointer-events-auto px-2.5 py-2">
       {overlay ? (
-        <OverlayCard feature={overlay} />
+        <OverlayCard feature={overlay} copy={m} />
       ) : (
         <dl className="space-y-1" aria-live="polite">
-          <Row label="Point" value={selected} />
+          <Row label={m.coords.point} value={selected} copy={m} locale={locale} />
         </dl>
       )}
       {selected && (
@@ -105,8 +108,8 @@ export function CoordinateReadout({
             type="button"
             onClick={copy}
             className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
-            aria-label="Copy selected coordinates"
-            title={copied ? "Copied" : "Copy"}
+            aria-label={m.coords.copy}
+            title={copied ? m.coords.copied : m.coords.copy}
           >
             <Icon name="copy" className="size-3.5" />
           </button>
@@ -114,14 +117,14 @@ export function CoordinateReadout({
             type="button"
             onClick={onClear}
             className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
-            aria-label="Clear selected location"
-            title="Clear"
+            aria-label={m.coords.clear}
+            title={m.coords.clear}
           >
             <Icon name="close" className="size-3.5" />
           </button>
         </div>
       )}
-      <span className="sr-only" aria-live="polite">{copied ? "Coordinates copied" : ""}</span>
+      <span className="sr-only" aria-live="polite">{copied ? m.coords.copiedLive : ""}</span>
     </section>
   );
 }

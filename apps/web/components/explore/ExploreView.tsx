@@ -13,7 +13,13 @@ import {
 import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
 import type { IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
-import { DESTINATIONS, destinationById, HOME_DESTINATION_VIEW, type GeographicDestination } from "@/lib/globe/destinations";
+import {
+  DESTINATIONS,
+  destinationAllowedInJudgeMode,
+  destinationById,
+  HOME_DESTINATION_VIEW,
+  type GeographicDestination,
+} from "@/lib/globe/destinations";
 import { caseById } from "@/lib/globe/energy-research-cases";
 import {
   buildDimensionOverlayGeoJson,
@@ -31,7 +37,14 @@ import {
   type ClimateBundle,
   type PaletteId,
 } from "@/lib/globe/climate";
-import { MS_PER_OBSERVED_YEAR, prefersReducedMotion, smoothstep01 } from "@/lib/globe/climate-timeline";
+import {
+  labelledObservedYear,
+  MS_PER_OBSERVED_YEAR,
+  MS_TREND_SUMMARY_HOLD,
+  prefersReducedMotion,
+  restartPlaybackConfig,
+  smoothstep01,
+} from "@/lib/globe/climate-timeline";
 // EXPLORATORY: Energy Tech Lab (D44). Opt-in tab, not on the demo path; scores are not validated results.
 import {
   buildEnergyConceptOverlayGeoJson,
@@ -76,10 +89,16 @@ import { DimensionDock } from "./DimensionDock";
 import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
 import { EnergyTechControlsDock, EnergyTechInspectorPanel } from "./EnergyTechAdvisor";
 import { EvidencePanel } from "./EvidencePanel";
+import { FindingsBriefPanel } from "./FindingsBriefPanel";
 import { Icon } from "./Icon";
 import { ScaleThermometer } from "./ScaleThermometer";
 import { StationCatalogPanel } from "./StationCatalogPanel";
+import { AethraCorePanel } from "./AethraCorePanel";
+import { TaroPortrait } from "./TaroPortrait";
 import { EvidenceCardPanel } from "./EvidenceCardPanel";
+import type { AgentSuggestedAction } from "@/lib/agent/types";
+import { useLocale } from "@/lib/i18n/locale";
+import type { Messages } from "@/lib/i18n/messages";
 import { ToolsBar, type ToolAction } from "./ToolsBar";
 import { TopNav } from "./TopNav";
 import { ViewModeToggle } from "./ViewModeToggle";
@@ -87,6 +106,17 @@ import { ViewModeToggle } from "./ViewModeToggle";
 const QUALITY_KEY = "globe-quality-mode";
 
 /** Shareable view in the URL hash: #cam=lat,lon,height,heading,pitch */
+/** Globe.tsx emits English error text; restate the known cases in the active language, keeping the raw detail. */
+function localizeGlobeError(error: string | undefined, e: Messages["explore"]): string {
+  if (!error) return "";
+  const start = "The 3D globe could not start. WebGL may be unavailable or disabled in this browser.";
+  if (error.startsWith(start)) return e.webglFailed + error.slice(start.length);
+  if (error.startsWith("The GPU context was lost")) return e.contextLost;
+  const stopped = "Rendering stopped: ";
+  if (error.startsWith(stopped)) return e.renderingStopped(error.slice(stopped.length));
+  return error;
+}
+
 function encodeView(c: CameraState, dim: SceneDim): string {
   const cam = [c.latitude.toFixed(5), c.longitude.toFixed(5), Math.round(c.height), c.heading.toFixed(1), c.pitch.toFixed(1)].join(",");
   return `#cam=${cam}&mode=world${dim === "2d" ? "&dim=2d" : ""}`;
@@ -104,6 +134,7 @@ function decodeView(hash: string): { camera: CameraState; dim: SceneDim } | null
 }
 
 export function ExploreView() {
+  const { m } = useLocale();
   const [baseLayers] = useState(() => buildLayerCatalog());
   const [layerStates, setLayerStates] = useState<LayerStateMap>(() => ({
     ...initialLayerStates(baseLayers),
@@ -117,6 +148,7 @@ export function ExploreView() {
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [trendTab, setTrendTab] = useState<"series" | "findings">("series");
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const viewMode: ViewMode = "world";
   const [dim, setDim] = useState<SceneDim>("3d");
@@ -173,6 +205,7 @@ export function ExploreView() {
   });
   const heatmapByYearRef = useRef(heatmapByYear);
   heatmapByYearRef.current = heatmapByYear;
+  const heatmapTrendUrlRef = useRef("");
 
   const resolvedScope = useMemo(
     () => resolveAdminScope(adminBundle, adminScope),
@@ -268,7 +301,7 @@ export function ExploreView() {
     setTimelineReady(false);
     const frameCfg = {
       dimension: climateConfig.dimension,
-      mode: climateConfig.mode,
+      mode: "value" as const,
       scenario: climateConfig.scenario,
       heatMetric: climateConfig.heatMetric,
       rainMetric: climateConfig.rainMetric,
@@ -277,9 +310,16 @@ export function ExploreView() {
     const domain = periodColorDomain(bundle, { ...frameCfg, year: LAST_COMPLETE_YEAR });
     const years: number[] = [];
     for (let year = FIRST_OBSERVED_YEAR; year <= LAST_COMPLETE_YEAR; year++) years.push(year);
-    void Promise.all(
-      years.map((year) => renderDimensionHeatmapDataUrl(bundle, { ...frameCfg, year }, resolvedScope, domain)),
-    )
+    const trendCfg: ActiveClimateConfig = {
+      ...climateConfig,
+      ...frameCfg,
+      mode: "trend",
+      year: LAST_COMPLETE_YEAR,
+    };
+    void Promise.all([
+      ...years.map((year) => renderDimensionHeatmapDataUrl(bundle, { ...frameCfg, year }, resolvedScope, domain)),
+      renderDimensionHeatmapDataUrl(bundle, trendCfg, resolvedScope),
+    ])
       .then((urls) => {
         if (cancelled) return;
         const next = new Map<number, string>();
@@ -287,6 +327,7 @@ export function ExploreView() {
           const url = urls[i];
           if (url) next.set(year, url);
         });
+        heatmapTrendUrlRef.current = urls[years.length] ?? "";
         setHeatmapByYear(next);
         const startYear = Math.min(
           LAST_COMPLETE_YEAR - 1,
@@ -310,6 +351,7 @@ export function ExploreView() {
       .catch((err: unknown) => {
         if (!cancelled) {
           console.error("[climate] timeline prefetch failed", err);
+          heatmapTrendUrlRef.current = "";
           setTimelineReady(true);
         }
       });
@@ -332,24 +374,40 @@ export function ExploreView() {
 
   useEffect(() => {
     if (!playing || climateConfig.mode !== "value") return;
+    const enterTrendSummary = () => {
+      const trendUrl = heatmapTrendUrlRef.current;
+      setBlendT(0);
+      setHeatSlotA("");
+      setHeatSlotB("");
+      if (trendUrl) setHeatmapUrl(trendUrl);
+      setClimateConfig((prev) => ({ ...prev, mode: "trend", year: LAST_COMPLETE_YEAR }));
+      setPlaying(false);
+    };
     if (prefersReducedMotion()) {
+      let codaTimer = 0;
       const timer = window.setInterval(() => {
         setClimateConfig((prev) => {
+          if (prev.mode === "trend" || codaTimer) {
+            return prev;
+          }
           if (prev.year >= LAST_COMPLETE_YEAR) {
-            setPlaying(false);
-            setBlendT(0);
+            codaTimer = window.setTimeout(enterTrendSummary, MS_TREND_SUMMARY_HOLD);
             return prev;
           }
           return { ...prev, year: prev.year + 1 };
         });
       }, 700);
-      return () => window.clearInterval(timer);
+      return () => {
+        window.clearInterval(timer);
+        window.clearTimeout(codaTimer);
+      };
     }
     if (!timelineReady) return;
     let raf = 0;
     let last = 0;
     let linear = 0;
     let sent = -1;
+    let codaTimer = 0;
     const tick = (now: number) => {
       const dt = now - last;
       last = now;
@@ -360,8 +418,8 @@ export function ExploreView() {
         if (shownYear >= LAST_COMPLETE_YEAR) {
           playbackRef.current.mix = 1;
           setBlendT(1);
-          setPlaying(false);
           setClimateConfig((prev) => ({ ...prev, year: LAST_COMPLETE_YEAR }));
+          codaTimer = window.setTimeout(enterTrendSummary, MS_TREND_SUMMARY_HOLD);
           return;
         }
         const incomingYear = shownYear + 1;
@@ -386,6 +444,8 @@ export function ExploreView() {
           sent = eased;
           setBlendT(eased);
         }
+        const labelled = labelledObservedYear(playbackRef.current);
+        setClimateConfig((prev) => (prev.year === labelled ? prev : { ...prev, year: labelled }));
       }
       raf = window.requestAnimationFrame(tick);
     };
@@ -396,6 +456,7 @@ export function ExploreView() {
     return () => {
       window.clearTimeout(start);
       window.cancelAnimationFrame(raf);
+      window.clearTimeout(codaTimer);
     };
   }, [playing, timelineReady, climateConfig.mode]);
 
@@ -613,6 +674,7 @@ export function ExploreView() {
   const [infraError, setInfraError] = useState<string | null>(null);
   const [selectedInstallationId, setSelectedInstallationId] = useState<string | null>(null);
   const [destinationId, setDestinationId] = useState<string | null>(null);
+  const [coreOpen, setCoreOpen] = useState(false);
   const [casePanelOpen, setCasePanelOpen] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
   const [showPlantRegister, setShowPlantRegister] = useState(false);
@@ -622,10 +684,11 @@ export function ExploreView() {
   const infraOpen = activeTool === "infrastructure";
   const bunielId = "RE-114777";
   const energyLayerOn =
-    infraOpen ||
-    showIllustrativeModel ||
-    showPlantRegister ||
-    destinationId === "installation-buniel";
+    EXPLORATORY_FEATURES_ENABLED &&
+    (infraOpen ||
+      showIllustrativeModel ||
+      showPlantRegister ||
+      destinationId === "installation-buniel");
   const needInfra = energyLayerOn;
   useEffect(() => {
     if (!needInfra || infraFile || infraError) return;
@@ -690,7 +753,10 @@ export function ExploreView() {
       "energy-infrastructure": { visible: energyLayerOn, opacity: 1 },
     };
   }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA]);
-  const toggleTool = useCallback((tool: ToolId) => setActiveTool((t) => (t === tool ? null : tool)), []);
+  const toggleTool = useCallback((tool: ToolId) => {
+    setActiveTool((t) => (t === tool ? null : tool));
+    setCoreOpen(false);
+  }, []);
   useEffect(() => {
     if (!activeTool && !casePanelOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -734,6 +800,9 @@ export function ExploreView() {
 
   const handleSelectDestination = useCallback(
     (dest: GeographicDestination) => {
+      if (!EXPLORATORY_FEATURES_ENABLED && !destinationAllowedInJudgeMode(dest)) {
+        return;
+      }
       setDestinationId(dest.id);
       setWorkspaceMode("climate");
       controller?.flyTo(dest.view);
@@ -748,6 +817,8 @@ export function ExploreView() {
       }
       if (dest.caseStudyId) {
         const study = caseById(dest.caseStudyId);
+        setActiveTool(null);
+        setCoreOpen(false);
         setCasePanelOpen(true);
         setActiveCaseId(dest.caseStudyId);
         if (study?.adminCcaaId) {
@@ -767,12 +838,13 @@ export function ExploreView() {
         setCasePanelOpen(false);
         setActiveCaseId(null);
       }
-      if (dest.installationId === bunielId) {
+      if (EXPLORATORY_FEATURES_ENABLED && dest.installationId === bunielId) {
         setShowIllustrativeModel(true);
         setSelectedInstallationId(bunielId);
         setSelected({ latitude: dest.latitude, longitude: dest.longitude });
-      } else if (dest.protectedLandscape) {
+      } else if (dest.protectedLandscape || !EXPLORATORY_FEATURES_ENABLED) {
         setShowIllustrativeModel(false);
+        setShowPlantRegister(false);
       }
     },
     [adminScope, controller, handleChangeAdminScope],
@@ -784,8 +856,37 @@ export function ExploreView() {
     else controller?.flyTo(HOME_DESTINATION_VIEW);
   }, [controller, handleSelectDestination]);
 
+  const handleCoreAction = useCallback(
+    (action: AgentSuggestedAction) => {
+      if (action.type === "FLY_TO_REGION") {
+        const dest = destinationById(action.targetId);
+        if (dest) {
+          handleSelectDestination(dest);
+          return;
+        }
+        if (action.latitude !== undefined && action.longitude !== undefined) {
+          controller?.flyTo({
+            target: { latitude: action.latitude, longitude: action.longitude },
+            heading: 10,
+            pitch: -48,
+            range: 380_000,
+            durationSeconds: 2.8,
+            terrainAware: false,
+          });
+        }
+        return;
+      }
+      setCoreOpen(false);
+      setActiveTool("evidence");
+      setEvidenceOpen(true);
+    },
+    [controller, handleSelectDestination],
+  );
+
   const activeCase = casePanelOpen && activeCaseId ? caseById(activeCaseId) : undefined;
   const activeDestination = destinationId ? destinationById(destinationId) : undefined;
+  const secondaryPanel = activeTool ? "tool" : coreOpen ? "core" : activeCase ? "case" : null;
+  const inspectorOpen = evidenceOpen || secondaryPanel !== null;
 
   // "Open in Trend panel": the province scope whose precomputed MERRA-2 result the panel shows.
   const openInstallationRegion = useCallback(
@@ -858,26 +959,26 @@ export function ExploreView() {
       if (!controller) return;
       if (action === "screenshot") {
         const blob = await controller.screenshot();
-        if (!blob) return flash("Screenshot failed");
+        if (!blob) return flash(m.explore.screenshotFailed);
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = `trend-detective-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")}.png`;
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 5_000);
-        flash("Screenshot saved");
+        flash(m.explore.screenshotSaved);
       } else {
         const hash = encodeView(controller.getCamera(), dim);
         history.replaceState(null, "", hash);
         try {
           await navigator.clipboard.writeText(window.location.href);
-          flash("Link to this view copied");
+          flash(m.explore.linkCopied);
         } catch {
-          flash("Link is in the address bar");
+          flash(m.explore.linkInBar);
         }
       }
     },
-    [controller, dim, flash],
+    [controller, dim, flash, m],
   );
 
   // Restore a shared view (#cam=…) once the globe is ready.
@@ -918,11 +1019,12 @@ export function ExploreView() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-space">
-      <h1 className="sr-only">Explore observed environmental trends in Spain on a 3D globe</h1>
+      <h1 className="sr-only">{m.explore.h1}</h1>
 
       {creditEl && (
         <GlobeClient
           className="absolute inset-0 focus-ring"
+          ariaLabel={m.explore.globeAria}
           layers={globeLayers}
           layerStates={globeLayerStates}
           selected={selected}
@@ -950,21 +1052,21 @@ export function ExploreView() {
         >
           <div className="flex flex-col items-center gap-3" role="status">
             <span className="size-10 animate-pulse rounded-full border border-nav/40 bg-atlantic/80" />
-            <p className="text-xs tracking-[0.22em] text-faint uppercase">Preparing Spain…</p>
+            <p className="text-xs tracking-[0.22em] text-faint uppercase">{m.explore.preparing}</p>
           </div>
         </div>
       )}
       {status?.phase === "error" && (
         <div className="absolute inset-0 z-30 grid place-items-center p-6">
           <div role="alert" className="panel max-w-md p-5 text-center">
-            <p className="text-sm text-ink">3D globe unavailable</p>
-            <p className="mt-2 text-xs leading-relaxed text-muted">{status.error}</p>
+            <p className="text-sm text-ink">{m.explore.globeUnavailable}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted">{localizeGlobeError(status.error, m.explore)}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="focus-ring mt-4 rounded-full border border-line px-4 py-1.5 text-xs text-ink hover:bg-white/6"
             >
-              Reload
+              {m.explore.reload}
             </button>
           </div>
         </div>
@@ -982,11 +1084,15 @@ export function ExploreView() {
         }
       />
 
-      <div className="pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-8.5rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+      <div
+        className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-9rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 ${
+          inspectorOpen ? "max-[1199px]:hidden" : ""
+        }`}
+      >
         {EXPLORATORY_FEATURES_ENABLED && (
         <div
           role="tablist"
-          aria-label="Analysis workspace mode"
+          aria-label={m.explore.workspace}
           className="panel pointer-events-auto grid grid-cols-2 gap-1 p-1 text-xs"
         >
           <button
@@ -1000,13 +1106,13 @@ export function ExploreView() {
                 : "text-muted hover:text-ink"
             }`}
           >
-            Climate trends
+            {m.explore.climateTrends}
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={workspaceMode === "energy"}
-            title="Exploratory: suitability scores are not validated results"
+            title={m.explore.energyLabTitle}
             onClick={() => {
               setPlaying(false);
               setBlendT(0);
@@ -1019,7 +1125,7 @@ export function ExploreView() {
                 : "text-muted hover:text-ink"
             }`}
           >
-            Energy Lab <span className="text-[9px] tracking-wider uppercase opacity-80">exploratory</span>
+            {m.explore.energyLab} <span className="text-[9px] tracking-wider uppercase opacity-80">{m.explore.energyLabTag}</span>
           </button>
         </div>
         )}
@@ -1072,10 +1178,13 @@ export function ExploreView() {
               }
               onTogglePlay={() => {
                 setPlaying((p) => {
-                  if (!p) {
-                    setClimateConfig((cfg) =>
-                      cfg.year >= LAST_COMPLETE_YEAR ? { ...cfg, year: FIRST_OBSERVED_YEAR } : cfg,
-                    );
+                  if (p) {
+                    const year = labelledObservedYear(playbackRef.current);
+                    setClimateConfig((cfg) => ({ ...cfg, mode: "value", year }));
+                    setHeatSlotA("");
+                    setHeatSlotB("");
+                  } else {
+                    setClimateConfig((cfg) => restartPlaybackConfig(cfg));
                   }
                   setBlendT(0);
                   return !p;
@@ -1083,7 +1192,7 @@ export function ExploreView() {
               }}
             />
             {(layerStates["climate-heatmap"]?.visible ?? true) && dimensionHasSpatialGrid(climateConfig.dimension) && (
-              <aside className="pointer-events-none mt-1 pl-1" aria-label="Map color scale">
+              <aside className="pointer-events-none mt-1 pl-1" aria-label={m.explore.mapScale}>
                 <ScaleThermometer
                   thin
                   palette={scaleMeta.palette}
@@ -1097,63 +1206,7 @@ export function ExploreView() {
         )}
       </div>
 
-      <div className="pointer-events-none absolute top-28 right-3 bottom-28 z-20 flex items-stretch justify-end gap-2 sm:top-16 sm:right-6 sm:bottom-32">
-        {(activeTool || activeCase) && (
-          <div className="pointer-events-none flex items-end pb-1">
-            {activeTool === "stations" && (
-              <StationCatalogPanel
-                bundle={bundle}
-                admin={adminBundle}
-                config={climateConfig}
-                scope={resolvedScope}
-                selected={selected}
-                onInspect={inspectStation}
-                onClose={closeTool}
-              />
-            )}
-            {activeTool === "evidence" && (
-              <EvidenceCardPanel scope={resolvedScope} onOpenTrend={() => setEvidenceOpen(true)} onClose={closeTool} />
-            )}
-            {activeCase && (
-              <EnergyCasePanel
-                study={activeCase}
-                showModel={showIllustrativeModel}
-                showPlantRegister={showPlantRegister}
-                appearance={modelAppearance}
-                conceptualOpacity={conceptualOpacity}
-                onSelectCase={(id) => {
-                  const dest = DESTINATIONS.find((d) => d.id === id && d.caseStudyId === id);
-                  if (dest) handleSelectDestination(dest);
-                }}
-                onShowModel={setShowIllustrativeModel}
-                onShowPlantRegister={setShowPlantRegister}
-                onAppearance={setModelAppearance}
-                onOpacity={setConceptualOpacity}
-                onOpenEvidence={() => {
-                  setActiveTool("evidence");
-                  setEvidenceOpen(true);
-                }}
-                onReturnOverview={returnToSpain}
-                onClose={() => {
-                  setCasePanelOpen(false);
-                  setActiveCaseId(null);
-                  setShowPlantRegister(false);
-                }}
-              />
-            )}
-            {EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure" && (
-              <EnergyInfrastructurePanel
-                file={infraFile}
-                error={infraError}
-                bundle={bundle}
-                selectedId={selectedInstallationId}
-                onSelect={selectInstallation}
-                onOpenRegion={openInstallationRegion}
-                onClose={closeTool}
-              />
-            )}
-          </div>
-        )}
+      <div className="pointer-events-none absolute top-[4.75rem] right-3 bottom-24 z-20 isolate flex min-h-0 max-w-[calc(100vw-1.25rem)] items-stretch justify-end gap-2 sm:right-6">
         <div className="flex shrink-0 flex-col justify-center gap-2">
           <ToolsBar
             active={activeTool}
@@ -1163,37 +1216,157 @@ export function ExploreView() {
           />
           <CameraControls controller={controller} flat={dim === "2d"} onReset={() => controller?.flyTo(homeView)} />
         </div>
-        {evidenceOpen && (
+        {inspectorOpen && (
           <div
-            className={`flex h-full min-h-0 shrink-0 ${
+            className={`flex min-h-0 min-w-0 flex-col gap-2 ${
               workspaceMode === "energy"
                 ? "w-[min(30rem,calc(100vw-4.75rem))]"
-                : "w-[min(28rem,calc(100vw-4.75rem))]"
+                : "w-[min(26rem,calc(100vw-4.75rem))]"
             }`}
           >
-            {workspaceMode === "energy" ? (
-              <EnergyTechInspectorPanel
-                conceptId={energyConcept}
-                scope={energyScope}
-                goal={energyGoal}
-                sites={evaluatedEnergySites}
-                selectedSiteId={selectedEnergySiteId}
-                onSelectSite={handleSelectEnergySite}
-                onClose={() => setEvidenceOpen(false)}
-              />
-            ) : (
-              <EvidencePanel
-                open={evidenceOpen}
-                onClose={() => setEvidenceOpen(false)}
-                selected={selected}
-                bundle={bundle}
-                config={climateConfig}
-                resolvedScope={resolvedScope}
-                onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
-                onSelectLocation={handleSelectLocation}
-                onOpenStationCatalog={() => setActiveTool("stations")}
-                onResetToNational={() => handleChangeAdminScope({ ...adminScope, level: "age" }, true)}
-              />
+            {secondaryPanel !== null && (
+              <div className={`min-h-0 overflow-hidden ${evidenceOpen ? "max-h-[min(42%,22rem)] shrink-0" : "flex-1"}`}>
+                {activeTool === "stations" && (
+                  <StationCatalogPanel
+                    bundle={bundle}
+                    admin={adminBundle}
+                    config={climateConfig}
+                    scope={resolvedScope}
+                    selected={selected}
+                    onInspect={inspectStation}
+                    onClose={closeTool}
+                  />
+                )}
+                {activeTool === "evidence" && (
+                  <EvidenceCardPanel
+                    scope={resolvedScope}
+                    onOpenTrend={() => {
+                      closeTool();
+                      setTrendTab("series");
+                      setEvidenceOpen(true);
+                    }}
+                    onClose={closeTool}
+                  />
+                )}
+                {EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure" && (
+                  <EnergyInfrastructurePanel
+                    file={infraFile}
+                    error={infraError}
+                    bundle={bundle}
+                    selectedId={selectedInstallationId}
+                    onSelect={selectInstallation}
+                    onOpenRegion={openInstallationRegion}
+                    onClose={closeTool}
+                  />
+                )}
+                {secondaryPanel === "core" && (
+                  <AethraCorePanel
+                    open={coreOpen}
+                    regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
+                    onClose={() => setCoreOpen(false)}
+                    onAction={handleCoreAction}
+                  />
+                )}
+                {secondaryPanel === "case" && activeCase && (
+                  <EnergyCasePanel
+                    study={activeCase}
+                    showModel={showIllustrativeModel}
+                    showPlantRegister={showPlantRegister}
+                    appearance={modelAppearance}
+                    conceptualOpacity={conceptualOpacity}
+                    allowInfrastructureControls={EXPLORATORY_FEATURES_ENABLED}
+                    onSelectCase={(id) => {
+                      const dest = DESTINATIONS.find((d) => d.id === id && d.caseStudyId === id);
+                      if (dest) handleSelectDestination(dest);
+                    }}
+                    onShowModel={setShowIllustrativeModel}
+                    onShowPlantRegister={setShowPlantRegister}
+                    onAppearance={setModelAppearance}
+                    onOpacity={setConceptualOpacity}
+                    onOpenEvidence={() => {
+                      setCasePanelOpen(false);
+                      setCoreOpen(false);
+                      setActiveTool("evidence");
+                    }}
+                    onReturnOverview={returnToSpain}
+                    onClose={() => {
+                      setCasePanelOpen(false);
+                      setActiveCaseId(null);
+                      setShowPlantRegister(false);
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            {evidenceOpen && (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {workspaceMode === "energy" ? (
+                  <EnergyTechInspectorPanel
+                    conceptId={energyConcept}
+                    scope={energyScope}
+                    goal={energyGoal}
+                    sites={evaluatedEnergySites}
+                    selectedSiteId={selectedEnergySiteId}
+                    onSelectSite={handleSelectEnergySite}
+                    onClose={() => setEvidenceOpen(false)}
+                  />
+                ) : (
+                  <div className="pointer-events-auto flex h-full min-h-0 flex-col gap-2">
+                    <div role="tablist" aria-label={m.explore.trendPanel} className="panel flex shrink-0 gap-1 p-1">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={trendTab === "series"}
+                        onClick={() => setTrendTab("series")}
+                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[11px] ${
+                          trendTab === "series" ? "bg-white/10 text-ink" : "text-muted hover:bg-white/6"
+                        }`}
+                      >
+                        {m.explore.thisPlace}
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={trendTab === "findings"}
+                        onClick={() => setTrendTab("findings")}
+                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[11px] ${
+                          trendTab === "findings" ? "bg-white/10 text-ink" : "text-muted hover:bg-white/6"
+                        }`}
+                      >
+                        {m.explore.studyFindings}
+                      </button>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-hidden">
+                      {trendTab === "series" ? (
+                        <EvidencePanel
+                          open={evidenceOpen}
+                          onClose={() => setEvidenceOpen(false)}
+                          selected={selected}
+                          bundle={bundle}
+                          config={climateConfig}
+                          resolvedScope={resolvedScope}
+                          onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
+                          onSelectLocation={handleSelectLocation}
+                          onOpenStationCatalog={() => setActiveTool("stations")}
+                          onResetToNational={() => handleChangeAdminScope({ ...adminScope, level: "age" }, true)}
+                        />
+                      ) : (
+                        <FindingsBriefPanel
+                          onClose={() => setEvidenceOpen(false)}
+                          onOpenCard={() => {
+                            setEvidenceOpen(false);
+                            setActiveTool("evidence");
+                          }}
+                          onOpenCase={(id) => {
+                            const dest = DESTINATIONS.find((d) => d.id === id && d.caseStudyId === id);
+                            if (dest) handleSelectDestination(dest);
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -1205,13 +1378,17 @@ export function ExploreView() {
         </div>
       )}
 
-      {ready && !selected && (
+      {ready && !selected && !inspectorOpen && (
         <p className="pointer-events-none absolute bottom-28 left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] text-muted backdrop-blur-md sm:block">
-          Drag to orbit · Scroll to zoom · Click {EXPLORATORY_FEATURES_ENABLED ? "a ranked site or station" : "a station"}
+          {EXPLORATORY_FEATURES_ENABLED ? m.explore.orbitRanked : m.explore.orbitStation}
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 px-4 pb-8 sm:px-6">
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-4 pb-8 sm:px-6 ${
+          inspectorOpen ? "pr-[min(31rem,calc(100vw-5.5rem))]" : ""
+        }`}
+      >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="sm:max-w-[20rem]">
             {(selected || overlayHover) && (
@@ -1227,10 +1404,26 @@ export function ExploreView() {
             {activeDestination && activeDestination.id !== "spain" && (
               <p className="pointer-events-none mb-1 max-w-[16rem] text-[10px] leading-snug text-muted">
                 {activeDestination.protectedLandscape
-                  ? `${activeDestination.name}: navigation only — not an energy development candidate.`
-                  : `${activeDestination.name}. ${activeDestination.source.name}.`}
+                  ? m.explore.navOnly(activeDestination.name)
+                  : m.explore.destSource(activeDestination.name, activeDestination.source.name)}
               </p>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setCoreOpen((o) => {
+                  const next = !o;
+                  if (next) setActiveTool(null);
+                  return next;
+                });
+              }}
+              aria-expanded={coreOpen}
+              aria-controls="taro"
+              aria-label="TARO"
+              className="focus-ring panel pointer-events-auto inline-flex size-11 items-center overflow-hidden !rounded-full p-0 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
+            >
+              <TaroPortrait className="size-11" />
+            </button>
             <ExploreSpain
               selectedId={destinationId}
               onSelect={handleSelectDestination}
@@ -1246,11 +1439,11 @@ export function ExploreView() {
               <Icon name="chart" className="size-4 text-muted" />
               {evidenceOpen
                 ? workspaceMode === "energy"
-                  ? "Hide Energy Advisor"
-                  : "Hide trend"
+                  ? m.explore.hideAdvisor
+                  : m.explore.hideTrend
                 : workspaceMode === "energy"
-                  ? "Ideal Sites & Time Series"
-                  : "Trend"}
+                  ? m.explore.idealSites
+                  : m.explore.trend}
             </button>
           </div>
         </div>
@@ -1259,7 +1452,9 @@ export function ExploreView() {
       {/* Imagery / terrain attribution (required by providers) */}
       <div
         ref={setCreditEl}
-        className="globe-credits pointer-events-auto absolute inset-x-4 bottom-1.5 z-10 sm:inset-x-6"
+        className={`globe-credits pointer-events-auto absolute inset-x-4 bottom-1.5 z-10 sm:inset-x-6 ${
+          inspectorOpen ? "sm:pr-[min(31rem,calc(100vw-5.5rem))]" : ""
+        }`}
       />
     </main>
   );

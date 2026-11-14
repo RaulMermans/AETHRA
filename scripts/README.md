@@ -68,6 +68,19 @@ Output locations:
 
 `data/raw/` and `data/processed/` are gitignored.
 
+## `build_admin_boundaries.py`: CCAA (NUTS-2) and provinces (NUTS-3)
+
+Writes `apps/web/public/data/spain-admin.json`. CCAA come from GISCO NUTS 2021 level 2; provinces
+from level 3 grouped to INE codes (island units unioned for Illes Balears, Las Palmas and Santa
+Cruz de Tenerife). No Earthdata login. Downloads the Europe NUTS-3 file if the Spain extract is
+missing.
+
+```bash
+python3 scripts/build_admin_boundaries.py
+```
+
+Then rebuild `climate-bundle.json` so province-scope weights match the new polygons.
+
 ## `build_energy_infrastructure.py`: registered energy installations (D49, not NASA)
 
 Builds `apps/web/public/data/energy-infrastructure.json` for the opt-in **Energy infrastructure** map

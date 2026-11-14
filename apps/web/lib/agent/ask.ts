@@ -1,0 +1,800 @@
+import { NAMED_PLACES, type NamedPlace } from "../globe/places-es.ts";
+import { cardFor, type EvidenceCard, type EvidenceCatalog } from "./cards.ts";
+import { interpretCard, interpretOutcome } from "./interpret.ts";
+import { claimById, CYL_INCLUDED_INSTALLATIONS } from "./knowledge/claims.ts";
+import { matchesCurriculum, selectClaims } from "./knowledge/select.ts";
+import type { KnowledgeClaim } from "./knowledge/types.ts";
+import type {
+  AgentActionType,
+  AgentAnswer,
+  AgentIntent,
+  AgentLanguage,
+  AgentSession,
+  AgentStatus,
+  AskRequest,
+  ConversationTurn,
+} from "./types.ts";
+
+export const MAX_QUESTION_CHARS = 800;
+export const MAX_CONVERSATION_TURNS = 12;
+
+export type StudyRegion = {
+  scope: string;
+  name: string;
+  dest: string;
+  aliases: readonly string[];
+  /** Camera centre from destinations.ts (GISCO NUTS framing). Not a plant site. */
+  latitude: number;
+  longitude: number;
+};
+
+export const STUDY_REGIONS: readonly StudyRegion[] = [
+  {
+    scope: "age",
+    name: "Peninsula + Balearics",
+    dest: "case-r0-joint-low",
+    aliases: ["peninsula", "balear", "national", "spain", "españa", "espana", "r0", "peninsular"],
+    latitude: 40.2,
+    longitude: -3.7,
+  },
+  {
+    scope: "ccaa:ES11",
+    name: "Galicia",
+    dest: "case-es11-joint-low",
+    aliases: ["galicia", "es11"],
+    latitude: 42.75,
+    longitude: -8.0,
+  },
+  {
+    scope: "ccaa:ES41",
+    name: "Castilla y León",
+    dest: "case-es41-joint-low",
+    aliases: ["castilla", "león", "leon", "es41"],
+    latitude: 41.75,
+    longitude: -4.5,
+  },
+  {
+    scope: "ccaa:ES24",
+    name: "Aragón",
+    dest: "case-es24-joint-low",
+    aliases: ["aragón", "aragon", "es24"],
+    latitude: 41.6,
+    longitude: -0.9,
+  },
+  {
+    scope: "ccaa:ES61",
+    name: "Andalucía",
+    dest: "case-es61-joint-low",
+    aliases: ["andalucía", "andalucia", "es61"],
+    latitude: 37.45,
+    longitude: -4.6,
+  },
+];
+
+function placePinId(name: string): string {
+  return fold(name).replace(/\s+/g, "-");
+}
+
+export function findMapPinById(id: string): { id: string; name: string; latitude: number; longitude: number } | undefined {
+  const place = NAMED_PLACES.find((p) => placePinId(p.name) === id);
+  if (!place) return undefined;
+  return { id, name: place.name, latitude: place.latitude, longitude: place.longitude };
+}
+
+function matchNamedPlace(text: string): NamedPlace | undefined {
+  const f = fold(text);
+  const hits = NAMED_PLACES.filter((p) => f.includes(fold(p.name)));
+  if (hits.length === 0) return undefined;
+  return [...hits].sort((a, b) => {
+    const la = fold(a.name).length;
+    const lb = fold(b.name).length;
+    if (lb !== la) return lb - la;
+    return f.indexOf(fold(a.name)) - f.indexOf(fold(b.name));
+  })[0];
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function fold(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+export function detectLanguage(question: string): AgentLanguage {
+  if (/[¿¡]/.test(question)) return "es";
+  const f = fold(question);
+  const es = (f.match(/\b(que|cual|por que|como|tendencia|calentamiento|lluvia|cuenca|instalaci|haria|alli|donde|sentido|hay|una|los|las)\b/g) ?? []).length;
+  const en = (f.match(/\b(what|why|how|does|can|the|is|are|for|and|that|this|over|with|from|will|not|if)\b/g) ?? []).length;
+  return es > en ? "es" : "en";
+}
+
+export function parseAskBody(raw: unknown): AskRequest {
+  if (!isRecord(raw)) throw new Error("Body must be a JSON object");
+  if (typeof raw.question !== "string") throw new Error("question must be a string");
+  const question = raw.question.trim();
+  if (!question) throw new Error("question is empty");
+  if (question.length > MAX_QUESTION_CHARS) throw new Error("question is too long");
+  const session: AgentSession = {};
+  if (isRecord(raw.session) && typeof raw.session.regionScope === "string") {
+    session.regionScope = raw.session.regionScope;
+  }
+  if (isRecord(raw.session) && typeof raw.session.sessionId === "string" && raw.session.sessionId.length < 80) {
+    session.sessionId = raw.session.sessionId;
+  }
+  const conversation: ConversationTurn[] = [];
+  if (Array.isArray(raw.conversation)) {
+    for (const turn of raw.conversation.slice(-MAX_CONVERSATION_TURNS)) {
+      if (!isRecord(turn) || (turn.role !== "user" && turn.role !== "core") || typeof turn.text !== "string") continue;
+      const text = turn.text.trim().slice(0, MAX_QUESTION_CHARS);
+      if (text) conversation.push({ role: turn.role, text });
+    }
+  }
+  const language = raw.language === "en" || raw.language === "es" ? raw.language : undefined;
+  return { question, session, conversation, language };
+}
+
+function signed(n: number, digits = 2): string {
+  const mag = Math.abs(n).toFixed(digits);
+  if (n > 0) return `+${mag}`;
+  if (n < 0) return `−${mag}`;
+  return mag;
+}
+
+function matchScope(text: string): StudyRegion | undefined {
+  const f = fold(text);
+  const ranked = STUDY_REGIONS.filter((r) => r.aliases.some((a) => f.includes(a)));
+  if (ranked.length === 0) return undefined;
+  return ranked.sort((a, b) => b.name.length - a.name.length)[0];
+}
+
+function matchNamelessPlace(text: string): string | undefined {
+  return matchNamedPlace(text)?.name;
+}
+
+function resolveScope(question: string, session: AgentSession): StudyRegion | undefined {
+  const fromQuestion = matchScope(question);
+  if (fromQuestion) return fromQuestion;
+  if (matchNamedPlace(question)) return undefined;
+  return STUDY_REGIONS.find((r) => r.scope === session.regionScope);
+}
+
+function isMixedWarmingPv(f: string): boolean {
+  const energy = /\b(pv|photovolta|fotovolta|mwh|generat)/.test(f);
+  const warm = /\b(temperatur|warming|calent|merra|t2m|aethra)\b/.test(f);
+  const link = /\b(imply|implica|prove|prueba|mean lower|fewer|menos|less)\b/.test(f);
+  return energy && warm && link;
+}
+
+function isUnsupportedForecast(f: string): boolean {
+  const future = /\b(2030|2032|2035|2038|2040|ssp|nex-gddp|cmip6)\b/.test(f);
+  if (isMixedWarmingPv(f) && !future) return false;
+  if (/\b(how many mwh will|will (this|the) .{0,40}generat|va a generar|cuantos mwh)\b/.test(f)) return true;
+  if (future) return true;
+  return /\b(forecast|predic|pronostic)/.test(f) || /\bpendiente de sen\b/.test(f);
+}
+
+export function classifyIntent(q: string): AgentIntent {
+  const f = fold(q);
+  if (/\b(ignore .{0,24}instructions|system prompt|you are now|jailbreak|forget (your )?rules|override (the )?policy)\b/.test(f)) {
+    return "prompt_injection";
+  }
+  if (/\b(invent\w*|make up|fabricate|pretend|fake (a )?(doi|source)|cite a scientific source that does not exist)\b/.test(f)) {
+    return "invent_source";
+  }
+  if (
+    /\b(buy land|comprar (tierra|terreno)|invest\b|roi\b|invertir|permiso de (obra|construccion)|where should i buy|rank all|recommend an energy investment)\b/.test(
+      f,
+    )
+  ) {
+    return "investment_advice";
+  }
+  if (isMixedWarmingPv(f)) return "mixed_warming_pv";
+  if (isUnsupportedForecast(f)) return "unsupported_forecast";
+  if (/\b(recipe|joke|poem|capital of|who won|password|crypto|credentials|secrets)\b/.test(f)) return "out_of_domain";
+  if (
+    /\b(why is|por que es|interesting for hybrid|hybrid renewable|where should we investigate|research candidate)\b/.test(f) ||
+    (/\b(hybrid|hibrid)\b/.test(f) && /\b(castilla|leon|investig|research|interes)\b/.test(f))
+  ) {
+    return "research_case";
+  }
+  const definitional =
+    /\b(what is|what does|que es|que significa|why can|por que puede|how does|como (afecta|funciona)|difference between|diferencia entre|why does|versus|frente a)\b/.test(
+      f,
+    );
+  const trendish = /\b(trend|tendencia|changed|cambio|become more)\b/.test(f);
+  if (definitional && !trendish) {
+    const mechanismTopic =
+      /\b(pv|photovolta|fotovolta|efficiency|eficiencia|ghi|dni|capacity factor|power curve|runoff|reanalysis|module|theil|ols|autocorrelat)\b/.test(
+        f,
+      );
+    if (
+      mechanismTopic ||
+      !/\b(temperatur|evidencecard|evidence card|instal|plant|nasa evidence)\b/.test(f)
+    ) {
+      return "explain_mechanism";
+    }
+  }
+  if (/\benergy gap\b/.test(f)) return "joint_low_trend";
+  if (/\b(instalar|industria energetic)/.test(f)) return "nasa_evidence";
+  if (/\b(temperatur|warming|t2m|calent)/.test(f)) return "temperature_trend";
+  if (
+    /\bprecip\w*\b/.test(f) ||
+    /\b(lluvia\w*|rainfall|\brain\b|cuenca\w*|hidraul\w*|hidrolog\w*|imerg|gpm|basin\w*|sequia\w*|drought|escorrent\w*)\b/.test(f)
+  ) {
+    return "precipitation_trend";
+  }
+  if (
+    /\beolic\w*\b/.test(f) ||
+    /\b(wind farm|wind energy|energia eolica|joint|low (solar|wind|resource)|complement\w*|sol y viento|fotovolta\w*|photovoltaic)\b/.test(f) ||
+    /\b(parque (eolico|solar)|recurso (eolico|solar|wind))\b/.test(f)
+  ) {
+    return "joint_low_trend";
+  }
+  if (/\b(plant|instalaci\w*|installation|buniel|mw\b|capacity)\b/.test(f)) {
+    return "infrastructure_metadata";
+  }
+  if (/\bcompar|\bobjectively better|\bmejor que\b/.test(f)) {
+    if (/\b(temperatur|warming|t2m|calent)/.test(f)) return "temperature_trend";
+    return "compare_joint_low";
+  }
+  if (/\b(additional data|what (else|more) would|need to evaluate|finer scale|parcel)\b/.test(f)) {
+    return "research_gap";
+  }
+  if (/\b(joint|low (solar|wind|resource)|complement|solar and wind|sol y viento)\b/.test(f)) {
+    return "joint_low_trend";
+  }
+  if (/\b(nasa evidence|evidence card|muestra|evidencia)\b/.test(f)) return "nasa_evidence";
+  if (/\b(temperatur|warming|t2m|calent)/.test(f)) return "temperature_trend";
+  if (/\b(trend|tendencia|changed|cambio)\b/.test(f)) return "nasa_evidence";
+  if (matchesCurriculum(q)) return "explain_mechanism";
+  return "out_of_domain";
+}
+
+export function asksToRankSites(question: string): boolean {
+  const f = fold(question);
+  return /\b(mejor(es)?|best|optimal|ranking|sitios para|donde (poner|construir|desarroll)|where to (build|develop)|desarrollar (una )?instalaci\w*)\b/.test(f);
+}
+
+function canned(language: AgentLanguage, en: string, es: string): string {
+  return language === "es" ? es : en;
+}
+
+function base(
+  question: string,
+  intent: AgentIntent,
+  language: AgentLanguage,
+  status: AgentStatus,
+  responseText: string,
+): AgentAnswer {
+  return {
+    status,
+    intent,
+    question,
+    language,
+    scope: {},
+    findings: [],
+    limitations: [],
+    suggestedActions: [],
+    responseText,
+  };
+}
+
+function formatLonLat(lat: number, lon: number): string {
+  const ns = lat >= 0 ? "N" : "S";
+  const ew = lon >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(2)}°${ns}, ${Math.abs(lon).toFixed(2)}°${ew}`;
+}
+
+function flyAction(region: StudyRegion, label: string): AgentAnswer["suggestedActions"][number] {
+  return {
+    type: "FLY_TO_REGION",
+    targetId: region.dest,
+    label,
+    latitude: region.latitude,
+    longitude: region.longitude,
+  };
+}
+
+function actionsFor(card: EvidenceCard, dest: string): AgentAnswer["suggestedActions"] {
+  const open: { type: AgentActionType; targetId: string } = { type: "OPEN_EVIDENCE_CARD", targetId: card.id };
+  const series: { type: AgentActionType; targetId: string } = { type: "SHOW_TIME_SERIES", targetId: card.id };
+  const region = STUDY_REGIONS.find((r) => r.dest === dest);
+  const fly = region ? flyAction(region, "Show on map") : { type: "FLY_TO_REGION" as const, targetId: dest };
+  return [open, fly, series];
+}
+
+/** Wind-framed study region used as a camera guide, not a suitability rank (destinations.ts). */
+const WIND_FRAMED_GUIDE: StudyRegion | undefined = STUDY_REGIONS.find((r) => r.scope === "ccaa:ES24");
+
+function claimTexts(question: string, language: AgentLanguage): string {
+  return selectClaims(question)
+    .map((claim: KnowledgeClaim) => (language === "es" ? claim.textEs : claim.text))
+    .join(" ");
+}
+
+function jointLowBriefing(
+  question: string,
+  language: AgentLanguage,
+  catalog: EvidenceCatalog,
+  focus: StudyRegion,
+  missingPlace?: string,
+): AgentAnswer {
+  const named = matchScope(question);
+  const surveyAll = asksToRankSites(question) || !named || named.scope === "age";
+  const rows: { region: StudyRegion; card: EvidenceCard }[] = [];
+  const targets = surveyAll ? STUDY_REGIONS : [focus];
+  for (const region of targets) {
+    const card = cardFor(catalog, "joint_low", region.scope);
+    if (card) rows.push({ region, card });
+  }
+  const coord = formatLonLat(focus.latitude, focus.longitude);
+  const survey = rows
+    .map(({ region, card }) => {
+      const here = formatLonLat(region.latitude, region.longitude);
+      const ci = `${signed(card.how_much.ci95_per_decade[0])} to ${signed(card.how_much.ci95_per_decade[1])}`;
+      return `${region.name}: ${card.outcome_label}, ${signed(card.how_much.slope_per_decade)} ${card.how_much.units} (95% CI ${ci}) · ${here}`;
+    })
+    .join(" ");
+  const missing = missingPlace
+    ? canned(
+        language,
+        `No EvidenceCard exists for ${missingPlace}; I will not invent one. `,
+        `No hay EvidenceCard para ${missingPlace}; no invento una. `,
+      )
+    : "";
+  const focusCard = cardFor(catalog, "joint_low", focus.scope) ?? rows[0]?.card;
+  const reading = focusCard ? interpretCard(focusCard, language) : "";
+  const extra = claimTexts(question, language);
+  const responseText = surveyAll
+    ? canned(
+        language,
+        `${missing}I am not picking a place to build. I opened the five NASA POWER joint-low cards: ${survey} ${focus.name} is the wind-framed research case — interesting to inspect, not a permit. I am leaving it here at ${coord}. Check it on the globe. ${reading} ${extra}`,
+        `${missing}No te voy a decir dónde construir. He abierto las cinco cards NASA POWER de recurso conjunto bajo: ${survey} ${focus.name} es el caso wind-framed del proyecto — un recorte bien interesante para mirar, no un permiso de obra. Te lo dejo aquí, ${coord}. Échale un ojo en el globo. ${reading} ${extra}`,
+      )
+    : canned(
+        language,
+        `${missing}${reading} Joint-low resource days are not blackouts. ${extra} I am not ranking sites.`,
+        `${missing}${reading} Los días de recurso conjunto bajo no son apagones. ${extra} No hago ranking de sitios.`,
+      );
+  const fly = flyAction(focus, language === "es" ? `Mira ${focus.name}` : `Check ${focus.name}`);
+  const open = focusCard
+    ? ({ type: "OPEN_EVIDENCE_CARD" as const, targetId: focusCard.id, label: language === "es" ? "Abre la evidencia" : "Open Evidence" })
+    : undefined;
+  return {
+    ...base(question, "joint_low_trend", language, "INSUFFICIENT_EVIDENCE", responseText),
+    scope: { regionId: focus.scope, regionName: focus.name, spatialSupport: focusCard?.where },
+    findings: rows.map(({ card }) => findingFrom(card)),
+    limitations: [
+      "Camera target is a research-case centre, not a recommended construction site.",
+      ...rows.map(({ card }) => card.do_not_conclude),
+    ],
+    suggestedActions: [fly, open].filter((a): a is NonNullable<typeof a> => a !== undefined),
+  };
+}
+
+function asksEnergyInstall(question: string): boolean {
+  return /\b(instalar|industria|energetic|haria sentido|sentido instalar)\b/.test(fold(question));
+}
+
+function placeBriefing(question: string, language: AgentLanguage, intent: AgentIntent, place: NamedPlace): AgentAnswer {
+  const coord = formatLonLat(place.latitude, place.longitude);
+  const energy = asksEnergyInstall(question);
+  const responseText = canned(
+    language,
+    `There is no EvidenceCard for ${place.name}, and I will not use the national Peninsula + Balearics result instead.${energy ? " I also cannot say which energy industry to install there: that would be a site ranking, which I do not do." : ""} Published trends cover national temperature and five pre-registered solar–wind regions, not ${place.name}. Here is ${place.name} (${coord}).`,
+    `No hay EvidenceCard para ${place.name}, y no sustituyo el resultado nacional de Península + Baleares.${energy ? " Tampoco puedo decir qué industria energética instalar ahí: eso sería un ranking de sitios, y no lo hago." : ""} Las tendencias publicadas cubren temperatura nacional y cinco CCAA de recurso solar-viento, no ${place.name}. Aquí tienes ${place.name} (${coord}).`,
+  );
+  return {
+    ...base(question, intent, language, "NOT_AVAILABLE", responseText),
+    scope: { regionName: place.name },
+    limitations: ["Geographic scope must match the card exactly (D50).", "Not a site ranking or investment recommendation."],
+    suggestedActions: [
+      {
+        type: "FLY_TO_REGION",
+        targetId: placePinId(place.name),
+        label: language === "es" ? `Mira ${place.name}` : `Check ${place.name}`,
+        latitude: place.latitude,
+        longitude: place.longitude,
+      },
+    ],
+  };
+}
+
+function explainBriefing(question: string, language: AgentLanguage): AgentAnswer {
+  const claims = selectClaims(question);
+  const limitations = claims.flatMap((c) => [...c.limitations]);
+  if (claims.length === 0) {
+    return {
+      ...base(
+        question,
+        "explain_mechanism",
+        language,
+        "DESCRIPTIVE",
+        canned(
+          language,
+          "I'm TARO. That concept is in domain, but I do not have a curated knowledge claim for it. I will not invent a definition or a number. Ask about a published EvidenceCard, NASA POWER resource vs generation, or a listed mechanism (PV temperature, GHI vs POA, Theil–Sen, confidence intervals).",
+          "Soy TARO. El tema está en dominio, pero no tengo una claim curada para eso. No invento una definición ni un número. Pregunta por una EvidenceCard publicada, recurso NASA POWER frente a generación, o un mecanismo listado (temperatura FV, GHI vs POA, Theil–Sen, intervalos de confianza).",
+        ),
+      ),
+      limitations: ["No curriculum claim matched; not a new measurement."],
+    };
+  }
+  const body = claims.map((c) => (language === "es" ? c.textEs : c.text)).join(" ");
+  const responseText = canned(
+    language,
+    `I'm TARO, AETHRA's research companion. ${body} Documented knowledge — not a new AETHRA measurement.`,
+    `Soy TARO, el compañero de investigación de AETHRA. ${body} Conocimiento documentado — no una medición nueva de AETHRA.`,
+  );
+  return {
+    ...base(question, "explain_mechanism", language, "DESCRIPTIVE", responseText),
+    limitations: [...limitations, "Not a scientific finding computed in this session."],
+  };
+}
+
+function mixedWarmingPvBriefing(question: string, language: AgentLanguage, catalog: EvidenceCatalog): AgentAnswer {
+  const card = cardFor(catalog, "temperature", "age");
+  const mechanism = claimById("claim-warming-not-pv-generation");
+  if (!card) {
+    return base(question, "mixed_warming_pv", language, "NOT_AVAILABLE", "Temperature EvidenceCard is missing.");
+  }
+  const extra = selectClaims(question)
+    .filter((c) => c.id !== "claim-warming-not-pv-generation")
+    .map((c) => (language === "es" ? c.textEs : c.text))
+    .join(" ");
+  const responseText = canned(
+    language,
+    `${interpretCard(card, language)} ${mechanism?.text ?? ""} ${extra}`,
+    `${interpretCard(card, language)} ${mechanism?.textEs ?? ""} ${extra}`,
+  );
+  return {
+    ...withCard(base(question, "mixed_warming_pv", language, "DESCRIPTIVE", responseText), card, "case-r0-joint-low"),
+    status: "DESCRIPTIVE",
+    limitations: [
+      "Historical warming is not photovoltaic generation.",
+      ...(mechanism?.limitations ?? []),
+      card.do_not_conclude,
+    ],
+  };
+}
+
+function researchCaseBriefing(question: string, language: AgentLanguage, catalog: EvidenceCatalog): AgentAnswer {
+  const card = cardFor(catalog, "joint_low", "ccaa:ES41");
+  const region = STUDY_REGIONS.find((r) => r.scope === "ccaa:ES41");
+  const register = claimById("claim-cyl-register-scope");
+  const levels = claimById("claim-complementarity-levels");
+  if (!card || !region) {
+    return base(question, "research_case", language, "NOT_AVAILABLE", "Castilla y León joint-low card is missing.");
+  }
+  const responseText = canned(
+    language,
+    `${interpretCard(card, language)} ${levels?.text ?? ""} ${register?.text ?? ""} This is a research candidate (level 3), not a ranking and not a construction recommendation. Difference versus Aragón was not tested.`,
+    `${interpretCard(card, language)} ${levels?.textEs ?? ""} ${register?.textEs ?? ""} Es un candidato de investigación (nivel 3), no un ranking ni una recomendación de obra. La diferencia frente a Aragón no se ha contrastado.`,
+  );
+  return {
+    ...withCard(base(question, "research_case", language, "INSUFFICIENT_EVIDENCE", responseText), card, region.dest),
+    limitations: [
+      "Recommendation level 3 (research candidate), not level 5.",
+      `Register count ${CYL_INCLUDED_INSTALLATIONS} is metadata from energy-infrastructure.json, not generation.`,
+      card.do_not_conclude,
+    ],
+  };
+}
+
+function precipitationBriefing(question: string, language: AgentLanguage): AgentAnswer {
+  const pin = matchNamedPlace(question);
+  const wantsCustomWindow = /\b(2020|2021|2022|2023|2024|2025)\b/.test(question);
+  const coord = pin ? formatLonLat(pin.latitude, pin.longitude) : "";
+  const place = pin?.name ?? (language === "es" ? "esa zona" : "that place");
+  const responseText = canned(
+    language,
+    `I do not have a published precipitation trend for ${place}${wantsCustomWindow ? " over 2020–2025" : ""}, so I cannot draw hydraulic-basin conclusions from a number I do not have. On the globe, Rain shows NASA GPM IMERG rainfall and Rivers shows basin boxes of that rainfall — not river discharge. ${pin ? `Here is ${pin.name} (${coord}).` : "Open Rain or Rivers to look around."}`,
+    `No tengo una tendencia de precipitación publicada para ${place}${wantsCustomWindow ? " en 2020–2025" : ""}, así que no puedo sacar conclusiones de cuencas a partir de un número que no existe. En el globo, Rain muestra la lluvia NASA GPM IMERG y Rivers las cajas de cuenca de esa lluvia — no el caudal del río. ${pin ? `Aquí tienes ${pin.name} (${coord}).` : "Abre Rain o Rivers para mirar."}`,
+  );
+  const fly = pin
+    ? {
+        type: "FLY_TO_REGION" as const,
+        targetId: placePinId(pin.name),
+        label: language === "es" ? `Mira ${pin.name}` : `Check ${pin.name}`,
+        latitude: pin.latitude,
+        longitude: pin.longitude,
+      }
+    : undefined;
+  return {
+    ...base(question, "precipitation_trend", language, "NOT_AVAILABLE", responseText),
+    scope: pin ? { regionName: pin.name } : {},
+    limitations: [
+      "No precipitation EvidenceCard is published; provincial GPM series are on the Trend panel, not invented here.",
+      "GLDAS runoff is modelled, not river discharge.",
+      "A custom 2020–2025 window is not a pipeline product.",
+    ],
+    suggestedActions: fly ? [fly] : [],
+  };
+}
+
+function findingFrom(card: EvidenceCard): AgentAnswer["findings"][number] {
+  return {
+    claim: `${card.outcome_label}: ${signed(card.how_much.slope_per_decade)} ${card.how_much.units} (95% CI ${signed(card.how_much.ci95_per_decade[0])} to ${signed(card.how_much.ci95_per_decade[1])})`,
+    variable: card.what,
+    units: card.how_much.units,
+    period: card.when,
+    evidenceId: card.id,
+    provenanceId: card.provenance.bundle_sha256,
+  };
+}
+
+function withCard(answer: AgentAnswer, card: EvidenceCard, dest: string): AgentAnswer {
+  const status: AgentStatus =
+    card.outcome === "supported_increase" || card.outcome === "supported_decrease"
+      ? "SUPPORTED"
+      : card.outcome === "insufficient_evidence"
+        ? "INSUFFICIENT_EVIDENCE"
+        : "DESCRIPTIVE";
+  return {
+    ...answer,
+    status,
+    scope: { regionId: card.region.scope, regionName: card.region.name, spatialSupport: card.where },
+    findings: [findingFrom(card)],
+    limitations: [...card.limitations, card.do_not_conclude],
+    suggestedActions: actionsFor(card, dest),
+  };
+}
+
+function trendSentence(card: EvidenceCard, language: AgentLanguage): string {
+  const slope = `${signed(card.how_much.slope_per_decade)} ${card.how_much.units}`;
+  const ci = `${signed(card.how_much.ci95_per_decade[0])} to ${signed(card.how_much.ci95_per_decade[1])}`;
+  if (language === "es") {
+    const label =
+      card.outcome_label === "Supported increase"
+        ? "Aumento respaldado"
+        : card.outcome_label === "Supported decrease"
+          ? "Descenso respaldado"
+          : card.outcome_label === "Insufficient evidence"
+            ? "Evidencia insuficiente"
+            : card.outcome_label === "No robust trend detected"
+              ? "No se detecta una tendencia robusta"
+              : card.outcome_label;
+    const region = card.region.name === "Peninsula + Balearics" ? "Península y Baleares" : card.region.name;
+    return `He ido a la ficha. Mira: ${region}, ${label}. ${slope} (IC del 95 % ${ci}; n = ${card.evidence.n_years}; p = ${card.evidence.p}). ${interpretOutcome(card, language)} Te dejo la evidencia aquí. Fuente: ${card.provenance.bundle}.`;
+  }
+  return `I pulled the card. Look: ${card.region.name}, ${card.outcome_label}. ${slope} (95% CI ${ci}; n = ${card.evidence.n_years}; p = ${card.evidence.p}). ${interpretOutcome(card, language)} I am leaving the evidence here. Source: ${card.provenance.bundle}.`;
+}
+
+export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): AgentAnswer {
+  const language = request.language ?? detectLanguage(request.question);
+  const intent = classifyIntent(request.question);
+  const region = resolveScope(request.question, request.session);
+  const unnamed = matchNamelessPlace(request.question);
+
+  if (intent === "prompt_injection" || intent === "out_of_domain" || intent === "invent_source") {
+    return base(
+      request.question,
+      intent === "invent_source" ? "invent_source" : intent === "prompt_injection" ? "prompt_injection" : "out_of_domain",
+      language,
+      "OUT_OF_DOMAIN",
+      canned(
+        language,
+        "I'm TARO, AETHRA's Earth-intelligence research companion. I can help with Earth-system trends, NASA evidence, Spanish geography and clean-energy resource conditions. That question is outside my supported research domain.",
+        "Soy TARO, el compañero de investigación de AETHRA. Puedo ayudar con tendencias del sistema Tierra, evidencia NASA, geografía de España y condiciones de recurso de energía limpia. Esa pregunta está fuera de mi dominio de investigación.",
+      ),
+    );
+  }
+
+  if (intent === "investment_advice") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "OUT_OF_DOMAIN",
+        canned(
+          language,
+          "I do not provide investment, siting or construction advice. I can only report validated NASA evidence and registered metadata.",
+          "No ofrezco consejo de inversión, localización o construcción. Solo puedo informar evidencia NASA validada y metadatos registrados.",
+        ),
+      ),
+      limitations: ["Not a recommendation engine."],
+    };
+  }
+
+  if (intent === "unsupported_forecast") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          "No validated generation forecast or climate projection is available. A historical Theil–Sen confidence interval is not a 2038 prediction interval. Building one would need a validated scenario artifact, a plant model, and operational constraints — none of which are in AETHRA yet. I can provide historical NASA evidence for supported Spanish study regions.",
+          "No hay un pronóstico de generación ni una proyección climática validada. Un intervalo de confianza de Theil–Sen histórico no es un intervalo de predicción para 2038. Haría falta un artefacto de escenario validado, un modelo de planta y restricciones de operación, que AETHRA aún no tiene. Puedo aportar evidencia NASA histórica para las regiones de estudio disponibles.",
+        ),
+      ),
+      limitations: ["A historical trend confidence interval is not a forecast interval."],
+    };
+  }
+
+  if (intent === "explain_mechanism") {
+    return explainBriefing(request.question, language);
+  }
+  if (intent === "mixed_warming_pv") {
+    return mixedWarmingPvBriefing(request.question, language, catalog);
+  }
+  if (intent === "research_case") {
+    return researchCaseBriefing(request.question, language, catalog);
+  }
+
+  if (intent === "infrastructure_metadata") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          "No validated generation time series is available for that installation. Registered CyL plant metadata is an exploratory overlay, not on the judge path. I can quote regional NASA evidence instead.",
+          "No hay una serie de generación validada para esa instalación. Los metadatos de plantas de CyL son una capa exploratoria, no el camino del jurado. Puedo citar evidencia NASA regional.",
+        ),
+      ),
+      limitations: ["Registered capacity (MW) is not actual generation (MWh).", "Plant coordinates are not NASA grid-cell measurements."],
+    };
+  }
+
+  const namedPlace = matchNamedPlace(request.question);
+  if (namedPlace && !matchScope(request.question)) {
+    return placeBriefing(request.question, language, intent, namedPlace);
+  }
+
+  if (unnamed && !region && intent !== "joint_low_trend") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          `No EvidenceCard exists for ${unnamed}. I will not substitute the national Peninsula + Balearics result. Temperature evidence is currently published for that national extent; joint-low cards exist for five pre-registered regions.`,
+          `No hay EvidenceCard para ${unnamed}. No sustituyo el resultado nacional de Península + Baleares. La evidencia de temperatura está publicada para ese ámbito nacional; las tarjetas de mínimos conjuntos cubren cinco regiones pre-registradas.`,
+        ),
+      ),
+      scope: { regionName: unnamed },
+      limitations: ["Geographic scope must match the card exactly (D50)."],
+    };
+  }
+
+  const scope = region ?? STUDY_REGIONS[0];
+  const mentioned = Boolean(matchScope(request.question) || request.session.regionScope);
+
+  if (intent === "compare_joint_low") {
+    const a = cardFor(catalog, "joint_low", "ccaa:ES41");
+    const b = cardFor(catalog, "joint_low", "ccaa:ES24");
+    if (!a || !b) {
+      return base(request.question, intent, language, "NOT_AVAILABLE", "Comparison cards are missing from the catalog.");
+    }
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "INSUFFICIENT_EVIDENCE",
+        canned(
+          language,
+          `Castilla y León and Aragón both have insufficient evidence of a joint-low-day trend. Difference between regions was not tested. ${trendSentence(a, language)} ${trendSentence(b, language)}`,
+          `Castilla y León y Aragón tienen ambos evidencia insuficiente de tendencia en días de recurso conjunto bajo. La diferencia entre regiones no se ha contrastado. ${trendSentence(a, language)} ${trendSentence(b, language)}`,
+        ),
+      ),
+      scope: { regionName: "Castilla y León vs Aragón" },
+      findings: [findingFrom(a), findingFrom(b)],
+      limitations: ["Difference not tested.", a.do_not_conclude, b.do_not_conclude],
+      suggestedActions: [
+        { type: "OPEN_EVIDENCE_CARD", targetId: a.id },
+        { type: "OPEN_EVIDENCE_CARD", targetId: b.id },
+      ],
+    };
+  }
+
+  if (intent === "research_gap") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "DESCRIPTIVE",
+        canned(
+          language,
+          `${scope.name} has regional NASA POWER evidence, not parcel-scale data. Further study would need finer irradiance and wind fields, plant-level generation, and grid/operational constraints. That does not identify sites to build.`,
+          `${scope.name} tiene evidencia NASA POWER regional, no a escala de parcela. Harían falta campos más finos de irradiancia y viento, generación a escala de planta y restricciones de red. Eso no identifica dónde construir.`,
+        ),
+      ),
+      scope: { regionId: scope.scope, regionName: scope.name },
+      limitations: ["Research candidate, not a suitability rank."],
+      suggestedActions: [{ type: "FLY_TO_REGION", targetId: scope.dest }],
+    };
+  }
+
+  if (intent === "precipitation_trend") {
+    return precipitationBriefing(request.question, language);
+  }
+
+  if (intent === "joint_low_trend") {
+    const focus =
+      region && region.scope !== "age"
+        ? region
+        : (WIND_FRAMED_GUIDE ?? STUDY_REGIONS[0]);
+    return jointLowBriefing(request.question, language, catalog, focus, unnamed);
+  }
+
+  const topic = intent === "temperature_trend" ? "temperature" : "joint_low";
+  const wantedScope = intent === "temperature_trend" ? (mentioned && scope.scope !== "age" ? scope.scope : "age") : scope.scope;
+  const card = cardFor(catalog, topic, wantedScope);
+
+  if (intent === "temperature_trend" && /\bprovin/.test(fold(request.question)) && wantedScope === "age") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          "No temperature EvidenceCard is published at province support. I will not invent a provincial slope or substitute the national Peninsula + Balearics card.",
+          "No hay EvidenceCard de temperatura a escala provincial. No invento una pendiente provincial ni sustituyo la tarjeta nacional de Península + Baleares.",
+        ),
+      ),
+      limitations: ["Scope-exact cards only (D50)."],
+    };
+  }
+
+  if (intent === "temperature_trend" && wantedScope !== "age") {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          `No temperature EvidenceCard is published for ${scope.name}. I will not silently use the national result. A Peninsula + Balearics card exists if you ask for that extent.`,
+          `No hay EvidenceCard de temperatura para ${scope.name}. No uso en silencio el resultado nacional. Existe una tarjeta de Península + Baleares si preguntas por ese ámbito.`,
+        ),
+      ),
+      scope: { regionId: scope.scope, regionName: scope.name },
+      limitations: ["Scope-exact cards only (D50)."],
+    };
+  }
+
+  if (!card) {
+    return {
+      ...base(
+        request.question,
+        intent,
+        language,
+        "NOT_AVAILABLE",
+        canned(
+          language,
+          `No validated EvidenceCard for that topic and region (${scope.name}).`,
+          `No hay EvidenceCard validada para ese tema y región (${scope.name}).`,
+        ),
+      ),
+      scope: { regionId: scope.scope, regionName: scope.name },
+    };
+  }
+
+  const ranked = asksToRankSites(request.question);
+  const body = trendSentence(card, language);
+  const responseText = ranked
+    ? canned(
+        language,
+        `I cannot rank sites or advise where to build. I can report NASA POWER resource conditions for pre-registered study regions. ${body}`,
+        `No puedo ordenar emplazamientos ni aconsejar dónde construir. Sí puedo informar condiciones de recurso NASA POWER en las regiones de estudio pre-registradas. ${body}`,
+      )
+    : body;
+  const answered = withCard(base(request.question, intent, language, "SUPPORTED", responseText), card, scope.dest);
+  if (!ranked) return answered;
+  return {
+    ...answered,
+    limitations: ["Not a site ranking or investment recommendation.", ...answered.limitations],
+  };
+}

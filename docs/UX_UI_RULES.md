@@ -44,7 +44,7 @@ palettes, outcome semantics, missing/invalid states or zero-centred diverging sc
 1. **Minimal, precise, premium scientific interface.** Data first; chrome second.
 2. **Clear visual hierarchy and consistent spacing** (Tailwind defaults work well).
 3. **Shared typography, colors and components** where practical. Geist Sans + Geist Mono; tabular
-   numerals on comparisons. Header wordmark: AETHRA (typographic placeholder, no final logo).
+   numerals on comparisons. Header wordmark: AETHRA raster lockup (`public/brand/aethra`).
 4. **Avoid clutter**; decorations and effects are fine when they add to the experience.
 5. **Components should have a purpose** — ideally helping answer *what / where / when / how much*.
 6. **Accessibility:** aim for good contrast, keyboard navigation, visible focus and labelled controls.
@@ -92,4 +92,10 @@ do not add destination chrome or 3D models to `/explore`.
 
 ## Language
 
-UI copy in English (event requirement — see `PROJECT.md`).
+The submitted default is English (event requirement — see `PROJECT.md`). A control in the header
+switches the interface to Spanish. Both languages use the same numbers, outcome states and limits;
+only the wording changes. The choice is stored in `localStorage` (`aethra-locale`) and sets
+`html lang`. Spanish dates follow D20. Copy lives in `apps/web/lib/i18n/messages.ts` (interface) and
+`science-copy.ts` (Spanish restatements of pipeline text — words only, never values). The first render
+is always English so server and client markup match; the stored choice applies right after mount.
+TARO receives the interface language (`language` in the ask request) and answers in it.

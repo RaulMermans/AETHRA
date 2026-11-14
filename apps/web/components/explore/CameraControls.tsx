@@ -1,25 +1,10 @@
 "use client";
 
 import type { GlobeController } from "@/lib/globe/types";
+import { useLocale } from "@/lib/i18n/locale";
 import { Icon, type IconName } from "./Icon";
 
 type Action = { icon: IconName; label: string; run: (c: GlobeController) => void };
-
-const GROUPS: Action[][] = [
-  [
-    { icon: "plus", label: "Zoom in", run: (c) => c.zoom(1) },
-    { icon: "minus", label: "Zoom out", run: (c) => c.zoom(-1) },
-  ],
-  [
-    { icon: "tiltUp", label: "Tilt toward horizon", run: (c) => c.tilt(1) },
-    { icon: "tiltDown", label: "Tilt to top-down", run: (c) => c.tilt(-1) },
-  ],
-  [
-    { icon: "rotateLeft", label: "Rotate left", run: (c) => c.rotate(-1) },
-    { icon: "rotateRight", label: "Rotate right", run: (c) => c.rotate(1) },
-    { icon: "compass", label: "Reset north", run: (c) => c.resetNorth() },
-  ],
-];
 
 export function CameraControls({
   controller,
@@ -31,12 +16,28 @@ export function CameraControls({
   /** Flat 2D map: no tilt or rotation, only zoom and reset. */
   flat?: boolean;
 }) {
+  const { m } = useLocale();
+  const groups: Action[][] = [
+    [
+      { icon: "plus", label: m.camera.zoomIn, run: (c) => c.zoom(1) },
+      { icon: "minus", label: m.camera.zoomOut, run: (c) => c.zoom(-1) },
+    ],
+    [
+      { icon: "tiltUp", label: m.camera.tiltHorizon, run: (c) => c.tilt(1) },
+      { icon: "tiltDown", label: m.camera.tiltTop, run: (c) => c.tilt(-1) },
+    ],
+    [
+      { icon: "rotateLeft", label: m.camera.rotateLeft, run: (c) => c.rotate(-1) },
+      { icon: "rotateRight", label: m.camera.rotateRight, run: (c) => c.rotate(1) },
+      { icon: "compass", label: m.camera.resetNorth, run: (c) => c.resetNorth() },
+    ],
+  ];
   const disabled = !controller;
   const btn =
     "focus-ring grid size-9 place-items-center text-muted transition-colors hover:bg-white/6 hover:text-ink active:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
   return (
-    <div role="toolbar" aria-label="Camera" aria-orientation="vertical" className="pointer-events-auto flex flex-col gap-2">
-      {(flat ? GROUPS.slice(0, 1) : GROUPS).map((group, i) => (
+    <div role="toolbar" aria-label={m.camera.toolbar} aria-orientation="vertical" className="pointer-events-auto flex flex-col gap-2">
+      {(flat ? groups.slice(0, 1) : groups).map((group, i) => (
         <div key={i} className={`panel flex-col overflow-hidden !rounded-lg ${i === 0 ? "flex" : "hidden sm:flex [@media(max-height:760px)]:!hidden"}`}>
           {group.map((a) => (
             <button
@@ -54,7 +55,7 @@ export function CameraControls({
         </div>
       ))}
       <div className="panel flex flex-col overflow-hidden !rounded-lg">
-        <button type="button" className={btn} aria-label="Reset view" title="Reset view" disabled={disabled} onClick={onReset}>
+        <button type="button" className={btn} aria-label={m.camera.resetView} title={m.camera.resetView} disabled={disabled} onClick={onReset}>
           <Icon name="home" />
         </button>
       </div>

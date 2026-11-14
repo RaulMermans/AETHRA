@@ -95,12 +95,13 @@ Reviewer must not be the person who ran the analysis. Tick only after doing the 
 
 Reviewer: ________ Date/time: ________
 
-## 6. Spatial experience (D54) — no additional scientific sign-off yet
+## 6. Spatial experience (D54 / D55) — prototype exists; not independently reviewed
 
-A 14 Nov evening sprint specified destinations, a Castilla y León research case, and optional 3D
-(`docs/SPATIAL_EXPERIENCE.md`). **Nothing was implemented.** Do not treat landmark fly-tos, plant
-glTF models, or 2032–2040 planning copy as reviewed evidence.
+A 14 Nov evening prototype landed destinations, five Gate B research-case sheets, and optional
+illustrative 3D at registered Buniel. **That is not additional scientific evidence.** Landmark
+fly-tos are navigation. Plant geometry is illustrative. 2032–2040 copy is a planning horizon, not a
+projection.
 
-If P1B is later built, the reviewer only confirms that the case **quotes** `energy-gap-ES41` /
-`energy-gap-ES24` (and independence ratios) without new statistics or a CyL-vs-Aragón significance
-claim. 3D geometry is not a scientific product.
+The reviewer, if asked later, only confirms that cases **quote** `energy-gap-*` cards and
+independence ratios without new statistics or a CyL-vs-Aragón significance claim. 3D geometry is
+not a scientific product. Judge mode (D61) hides plant overlay and 3D.

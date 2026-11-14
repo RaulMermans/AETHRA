@@ -28,12 +28,13 @@
 }
 
 @utility panel {
-  background-color: rgb(16 28 43 / 0.86);
+  isolation: isolate;
+  background-color: rgb(16 28 43 / 0.97);
   border: 1px solid rgb(129 157 181 / 0.22);
   border-radius: 0.65rem;
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  box-shadow: 0 8px 28px rgb(3 5 10 / 0.45), inset 0 1px 0 rgb(245 241 233 / 0.04);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 8px 28px rgb(3 5 10 / 0.55), inset 0 1px 0 rgb(245 241 233 / 0.04);
 }
 
 @utility focus-ring {
@@ -87,6 +88,34 @@ body {
 .globe-credits .cesium-credit-logoContainer img {
   max-height: 14px;
   opacity: 0.8;
+}
+
+.aethra-core-mark {
+  color: var(--color-nav);
+  display: grid;
+  place-items: center;
+}
+.aethra-core-mark--investigating .aethra-core-mark__orbit {
+  transform-origin: 16px 16px;
+  animation: aethra-core-orbit 2.4s linear infinite;
+}
+.aethra-core-mark--ready {
+  color: var(--color-accent);
+}
+.aethra-core-mark--insufficient {
+  color: var(--color-muted);
+  opacity: 0.85;
+}
+.aethra-core-mark--idle .aethra-core-mark__nucleus {
+  animation: aethra-core-idle 3.6s ease-in-out infinite;
+}
+@keyframes aethra-core-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes aethra-core-idle {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

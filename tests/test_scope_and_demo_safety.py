@@ -100,6 +100,12 @@ def test_judge_mode_is_default_and_gates_every_exploratory_entry_point():
     assert "EXPLORATORY_FEATURES_ENABLED ? (params.get(\"concept\")" in x
     assert "{EXPLORATORY_FEATURES_ENABLED && (\n        <div\n          role=\"tablist\"" in x
     assert 'EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure"' in x
+    assert "allowInfrastructureControls={EXPLORATORY_FEATURES_ENABLED}" in x
+    assert "EXPLORATORY_FEATURES_ENABLED &&" in x and "destinationId === \"installation-buniel\"" in x
+    spain = src("components/explore/ExploreSpain.tsx")
+    assert "destinationAllowedInJudgeMode" in spain
+    cases = src("components/explore/EnergyCasePanel.tsx")
+    assert "allowInfrastructureControls && study.hasPlantRegister" in cases
     t = src("components/explore/ToolsBar.tsx")
     assert re.search(r'id: "infrastructure",[\s\S]{0,300}exploratory: true', t)
     assert "EXPLORATORY_FEATURES_ENABLED || !t.exploratory" in t
@@ -112,8 +118,10 @@ def test_judge_path_has_no_forecast_or_2030_wording():
     for rel in ["components/explore/EvidenceCardPanel.tsx", "components/explore/EvidencePanel.tsx", "components/explore/DimensionDock.tsx"]:
         text = src(rel)
         assert "2030" not in text, rel
-        for m in re.finditer(r"forecast", text, re.I):
-            assert text[max(0, m.start() - 6):m.start()].lower().endswith("not a "), (rel, text[m.start() - 30:m.end()])
+        compact = re.sub(r"\s+", " ", text)
+        for m in re.finditer(r"forecast", compact, re.I):
+            prefix = compact[max(0, m.start() - 8):m.start()].lower()
+            assert prefix.endswith("not a "), (rel, compact[m.start() - 40:m.end()])
 
 
 def test_multiplicity_caveat_matches_recorded_check():
@@ -124,6 +132,25 @@ def test_multiplicity_caveat_matches_recorded_check():
     panel = src("components/explore/EvidencePanel.tsx")
     assert f"only {r['supported_after_bh']} of {r['supported_unadjusted']} modelled-runoff" in panel
     assert 'config.dimension !== "temperature" && st' in panel
+    guard = src("lib/globe/scope-multiplicity.ts")
+    assert "judgePromotesUnadjustedSupport" in guard
+    assert 'return dimension === "temperature"' in guard
+    assert "presentedOutcome" in panel
+    assert "EXPLORATORY — multiplicity unadjusted" in panel
+    assert "supported_increase" in panel
+
+
+def test_climate_timeline_slots_are_observed_years_then_trend_not_a_year():
+    timeline = src("lib/globe/climate-timeline.ts")
+    assert "kind: \"trend-summary\"" in timeline
+    assert "labelledObservedYear" in timeline
+    assert "2030" not in timeline
+    assert "LAST_COMPLETE_YEAR" in timeline
+    view = src("components/explore/ExploreView.tsx")
+    assert "labelledObservedYear(playbackRef.current)" in view
+    dock = src("components/explore/DimensionDock.tsx")
+    assert "Visual blend between consecutive observed years" in dock
+    assert "not a new year, not a forecast" in dock
 
 
 # --- NASA vs NOAA artifact is internally consistent ---------------------------------------------

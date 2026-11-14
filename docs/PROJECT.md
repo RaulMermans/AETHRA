@@ -33,7 +33,8 @@ The challenge name stays **Be An Earth System Trend Detective!** (LOCKED, extern
 product identity in `/explore` is **AETHRA** — Earth Intelligence Platform; first mission
 **MISSION 01 — SPAIN** (D56). GRIDSHIFT (D34) remains an internal energy-strategy working name.
 This is an independent Space Apps project, not an official NASA product. Art direction:
-[BRAND_ART_DIRECTION.md](BRAND_ART_DIRECTION.md). Final logo deferred.
+[BRAND_ART_DIRECTION.md](BRAND_ART_DIRECTION.md). Raster logo kit in `apps/web/public/brand/aethra`
+(D58). Vector master still deferred.
 
 ## 2. Product thesis
 

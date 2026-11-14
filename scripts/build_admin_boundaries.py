@@ -1,10 +1,10 @@
-"""Build administrative hierarchy and boundaries for Spain (AGE, CCAA, Provincias, Municipios).
+"""Build administrative hierarchy and boundaries for Spain (AGE, CCAA, Provincias).
 
 Pure Python implementation (zero external dependencies):
-- Reads official Eurostat GISCO NUTS-2 polygons from data/processed/spain/spain_boundary_nuts2021_01m.geojson
-- Simplifies rings with Ramer-Douglas-Peucker
-- Partitions multi-province CCAA polygons into exact coastline-hugging provincial polygons via
-  Laguerre-Voronoi half-plane clipping (Sutherland-Hodgman)
+- CCAA: Eurostat GISCO NUTS-2 2021 1:1M (`spain_boundary_nuts2021_01m.geojson`)
+- Provinces: Eurostat GISCO NUTS-3 2021 1:1M, grouped to INE provinces (island NUTS-3
+  units are unioned for Illes Balears, Las Palmas and Santa Cruz de Tenerife)
+- Rings simplified with Ramer-Douglas-Peucker
 - Outputs apps/web/public/data/spain-admin.json
 """
 
@@ -14,10 +14,17 @@ import json
 import math
 import re
 import unicodedata
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NUTS2_SRC = ROOT / "data/processed/spain/spain_boundary_nuts2021_01m.geojson"
+NUTS3_URL = (
+    "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/"
+    "NUTS_RG_01M_2021_4326_LEVL_3.geojson"
+)
+NUTS3_RAW = ROOT / "data/raw/boundary/NUTS_RG_01M_2021_4326_LEVL_3.geojson"
+NUTS3_PROC = ROOT / "data/processed/spain/spain_nuts3_2021_01m.geojson"
 OUT_PATH = ROOT / "apps/web/public/data/spain-admin.json"
 
 TOLERANCE_DEG = 0.005
@@ -136,75 +143,6 @@ def rings_bbox_and_center(rings: list[Ring]) -> tuple[list[float], list[float]]:
     return [round(w, 4), round(s, 4), round(e, 4), round(n, 4)], [round(cy, 4), round(cx, 4)]
 
 
-def clip_ring_halfplane(ring: Ring, a: float, b: float, c: float) -> Ring:
-    """Clip a closed ring to the half-plane a*x + b*y <= c (Sutherland-Hodgman)."""
-    if len(ring) < 4:
-        return []
-    pts = ring[:-1] if ring[0] == ring[-1] else ring[:]
-    out: Ring = []
-    n = len(pts)
-    for i in range(n):
-        p1 = pts[i]
-        p2 = pts[(i + 1) % n]
-        v1 = a * p1[0] + b * p1[1] - c
-        v2 = a * p2[0] + b * p2[1] - c
-        in1 = v1 <= 1e-9
-        in2 = v2 <= 1e-9
-        if in1 and in2:
-            out.append(p2)
-        elif in1 and not in2:
-            denom = v1 - v2
-            t = v1 / denom if abs(denom) > 1e-12 else 0.5
-            ix = p1[0] + t * (p2[0] - p1[0])
-            iy = p1[1] + t * (p2[1] - p1[1])
-            out.append([ix, iy])
-        elif not in1 and in2:
-            denom = v1 - v2
-            t = v1 / denom if abs(denom) > 1e-12 else 0.5
-            ix = p1[0] + t * (p2[0] - p1[0])
-            iy = p1[1] + t * (p2[1] - p1[1])
-            out.append([ix, iy])
-            out.append(p2)
-    if len(out) < 3:
-        return []
-    out.append(out[0])
-    return out
-
-
-def clip_rings_voronoi(
-    parent_rings: list[Ring],
-    target_lon: float,
-    target_lat: float,
-    target_w: float,
-    others: list[tuple[float, float, float]],
-) -> list[Ring]:
-    """Clip parent CCAA rings to the Laguerre-Voronoi cell of target against others."""
-    cos_lat = math.cos(math.radians(target_lat))
-    aspect2 = cos_lat * cos_lat
-    ax = target_lon
-    ay = target_lat
-
-    clipped_rings: list[Ring] = []
-    for ring in parent_rings:
-        curr = ring
-        for bx, by, bw in others:
-            # ((x - ax)^2 * aspect2 + (y - ay)^2 - target_w) <= ((x - bx)^2 * aspect2 + (y - by)^2 - bw)
-            # 2 * aspect2 * (bx - ax) * x + 2 * (by - ay) * y <= aspect2*(bx^2 - ax^2) + (by^2 - ay^2) + target_w - bw
-            a = 2.0 * aspect2 * (bx - ax)
-            b = 2.0 * (by - ay)
-            c = aspect2 * (bx * bx - ax * ax) + (by * by - ay * ay) + (target_w - bw)
-            curr = clip_ring_halfplane(curr, a, b, c)
-            if not curr:
-                break
-        if curr and ring_area(curr) >= MIN_RING_AREA_DEG2 * 0.4:
-            s = simplify_ring(curr, TOLERANCE_DEG * 0.8)
-            if len(s) >= 4:
-                clipped_rings.append(s)
-
-    clipped_rings.sort(key=ring_area, reverse=True)
-    return clipped_rings
-
-
 def compute_view_range(bbox: list[float], min_range: int = 90_000, max_range: int = 950_000) -> int:
     w, s, e, n = bbox
     lat_span = max(0.15, n - s)
@@ -292,7 +230,8 @@ CCAA_META: dict[str, dict[str, str]] = {
     },
 }
 
-# (id, name, ccaa_id, capital, institution, center_lat, center_lon, voronoi_lat, voronoi_lon, weight)
+# (id, name, ccaa_id, capital, institution, center_lat, center_lon, unused, unused, unused)
+# Last three fields are kept so existing rows stay parseable; province rings come from NUTS-3.
 PROVINCES_SPEC = [
     # Andalucía (ES61)
     ("04", "Almería", "ES61", "Almería", "Diputación Provincial de Almería", 36.84, -2.46, 37.15, -2.30, 0.02),
@@ -365,6 +304,110 @@ PROVINCES_SPEC = [
     ("51", "Ceuta", "ES63", "Ceuta", "Ciudad Autónoma de Ceuta", 35.89, -5.32, 35.89, -5.32, 0.0),
     ("52", "Melilla", "ES64", "Melilla", "Ciudad Autónoma de Melilla", 35.29, -2.94, 35.29, -2.94, 0.0),
 ]
+
+# INE province code -> GISCO NUTS 2021 level-3 ids. Island NUTS-3 units are unioned to
+# match INE provinces (Illes Balears; Las Palmas; Santa Cruz de Tenerife).
+PROVINCE_NUTS3: dict[str, tuple[str, ...]] = {
+    "01": ("ES211",),
+    "02": ("ES421",),
+    "03": ("ES521",),
+    "04": ("ES611",),
+    "05": ("ES411",),
+    "06": ("ES431",),
+    "07": ("ES531", "ES532", "ES533"),
+    "08": ("ES511",),
+    "09": ("ES412",),
+    "10": ("ES432",),
+    "11": ("ES612",),
+    "12": ("ES522",),
+    "13": ("ES422",),
+    "14": ("ES613",),
+    "15": ("ES111",),
+    "16": ("ES423",),
+    "17": ("ES512",),
+    "18": ("ES614",),
+    "19": ("ES424",),
+    "20": ("ES212",),
+    "21": ("ES615",),
+    "22": ("ES241",),
+    "23": ("ES616",),
+    "24": ("ES413",),
+    "25": ("ES513",),
+    "26": ("ES230",),
+    "27": ("ES112",),
+    "28": ("ES300",),
+    "29": ("ES617",),
+    "30": ("ES620",),
+    "31": ("ES220",),
+    "32": ("ES113",),
+    "33": ("ES120",),
+    "34": ("ES414",),
+    "35": ("ES704", "ES705", "ES708"),
+    "36": ("ES114",),
+    "37": ("ES415",),
+    "38": ("ES703", "ES706", "ES707", "ES709"),
+    "39": ("ES130",),
+    "40": ("ES416",),
+    "41": ("ES618",),
+    "42": ("ES417",),
+    "43": ("ES514",),
+    "44": ("ES242",),
+    "45": ("ES425",),
+    "46": ("ES523",),
+    "47": ("ES418",),
+    "48": ("ES213",),
+    "49": ("ES419",),
+    "50": ("ES243",),
+    "51": ("ES630",),
+    "52": ("ES640",),
+}
+
+
+def load_spain_nuts3_geometries() -> dict[str, dict]:
+    """NUTS_ID -> GeoJSON geometry for Spanish NUTS-3 units."""
+    if not NUTS3_PROC.exists():
+        if not NUTS3_RAW.exists():
+            NUTS3_RAW.parent.mkdir(parents=True, exist_ok=True)
+            print(f"Downloading {NUTS3_URL} ...")
+            urllib.request.urlretrieve(NUTS3_URL, NUTS3_RAW)
+        europe = json.loads(NUTS3_RAW.read_text(encoding="utf-8"))
+        feats = [
+            {
+                "type": "Feature",
+                "properties": {
+                    "NUTS_ID": feat["properties"]["NUTS_ID"],
+                    "NAME_LATN": feat["properties"].get("NAME_LATN", ""),
+                },
+                "geometry": feat["geometry"],
+            }
+            for feat in europe["features"]
+            if feat.get("properties", {}).get("CNTR_CODE") == "ES"
+        ]
+        if len(feats) < 52:
+            raise RuntimeError(f"Spain NUTS-3 extract has {len(feats)} features; expected 59")
+        NUTS3_PROC.parent.mkdir(parents=True, exist_ok=True)
+        collection = {"type": "FeatureCollection", "features": feats}
+        NUTS3_PROC.write_text(
+            json.dumps(collection, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        print(f"Wrote {NUTS3_PROC.relative_to(ROOT)} ({len(feats)} NUTS-3 units)")
+    raw = json.loads(NUTS3_PROC.read_text(encoding="utf-8"))
+    return {feat["properties"]["NUTS_ID"]: feat["geometry"] for feat in raw["features"]}
+
+
+def rings_for_province(nuts3_geoms: dict[str, dict], nuts_ids: tuple[str, ...]) -> list[Ring]:
+    rings: list[Ring] = []
+    for nid in nuts_ids:
+        geom = nuts3_geoms.get(nid)
+        if geom is None:
+            raise KeyError(f"Missing GISCO NUTS-3 geometry for {nid}")
+        rings.extend(extract_outer_rings(geom))
+    if not rings:
+        raise RuntimeError(f"No rings extracted for NUTS-3 {nuts_ids}")
+    rings.sort(key=ring_area, reverse=True)
+    return rings
+
 
 MUNICIPALITIES_RAW = [
     # 04 Almería
@@ -727,11 +770,19 @@ MUNICIPALITIES_RAW = [
 
 
 def main() -> None:
-    raw = json.loads(NUTS2_SRC.read_text())
+    raw = json.loads(NUTS2_SRC.read_text(encoding="utf-8"))
     ccaa_rings_map: dict[str, list[Ring]] = {}
     for feat in raw["features"]:
         nid = feat["properties"]["NUTS_ID"]
         ccaa_rings_map[nid] = extract_outer_rings(feat["geometry"])
+
+    nuts3_geoms = load_spain_nuts3_geometries()
+    spec_ids = {spec[0] for spec in PROVINCES_SPEC}
+    if spec_ids != set(PROVINCE_NUTS3):
+        raise RuntimeError("PROVINCES_SPEC ids and PROVINCE_NUTS3 keys differ")
+    unused_nuts3 = set(nuts3_geoms) - {nid for ids in PROVINCE_NUTS3.values() for nid in ids}
+    if unused_nuts3:
+        raise RuntimeError(f"Unmapped Spain NUTS-3 units: {sorted(unused_nuts3)}")
 
     # 1. Build CCAA list
     ccaa_list = []
@@ -750,22 +801,16 @@ def main() -> None:
             }
         )
 
-    # 2. Group provinces by CCAA and build province polygons
-    by_ccaa: dict[str, list] = {}
-    for spec in PROVINCES_SPEC:
-        by_ccaa.setdefault(spec[2], []).append(spec)
-
+    # 2. Official NUTS-3 rings grouped to INE provinces
     provinces_list = []
-    prov_lookup: dict[str, dict] = {}
-
-    for nid, specs in by_ccaa.items():
-        parent_rings = ccaa_rings_map[nid]
+    for spec in PROVINCES_SPEC:
+        pid, pname, nid, cap, inst, clat, clon, _, _, _ = spec
         ccaa_name = CCAA_META[nid]["name"]
-
-        if len(specs) == 1:
-            pid, pname, _, cap, inst, clat, clon, _, _, _ = specs[0]
-            bbox, _ = rings_bbox_and_center(parent_rings)
-            entry = {
+        p_rings = rings_for_province(nuts3_geoms, PROVINCE_NUTS3[pid])
+        bbox, _ = rings_bbox_and_center(p_rings)
+        min_range = 120_000 if nid == "ES70" else 85_000
+        provinces_list.append(
+            {
                 "id": pid,
                 "name": pname,
                 "ccaaId": nid,
@@ -774,64 +819,16 @@ def main() -> None:
                 "institution": inst,
                 "center": [round(clat, 4), round(clon, 4)],
                 "bbox": bbox,
-                "range": compute_view_range(bbox, min_range=65_000, max_range=450_000),
-                "coordinates": [[r] for r in parent_rings],
+                "range": compute_view_range(bbox, min_range=min_range, max_range=450_000),
+                "coordinates": [[r] for r in p_rings],
             }
-            provinces_list.append(entry)
-            prov_lookup[pid] = entry
-        elif nid == "ES70":
-            # Canarias: split islands by centroid lon > -15.9 (Las Palmas) vs <= -15.9 (SC Tenerife)
-            for pid, pname, _, cap, inst, clat, clon, _, _, _ in specs:
-                if pid == "35":
-                    sub_rings = [r for r in parent_rings if ring_centroid(r)[0] > -15.9]
-                else:
-                    sub_rings = [r for r in parent_rings if ring_centroid(r)[0] <= -15.9]
-                bbox, _ = rings_bbox_and_center(sub_rings)
-                entry = {
-                    "id": pid,
-                    "name": pname,
-                    "ccaaId": nid,
-                    "ccaaName": ccaa_name,
-                    "capital": cap,
-                    "institution": inst,
-                    "center": [round(clat, 4), round(clon, 4)],
-                    "bbox": bbox,
-                    "range": compute_view_range(bbox, min_range=120_000, max_range=450_000),
-                    "coordinates": [[r] for r in sub_rings],
-                }
-                provinces_list.append(entry)
-                prov_lookup[pid] = entry
-        else:
-            for pid, pname, _, cap, inst, clat, clon, vlat, vlon, vw in specs:
-                others = [
-                    (o_vlon, o_vlat, o_vw)
-                    for o_pid, _, _, _, _, _, _, o_vlat, o_vlon, o_vw in specs
-                    if o_pid != pid
-                ]
-                p_rings = clip_rings_voronoi(parent_rings, vlon, vlat, vw, others)
-                if not p_rings:
-                    p_rings = parent_rings
-                bbox, _ = rings_bbox_and_center(p_rings)
-                entry = {
-                    "id": pid,
-                    "name": pname,
-                    "ccaaId": nid,
-                    "ccaaName": ccaa_name,
-                    "capital": cap,
-                    "institution": inst,
-                    "center": [round(clat, 4), round(clon, 4)],
-                    "bbox": bbox,
-                    "range": compute_view_range(bbox, min_range=85_000, max_range=350_000),
-                    "coordinates": [[r] for r in p_rings],
-                }
-                provinces_list.append(entry)
-                prov_lookup[pid] = entry
+        )
 
     provinces_list.sort(key=lambda p: p["name"])
 
     payload = {
         "generated_at": "2026-11-14",
-        "source": "Eurostat GISCO NUTS 2021 (1:1M) + IGN/INE Administrative Reference",
+        "source": "Eurostat GISCO NUTS 2021 1:1M (level 2 CCAA, level 3 provinces) © EuroGeographics",
         "age": {
             "id": "ES",
             "name": "España (Territorio Nacional)",

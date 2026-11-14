@@ -1,7 +1,7 @@
 """Study regions and fractional area weights on regular lat/lon grids.
 
-Regions come from apps/web/public/data/spain-admin.json (Eurostat GISCO NUTS 2021 1:1M + INE
-provinces). Scope keys match the /explore admin picker:
+Regions come from apps/web/public/data/spain-admin.json (Eurostat GISCO NUTS 2021 1:1M:
+NUTS-2 CCAA, NUTS-3 grouped to INE provinces). Scope keys match the /explore admin picker:
   "age"            -> R0 Peninsula + Balearics (excludes ES70 Canarias, ES63 Ceuta, ES64 Melilla)
   "ccaa:<NUTS id>" -> Comunidad / Ciudad Autónoma
   "provincia:<INE code>"

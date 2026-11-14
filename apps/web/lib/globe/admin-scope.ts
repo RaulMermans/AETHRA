@@ -245,89 +245,91 @@ export function resolveAdminScope(
   };
 }
 
+type AdminOverlayFeature = {
+  type: "Feature";
+  properties: Record<string, unknown>;
+  geometry:
+    | { type: "Point"; coordinates: [number, number] }
+    | { type: "LineString"; coordinates: number[][] };
+};
+
+function pushOuterRings(
+  features: AdminOverlayFeature[],
+  coordinates: number[][][][],
+  properties: Record<string, unknown>,
+): void {
+  for (const poly of coordinates) {
+    const ring = poly[0];
+    if (!ring || ring.length < 2) continue;
+    features.push({
+      type: "Feature",
+      properties,
+      geometry: { type: "LineString", coordinates: ring },
+    });
+  }
+}
+
 /**
- * Builds the GeoJSON LineString/Point overlay highlighting the active administrative boundary
- * (and subtle reference lines for parent CCAA when viewing a Province).
+ * Builds the GeoJSON overlay: official GISCO province borders (atlas-style) plus the
+ * active jurisdiction in gold. Parent CCAA is drawn when a province is selected.
  */
 export function buildAdminScopeOverlayGeoJson(
   admin: AdminBundle | null,
   resolved: ResolvedAdminScope,
 ): {
   type: "FeatureCollection";
-  features: Array<{
-    type: "Feature";
-    properties: Record<string, unknown>;
-    geometry:
-      | { type: "Point"; coordinates: [number, number] }
-      | { type: "LineString"; coordinates: number[][] };
-  }>;
+  features: AdminOverlayFeature[];
 } {
-  if (!admin || resolved.level === "age") {
+  if (!admin) {
     return { type: "FeatureCollection", features: [] };
   }
 
-  const features: Array<{
-    type: "Feature";
-    properties: Record<string, unknown>;
-    geometry:
-      | { type: "Point"; coordinates: [number, number] }
-      | { type: "LineString"; coordinates: number[][] };
-  }> = [];
+  const features: AdminOverlayFeature[] = [];
+  const provinceColor = "#94a3b8";
+  const provinces =
+    resolved.level === "age"
+      ? admin.provinces
+      : admin.provinces.filter((p) => p.ccaaId === (resolved.ccaa?.id ?? resolved.province?.ccaaId));
 
-  // 1. If in Provincia mode, draw parent CCAA outline subtly for context
+  for (const prov of provinces) {
+    if (resolved.level === "provincia" && prov.id === resolved.province?.id) continue;
+    pushOuterRings(features, prov.coordinates, {
+      kind: "admin-province-outline",
+      color: provinceColor,
+    });
+  }
+
   if (resolved.level === "provincia" && resolved.ccaa) {
-    for (const poly of resolved.ccaa.coordinates) {
-      if (poly[0]) {
-        features.push({
-          type: "Feature",
-          properties: {
-            kind: "admin-parent-outline",
-            color: "#819DB5",
-          },
-          geometry: {
-            type: "LineString",
-            coordinates: poly[0],
-          },
-        });
-      }
-    }
+    pushOuterRings(features, resolved.ccaa.coordinates, {
+      kind: "admin-parent-outline",
+      color: "#819DB5",
+    });
   }
 
-  // 2. Draw the active jurisdiction's primary perimeter in bright gold/amber
-  if (resolved.multiPolygon) {
-    for (const poly of resolved.multiPolygon) {
-      if (poly[0]) {
-        features.push({
-          type: "Feature",
-          properties: {
-            kind: "admin-active-outline",
-            name: resolved.name,
-            institution: resolved.institution,
-            color: "#fbbf24",
-          },
-          geometry: {
-            type: "LineString",
-            coordinates: poly[0],
-          },
-        });
-      }
-    }
-  }
-
-  // 3. Center badge point for the active jurisdiction
-  features.push({
-    type: "Feature",
-    properties: {
-      kind: "basin-hub",
-      name: `${resolved.name} (${resolved.institution})`,
+  if (resolved.level !== "age" && resolved.multiPolygon) {
+    pushOuterRings(features, resolved.multiPolygon, {
+      kind: "admin-active-outline",
+      name: resolved.name,
+      institution: resolved.institution,
       color: "#fbbf24",
-      pixelSize: 9.5,
-    },
-    geometry: {
-      type: "Point",
-      coordinates: [resolved.center.longitude, resolved.center.latitude],
-    },
-  });
+    });
+  }
+
+  if (resolved.level !== "age") {
+    features.push({
+      type: "Feature",
+      properties: {
+        kind: "basin-hub",
+        name: `${resolved.name} (${resolved.institution})`,
+        color: "#fbbf24",
+        pixelSize: 9.5,
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [resolved.center.longitude, resolved.center.latitude],
+      },
+    });
+  }
 
   return { type: "FeatureCollection", features };
 }

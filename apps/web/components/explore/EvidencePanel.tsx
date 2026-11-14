@@ -1,7 +1,9 @@
 "use client";
 
 import { formatDegrees } from "@/lib/format";
-import { SCOPE_LEVEL_META, type ResolvedAdminScope } from "@/lib/globe/admin-scope";
+import { useLocale } from "@/lib/i18n/locale";
+import type { Messages } from "@/lib/i18n/messages";
+import { type ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import {
   getEffectiveMeta,
   queryClimateAtLocation,
@@ -11,6 +13,7 @@ import {
   type LocationEvidence,
   type RiverBasin,
 } from "@/lib/globe/climate";
+import { presentedOutcome } from "@/lib/globe/scope-multiplicity";
 import type { GeoCoordinate } from "@/lib/globe/types";
 import { Icon } from "./Icon";
 import { ScaleThermometer } from "./ScaleThermometer";
@@ -43,17 +46,60 @@ function signed(n: number): string {
   return `${n > 0 ? "+" : n < 0 ? "−" : "±"}${fmt(Math.abs(n))}`;
 }
 
-function outcomeView(evidence: LocationEvidence): { glyph: string; label: string; tone: string } {
-  const outcome: EvidenceOutcome = evidence.outcome;
+function placeLabel(label: string, copy: Messages): string {
+  if (label === "This place") return copy.evidence.thisPlace;
+  if (label === "Peninsula + Balearics") return copy.evidence.peninsula;
+  if (label.startsWith("Near ")) return copy.evidence.near(label.slice(5));
+  if (label.endsWith(" basin box")) return copy.evidence.basinBox(label.slice(0, -" basin box".length));
+  return label;
+}
+
+function subPlace(label: string, copy: Messages): string {
+  if (label === "Clicked on the map") return copy.evidence.clicked;
+  if (label === "National view (Canarias reported separately)") return copy.evidence.nationalCanarias;
+  return label;
+}
+
+function reasonLabel(reason: string | undefined, copy: Messages): string {
+  if (!reason) return copy.evidence.noTrend;
+  if (reason === "No precomputed trend for this place.") return copy.evidence.noTrend;
+  if (reason === "No precomputed series for this area.") return copy.evidence.noSeriesArea;
+  if (reason === "This station has fewer than 15 complete years for this metric.") return copy.evidence.stationYears;
+  if (reason.startsWith("Area trends are not computed")) return copy.evidence.pickStation;
+  return reason;
+}
+
+function sourceLabel(source: string, copy: Messages): string {
+  if (source === "NOAA GHCN-Daily stations") return copy.evidence.stationShort;
+  const station = /^NOAA GHCN-Daily station (.+) \(complete years only; not homogenized\)$/.exec(source);
+  if (station?.[1]) return copy.evidence.stationSource(station[1]);
+  const basin = /^NASA GPM IMERG, (.+) bounding box \(not the watershed\)$/.exec(source);
+  if (basin?.[1]) return copy.evidence.basinSource(basin[1]);
+  const scope = /^(.+), (.+), area-weighted$/.exec(source);
+  if (scope?.[1] && scope[2]) return copy.evidence.scopeSource(scope[1], scope[2]);
+  return source;
+}
+
+function outcomeView(evidence: LocationEvidence, copy: Messages): { glyph: string; label: string; tone: string } {
+  const outcome: EvidenceOutcome | "exploratory_unadjusted" = presentedOutcome(
+    evidence.dimensionMeta.id,
+    evidence.outcome,
+  );
   switch (outcome) {
     case "supported_increase":
-      return { glyph: "▲", label: "Supported increase", tone: "border-amber-300/40 bg-amber-400/15 text-amber-100" };
+      return { glyph: "▲", label: copy.outcome.increase, tone: "border-amber-300/40 bg-amber-400/15 text-amber-100" };
     case "supported_decrease":
-      return { glyph: "▼", label: "Supported decrease", tone: "border-sky-300/40 bg-sky-400/15 text-sky-100" };
+      return { glyph: "▼", label: copy.outcome.decrease, tone: "border-sky-300/40 bg-sky-400/15 text-sky-100" };
+    case "exploratory_unadjusted":
+      return {
+        glyph: "⚠",
+        label: copy.outcome.exploratory,
+        tone: "border-amber-300/35 bg-amber-400/10 text-amber-100",
+      };
     case "not_significant":
-      return { glyph: "◆", label: "No robust trend detected", tone: "border-white/25 bg-white/8 text-ink" };
+      return { glyph: "◆", label: copy.outcome.noRobust, tone: "border-white/25 bg-white/8 text-ink" };
     case "not_computed":
-      return { glyph: "?", label: "Insufficient evidence", tone: "border-white/25 bg-white/8 text-ink" };
+      return { glyph: "?", label: copy.outcome.insufficient, tone: "border-white/25 bg-white/8 text-ink" };
     default: {
       const exhaustive: never = outcome;
       return exhaustive;
@@ -65,21 +111,25 @@ function ObservedChart({
   evidence,
   selectedYear,
   onSelectYear,
+  mapShowsTrend,
+  copy,
 }: {
   evidence: LocationEvidence;
   selectedYear: number;
   onSelectYear: (year: number) => void;
+  mapShowsTrend: boolean;
+  copy: Messages;
 }) {
   const pts = evidence.series;
   if (pts.length < 2) {
-    return <p className="rounded-xl bg-black/30 p-3 text-[12px] text-muted">No observed series for this place.</p>;
+    return <p className="rounded-xl bg-black/30 p-3 text-[12px] text-muted">{copy.evidence.noSeries}</p>;
   }
   const w = 360;
   const h = 168;
-  const padL = 34;
+  const padL = 38;
   const padR = 8;
-  const padT = 12;
-  const padB = 22;
+  const padT = 14;
+  const padB = 24;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
   const x0 = pts[0].year;
@@ -125,20 +175,23 @@ function ObservedChart({
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
         <span className="inline-flex items-center gap-1.5 text-ink">
           <span className="h-0.5 w-4 rounded bg-[#7cc4ff]" />
-          Observed ({evidence.units})
+          {copy.evidence.observed(evidence.units)}
         </span>
         {trendPath && (
-          <span className="inline-flex items-center gap-1.5 text-amber-200">
+          <span className={`inline-flex items-center gap-1.5 ${mapShowsTrend ? "font-medium text-amber-100" : "text-amber-200"}`}>
             <span className="h-0 w-4 border-t-2 border-dashed border-amber-400" />
-            Theil–Sen line, fitted period only
+            {copy.evidence.senLine}
           </span>
+        )}
+        {mapShowsTrend && (
+          <span className="text-[10px] text-faint">{copy.evidence.globeSlope}</span>
         )}
       </div>
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="h-44 w-full cursor-pointer select-none overflow-visible"
+        className="h-44 w-full cursor-pointer select-none overflow-hidden"
         role="img"
-        aria-label={`${evidence.effectiveTitle}, observed ${x0}–${x1}, ${evidence.units}`}
+        aria-label={copy.evidence.chartAria(evidence.effectiveTitle, x0, x1, evidence.units)}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const relX = ((e.clientX - rect.left) / rect.width) * w;
@@ -146,13 +199,25 @@ function ObservedChart({
           onSelectYear(Math.max(x0, Math.min(x1, yr)));
         }}
       >
-        {ticks.map((v) => (
-          <text key={v} x={padL - 4} y={yOf(v) + 3} textAnchor="end" className="fill-white/45 text-[9px]">
-            {fmt(v)}
-          </text>
-        ))}
+        {ticks.map((v) => {
+          const y = yOf(v) + 3;
+          if (y > padT + innerH - 2) return null;
+          return (
+            <text key={v} x={padL - 4} y={y} textAnchor="end" className="fill-white/45 text-[9px]">
+              {fmt(v)}
+            </text>
+          );
+        })}
         <line x1={padL} y1={padT + innerH} x2={w - padR} y2={padT + innerH} stroke="rgba(255,255,255,0.15)" />
-        {trendPath && <path d={trendPath} fill="none" stroke="#fbbf24" strokeWidth={1.8} strokeDasharray="5 3" />}
+        {trendPath && (
+          <path
+            d={trendPath}
+            fill="none"
+            stroke="#fbbf24"
+            strokeWidth={mapShowsTrend ? 2.4 : 1.8}
+            strokeDasharray="5 3"
+          />
+        )}
         {segments.map((d) => (
           <path key={d} d={d} fill="none" stroke="#7cc4ff" strokeWidth={2} />
         ))}
@@ -189,34 +254,40 @@ export function EvidencePanel({
   onResetToNational,
   onOpenStationCatalog,
 }: EvidencePanelProps) {
+  const { m } = useLocale();
   if (!open) return null;
 
   const evidence = bundle ? queryClimateAtLocation(bundle, config, selected, resolvedScope) : null;
-  const scopeLevelMeta = resolvedScope ? SCOPE_LEVEL_META[resolvedScope.level] : SCOPE_LEVEL_META.age;
+  const levelLabel =
+    resolvedScope?.level === "ccaa"
+      ? m.evidence.levelRegion
+      : resolvedScope?.level === "provincia"
+        ? m.evidence.levelProvince
+        : m.evidence.levelNational;
   const scale = getEffectiveMeta(config, bundle);
-  const view = evidence ? outcomeView(evidence) : null;
+  const view = evidence ? outcomeView(evidence, m) : null;
   const st = evidence?.stats ?? null;
 
   return (
     <aside
       id="evidence-panel"
-      aria-label="Trend evidence"
+      aria-label={m.evidence.aria}
       className="panel pointer-events-auto flex h-full max-h-full w-full flex-col overflow-hidden"
     >
       <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div className="min-w-0">
           <p className="text-[10px] font-medium tracking-[0.14em] text-muted uppercase">
-            {evidence?.dimensionMeta.shortLabel ?? "Trend"} · {scopeLevelMeta.labelEn}
+            {(evidence ? m.dimensions[evidence.dimensionMeta.id].short : m.evidence.trend)} · {levelLabel}
           </p>
           <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-ink">
-            {evidence ? evidence.locationLabel : "Spain"}
+            {evidence ? placeLabel(evidence.locationLabel, m) : m.evidence.spain}
           </h2>
           <p className="truncate text-[12px] text-muted">
             {evidence
-              ? evidence.subLabel
+              ? subPlace(evidence.subLabel, m)
               : selected
                 ? `${formatDegrees(selected.latitude, 3)}, ${formatDegrees(selected.longitude, 3)}`
-                : "National view"}
+                : m.evidence.nationalView}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -229,13 +300,13 @@ export function EvidencePanel({
               }}
               className="focus-ring rounded-md px-2 py-1 text-[11px] text-muted hover:bg-white/8 hover:text-ink"
             >
-              Spain
+              {m.evidence.spain}
             </button>
           )}
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close evidence panel"
+            aria-label={m.evidence.close}
             className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
           >
             <Icon name="close" />
@@ -245,7 +316,7 @@ export function EvidencePanel({
 
       {!evidence || !view ? (
         <div className="grid flex-1 place-items-center p-8 text-center">
-          <p className="text-xs text-muted">Loading…</p>
+          <p className="text-xs text-muted">{m.evidence.loading}</p>
         </div>
       ) : (
         <div className="mt-1 min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
@@ -260,52 +331,79 @@ export function EvidencePanel({
                 {signed(st.slope_decade)} {evidence.trendUnits}
               </p>
               <p className="text-[12px] text-muted">
-                95% CI {signed(st.ci_low_decade)} to {signed(st.ci_high_decade)} · {st.first_year ?? "?"}–{st.last_year ?? "?"} ·
-                n = {st.n} years · Mann–Kendall p = {st.p_value}
-                {st.hamed_rao_applied ? " (autocorrelation-corrected)" : ""}
+                {m.cards.ci(signed(st.ci_low_decade), signed(st.ci_high_decade))} · {st.first_year ?? "?"}–{st.last_year ?? "?"} ·
+                n = {st.n} {m.cards.years} · Mann–Kendall p = {st.p_value}
+                {st.hamed_rao_applied ? m.evidence.corrected : ""}
               </p>
             </div>
           ) : (
-            <p className="text-[12px] leading-snug text-muted">{evidence.notComputedReason ?? "No precomputed trend for this place."}</p>
+            <p className="text-[12px] leading-snug text-muted">{reasonLabel(evidence.notComputedReason, m)}</p>
           )}
 
           <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2">
-            {evidence.currentValue !== null ? (
-              <ScaleThermometer
-                palette={scale.palette}
-                domain={scale.domain}
-                units={evidence.units}
-                value={evidence.currentValue}
-                label={String(evidence.currentYear)}
-                height={96}
-                thin
-              />
-            ) : null}
-            <p className="text-[12px] text-muted">
-              {evidence.currentValue !== null
-                ? `${evidence.currentYear}: ${fmt(evidence.currentValue)} ${evidence.units} (observed)`
-                : `No data for ${evidence.currentYear} at this place.`}
-            </p>
+            {config.mode === "trend" && st ? (
+              <>
+                <ScaleThermometer
+                  palette={scale.palette}
+                  domain={scale.domain}
+                  units={evidence.trendUnits}
+                  value={st.slope_decade}
+                  label={m.evidence.slopeLabel}
+                  height={96}
+                  thin
+                />
+                <p className="text-[12px] text-muted">
+                  {m.evidence.mapSlope(
+                    signed(st.slope_decade),
+                    evidence.trendUnits,
+                    String(st.first_year ?? "?"),
+                    String(st.last_year ?? "?"),
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                {evidence.currentValue !== null ? (
+                  <ScaleThermometer
+                    palette={scale.palette}
+                    domain={scale.domain}
+                    units={evidence.units}
+                    value={evidence.currentValue}
+                    label={String(evidence.currentYear)}
+                    height={96}
+                    thin
+                  />
+                ) : null}
+                <p className="text-[12px] text-muted">
+                  {evidence.currentValue !== null
+                    ? m.evidence.observedYear(evidence.currentYear, fmt(evidence.currentValue), evidence.units)
+                    : m.evidence.noDataYear(evidence.currentYear)}
+                </p>
+              </>
+            )}
           </div>
 
-          <ObservedChart evidence={evidence} selectedYear={config.year} onSelectYear={onSelectYear} />
+          <ObservedChart
+            evidence={evidence}
+            selectedYear={config.year}
+            onSelectYear={onSelectYear}
+            mapShowsTrend={config.mode === "trend"}
+            copy={m}
+          />
 
           <dl className="space-y-1.5 text-[12px] text-muted">
             <div>
-              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Source & support</dt>
-              <dd>{evidence.statsSource}</dd>
+              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.evidence.source}</dt>
+              <dd>{sourceLabel(evidence.statsSource, m)}</dd>
             </div>
             <div>
-              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Method</dt>
-              <dd>
-                Theil–Sen slope with 95% CI; Mann–Kendall test (ties-corrected, autocorrelation-checked). Supported = p &lt;
-                0.05 and CI excludes 0. Complete calendar years only.
-              </dd>
+              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.evidence.method}</dt>
+              <dd>{m.evidence.methodBody}</dd>
             </div>
           </dl>
 
           <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-[12px] text-amber-100">
-            Do not conclude: not a forecast, not a cause, not energy production or site suitability.
+            {m.evidence.doNot}
           </p>
 
           {/* Review check (data/results/scope_multiplicity/scope_bh.json): non-temperature regional labels are
@@ -313,14 +411,12 @@ export function EvidencePanel({
           {config.dimension !== "temperature" && st && (
             <p className="rounded-md border border-white/20 bg-white/5 px-2 py-1.5 text-[11px] text-muted">
               <span aria-hidden className="mr-1">⚠</span>
-              EXPLORATORY: each region is tested on its own, without adjustment for the ~72 regions offered here. After a
-              Benjamini–Hochberg adjustment, none of the regional rain or rain-anomaly labels and only 1 of 17 modelled-runoff
-              labels stay supported. Temperature labels are unaffected.
+              {m.evidence.multiplicity}
             </p>
           )}
 
           {bundle && config.dimension === "precipitation" && (
-            <div className="flex flex-wrap gap-1" aria-label="Basin bounding boxes">
+            <div className="flex flex-wrap gap-1" aria-label={m.evidence.basins}>
               {bundle.rivers.map((b: RiverBasin) => {
                 const isCurr = evidence.basin?.id === b.id;
                 return (
@@ -332,7 +428,7 @@ export function EvidencePanel({
                       isCurr ? "bg-sky-400/25 font-medium text-sky-100" : "bg-white/6 text-muted hover:text-ink"
                     }`}
                   >
-                    {b.name.replace("Cuenca del ", "")} box
+                    {b.name.replace("Cuenca del ", "")} {m.evidence.box}
                   </button>
                 );
               })}
@@ -340,13 +436,14 @@ export function EvidencePanel({
           )}
 
           <details className="text-[12px] text-muted">
-            <summary className="cursor-pointer text-ink/80">Stations</summary>
+            <summary className="cursor-pointer text-ink/80">{m.evidence.stations}</summary>
             <div className="mt-2 space-y-2">
               {evidence.nearestStation && (
                 <p>
-                  Nearest NOAA station:{" "}
-                  <span className="text-ink">{evidence.nearestStation.station.name.replace(/, SP$/i, "")}</span>
-                  {evidence.nearestStation.distanceKm >= 2 ? ` · ${evidence.nearestStation.distanceKm} km` : ""}
+                  {m.evidence.nearest(
+                    evidence.nearestStation.station.name.replace(/, SP$/i, ""),
+                    evidence.nearestStation.distanceKm >= 2 ? String(evidence.nearestStation.distanceKm) : "",
+                  )}
                 </p>
               )}
               <button
@@ -354,7 +451,7 @@ export function EvidencePanel({
                 onClick={onOpenStationCatalog}
                 className="focus-ring flex w-full items-center justify-between text-left text-[11px] text-muted hover:text-ink"
               >
-                Browse all weather stations
+                {m.evidence.browse}
                 <Icon name="chevron" className="size-3.5" />
               </button>
             </div>

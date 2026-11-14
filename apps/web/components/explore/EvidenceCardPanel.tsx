@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { ResolvedAdminScope } from "@/lib/globe/admin-scope";
+import { useLocale } from "@/lib/i18n/locale";
+import { localizeCardFace } from "@/lib/i18n/science-copy";
 import { ToolPanel, smallButton } from "./ToolPanel";
 
 /**
@@ -68,10 +70,7 @@ const OUTCOME_STYLE: Record<Outcome, { glyph: string; cls: string }> = {
   insufficient_evidence: { glyph: "?", cls: "border-white/25 bg-white/8 text-ink" },
 };
 
-const TOPICS: { id: Topic; title: string }[] = [
-  { id: "temperature", title: "Air temperature" },
-  { id: "joint_low", title: "Solar + wind joint lows" },
-];
+const TOPIC_IDS: Topic[] = ["temperature", "joint_low"];
 
 /** Same scope keys as climate-bundle.json and queryClimateAtLocation: "age", "ccaa:<id>", "provincia:<id>". */
 function scopeKeyOf(scope: ResolvedAdminScope): string {
@@ -97,12 +96,13 @@ function signed(v: number, digits = 2): string {
   return `${v > 0 ? "+" : v < 0 ? "−" : "±"}${Math.abs(v).toFixed(digits)}`;
 }
 
-function Series({ card }: { card: EvidenceCard }) {
-  const { years, values, complete, units, label } = card.series;
+function Series({ card, label, units, caption }: { card: EvidenceCard; label: string; units: string; caption: string }) {
+  const { years, values, complete } = card.series;
   const w = 256;
   const h = 110;
-  const pl = 30;
-  const pb = 16;
+  const pl = 36;
+  const pt = 12;
+  const pb = 18;
   const lo0 = Math.min(...values);
   const hi0 = Math.max(...values);
   const pad = (hi0 - lo0) * 0.12 || 1;
@@ -111,17 +111,21 @@ function Series({ card }: { card: EvidenceCard }) {
   const x0 = years[0];
   const x1 = years[years.length - 1];
   const fx = (x: number) => pl + ((x - x0) / (x1 - x0)) * (w - pl - 4);
-  const fy = (y: number) => 4 + ((hi - y) / (hi - lo)) * (h - pb - 4);
+  const fy = (y: number) => pt + ((hi - y) / (hi - lo)) * (h - pb - pt);
   const line = (yr: number) => card.trend_line.intercept + (card.trend_line.slope_per_decade / 10) * yr;
   return (
     <figure className="mt-3">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${label}, ${x0}–${x1}, ${units}`}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full overflow-hidden" role="img" aria-label={`${label}, ${x0}–${x1}, ${units}`}>
         <line x1={pl} y1={h - pb} x2={w - 4} y2={h - pb} stroke="rgb(255 255 255 / 0.2)" />
-        {[lo, (lo + hi) / 2, hi].map((v) => (
-          <text key={v} x={pl - 4} y={fy(v) + 3} textAnchor="end" className="fill-white/45 text-[8px]">
-            {v.toFixed(Math.abs(hi - lo) < 5 ? 1 : 0)}
-          </text>
-        ))}
+        {[lo, (lo + hi) / 2, hi].map((v) => {
+          const y = fy(v) + 3;
+          if (y > h - pb - 2) return null;
+          return (
+            <text key={v} x={pl - 4} y={y} textAnchor="end" className="fill-white/45 text-[8px]">
+              {v.toFixed(Math.abs(hi - lo) < 5 ? 1 : 0)}
+            </text>
+          );
+        })}
         {[x0, Math.round((x0 + x1) / 2), x1].map((yr) => (
           <text key={yr} x={fx(yr)} y={h - 4} textAnchor="middle" className="fill-white/45 text-[8px]">
             {yr}
@@ -146,84 +150,100 @@ function Series({ card }: { card: EvidenceCard }) {
         <line x1={fx(x0)} y1={fy(line(x0))} x2={fx(x1)} y2={fy(line(x1))} stroke="rgb(251 191 36)" strokeDasharray="4 3" strokeWidth={1.4} />
       </svg>
       <figcaption className="text-[10px] text-faint">
-        {label} ({units}), observed years only. Dashed: Theil–Sen line.
+        {caption}
       </figcaption>
     </figure>
   );
 }
 
 function CardBody({ card }: { card: EvidenceCard }) {
+  const { locale, m } = useLocale();
+  const face = localizeCardFace(card, locale);
+  const seriesUnits = card.series.units === "days per year" && locale === "es" ? "días por año" : card.series.units;
   return (
     <article className="mt-3 space-y-3 text-xs text-muted">
-      <p className="text-ink">{card.question}</p>
+      <p className="text-ink">{face.question}</p>
       <div className={`flex items-center gap-2 rounded-md border px-2 py-1.5 ${OUTCOME_STYLE[card.outcome].cls}`}>
         <span aria-hidden className="font-mono">{OUTCOME_STYLE[card.outcome].glyph}</span>
-        <span className="font-semibold">{card.outcome_label}</span>
+        <span className="font-semibold">{face.outcome_label}</span>
       </div>
       <p className="font-mono text-sm text-ink tabular-nums">
-        {signed(card.how_much.slope_per_decade)} {card.how_much.units}
+        {signed(card.how_much.slope_per_decade)} {face.units}
         <span className="block text-[11px] text-muted">
-          95% CI {signed(card.how_much.ci95_per_decade[0])} to {signed(card.how_much.ci95_per_decade[1])}
+          {m.cards.ci(signed(card.how_much.ci95_per_decade[0]), signed(card.how_much.ci95_per_decade[1]))}
           {card.how_much.window_range_per_decade &&
-            ` · window range ${signed(card.how_much.window_range_per_decade[0])} to ${signed(card.how_much.window_range_per_decade[1])}`}
+            ` · ${m.cards.window(signed(card.how_much.window_range_per_decade[0]), signed(card.how_much.window_range_per_decade[1]))}`}
         </span>
       </p>
-      <Series card={card} />
+      <Series
+        card={card}
+        label={face.seriesLabel}
+        units={seriesUnits}
+        caption={
+          locale === "es"
+            ? `${face.seriesLabel} (${seriesUnits}), solo años observados. Discontinua: recta de Theil–Sen.`
+            : `${face.seriesLabel} (${seriesUnits}), observed years only. Dashed: Theil–Sen line.`
+        }
+      />
       <dl className="space-y-1.5">
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">What</dt><dd>{card.what}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Where</dt><dd>{card.where}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">When</dt><dd>{card.when}</dd></div>
+        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.what}</dt><dd>{face.what}</dd></div>
+        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.where}</dt><dd>{face.where}</dd></div>
+        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.when}</dt><dd>{face.when}</dd></div>
         <div>
-          <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Evidence</dt>
+          <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.evidence}</dt>
           <dd>
-            {card.evidence.method}. n = {card.evidence.n_years} years, p = {card.evidence.p}
-            {card.evidence.p_adjusted_bh !== undefined && ` (BH-adjusted ${card.evidence.p_adjusted_bh})`}, lag-1 r ={" "}
+            {face.method}. n = {card.evidence.n_years} {m.cards.years}, p = {card.evidence.p}
+            {card.evidence.p_adjusted_bh !== undefined && ` ${m.cards.bh(card.evidence.p_adjusted_bh)}`}, lag-1 r ={" "}
             {card.evidence.lag1_autocorr}
             {card.evidence.min_detectable_trend_per_decade != null &&
-              `. Smallest trend detectable with 80% power ≈ ${card.evidence.min_detectable_trend_per_decade} ${card.how_much.units}`}
+              m.cards.power(card.evidence.min_detectable_trend_per_decade, face.units)}
             .
           </dd>
         </div>
         {card.complementarity && (
           <div>
-            <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Descriptive context (not a trend)</dt>
+            <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.context}</dt>
             <dd>
-              {card.complementarity.observed_2001_2025} joint-low days in 2001–2025 vs ≈
-              {card.complementarity.expected_if_independent_mean} expected if same-day solar and wind lows were independent (95% range{" "}
-              {card.complementarity.expected_range_95[0]}–{card.complementarity.expected_range_95[1]}; ratio {card.complementarity.ratio}).
-              Null model: {card.complementarity.null_model}. Describes resource data, not grid reliability.
+              {m.cards.jointDays(
+                card.complementarity.observed_2001_2025,
+                card.complementarity.expected_if_independent_mean,
+                card.complementarity.expected_range_95[0],
+                card.complementarity.expected_range_95[1],
+                card.complementarity.ratio,
+              )}{" "}
+              {m.cards.nullModel(face.nullModel)}
             </dd>
           </div>
         )}
       </dl>
       <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-amber-100">
-        Do not conclude: {card.do_not_conclude}
+        {m.cards.doNot} {face.do_not_conclude}
       </p>
       <details>
-        <summary className="cursor-pointer text-ink">Limitations & sensitivity</summary>
+        <summary className="cursor-pointer text-ink">{m.cards.limits}</summary>
         <ul className="mt-1 list-disc space-y-1 pl-4">
-          {card.limitations.map((l) => <li key={l}>{l}</li>)}
+          {face.limitations.map((l) => <li key={l}>{l}</li>)}
           <li>
-            Sensitivity:{" "}
+            {m.cards.sensitivity}{" "}
             {Object.entries(card.evidence.sensitivity).map(([k, v]) => `${k} ${signed(v)}`).join(" · ")}
           </li>
         </ul>
       </details>
       <details>
-        <summary className="cursor-pointer text-ink">Sources & provenance</summary>
+        <summary className="cursor-pointer text-ink">{m.cards.sources}</summary>
         <ul className="mt-1 space-y-1">
           {card.sources.map((s) => (
             <li key={s.name}>
               <a className="underline decoration-white/30 hover:text-ink" href={s.url} target="_blank" rel="noreferrer">
                 {s.name}
               </a>{" "}
-              — {s.role}
+              — {locale === "es" && s.role === card.sources[0]?.role ? face.sourceRole : locale === "es" && s.role === "daily 50 m wind speed" ? "velocidad del viento a 50 m, diaria" : locale === "es" && s.role === "daily solar insolation" ? "insolación solar diaria" : s.role}
             </li>
           ))}
           <li className="font-mono text-[10px] break-all text-faint">
             {card.provenance.bundle} · sha256 {card.provenance.bundle_sha256.slice(0, 12)}… · {card.provenance.git}
           </li>
-          <li className="text-[10px] text-faint">{card.status}</li>
+          <li className="text-[10px] text-faint">{face.status}</li>
         </ul>
       </details>
     </article>
@@ -243,6 +263,7 @@ export function EvidenceCardPanel({
   const [error, setError] = useState<string | null>(null);
   const [topic, setTopic] = useState<Topic>("temperature");
   const [showReference, setShowReference] = useState(false);
+  const { m } = useLocale();
 
   useEffect(() => {
     fetch("/data/evidence-cards.json")
@@ -264,29 +285,29 @@ export function EvidenceCardPanel({
 
   const exact = cards?.find((c) => c.topic === topic && c.region.scope === key) ?? null;
   const national = cards?.find((c) => c.topic === topic && c.headline && c.region.scope === "age") ?? null;
-  const regionLabel = key === "age" ? "Spain (national view)" : scope.name;
+  const regionLabel = key === "age" ? m.cards.spainNational : scope.name;
 
   return (
-    <ToolPanel icon="chart" title="Evidence cards" onClose={onClose}>
+    <ToolPanel icon="chart" title={m.cards.title} onClose={onClose}>
       <p className="mt-2 text-[11px] text-muted">
-        Selected region: <span className="text-ink">{regionLabel}</span>
+        {m.cards.selected} <span className="text-ink">{regionLabel}</span>
       </p>
-      {error && <p role="alert" className="mt-3 text-xs text-ink">Data failed quality checks: evidence could not be loaded ({error}).</p>}
-      {!cards && !error && <p className="mt-3 text-xs text-muted" role="status">Loading evidence…</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-ink">{m.cards.failed(error)}</p>}
+      {!cards && !error && <p className="mt-3 text-xs text-muted" role="status">{m.cards.loading}</p>}
       {cards && (
-        <div role="tablist" aria-label="Evidence topic" className="mt-2 flex gap-1">
-          {TOPICS.map((t) => (
+        <div role="tablist" aria-label={m.cards.topic} className="mt-2 flex gap-1">
+          {TOPIC_IDS.map((id) => (
             <button
-              key={t.id}
+              key={id}
               type="button"
               role="tab"
-              aria-selected={t.id === topic}
-              onClick={() => setTopic(t.id)}
+              aria-selected={id === topic}
+              onClick={() => setTopic(id)}
               className={`focus-ring flex-1 rounded-md px-2 py-1 text-[11px] ${
-                t.id === topic ? "bg-white/12 text-ink" : "text-muted hover:bg-white/6"
+                id === topic ? "bg-white/12 text-ink" : "text-muted hover:bg-white/6"
               }`}
             >
-              {t.title}
+              {id === "temperature" ? m.cards.air : m.cards.joint}
             </button>
           ))}
         </div>
@@ -294,8 +315,8 @@ export function EvidenceCardPanel({
       {cards && exact && (
         <>
           <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[11px] text-ink">
-            Result for <strong className="font-medium">{exact.region.name}</strong>
-            {key === "age" && " (Canarias reported separately)"}
+            {m.cards.resultFor} <strong className="font-medium">{exact.region.name}</strong>
+            {key === "age" && ` ${m.cards.canarias}`}
           </p>
           <CardBody card={exact} />
         </>
@@ -304,15 +325,14 @@ export function EvidenceCardPanel({
         <div className="mt-3 space-y-2 text-xs">
           <p className="rounded-md border border-white/25 bg-white/8 px-2 py-1.5 text-ink">
             <span aria-hidden className="mr-1 font-mono">?</span>
-            No {topic === "temperature" ? "air-temperature" : "solar + wind"} EvidenceCard for {scope.name}.
-            {topic === "joint_low" &&
-              " The pre-registered study covers Peninsula + Balearics, Galicia, Castilla y León, Aragón and Andalucía only."}
+            {m.cards.noCard(topic === "temperature" ? m.cards.airTopic : m.cards.jointTopic, scope.name)}
+            {topic === "joint_low" && ` ${m.cards.jointScope}`}
           </p>
           {topic === "temperature" && (
             <p className="text-muted">
-              This region&apos;s own MERRA-2 temperature trend (precomputed by the same pipeline) is in the Trend panel.{" "}
+              {m.cards.ownTrend}{" "}
               <button type="button" onClick={onOpenTrend} className={`${smallButton} mt-1`}>
-                Open Trend panel
+                {m.cards.openTrend}
               </button>
             </p>
           )}
@@ -323,13 +343,13 @@ export function EvidenceCardPanel({
               onClick={() => setShowReference((v) => !v)}
               className="focus-ring text-[11px] text-muted underline hover:text-ink"
             >
-              {showReference ? "Hide" : "Show"} national reference ({national.region.name}, not {scope.name})
+              {showReference ? m.cards.hide : m.cards.show} {m.cards.nationalRef(national.region.name, scope.name)}
             </button>
           )}
           {showReference && national && (
             <>
               <p className="rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[11px] text-amber-100">
-                National reference: {national.region.name}. This is <strong>not</strong> a result for {scope.name}.
+                {m.cards.notFor(national.region.name, scope.name)}
               </p>
               <CardBody card={national} />
             </>

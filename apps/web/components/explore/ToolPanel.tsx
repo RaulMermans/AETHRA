@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useLocale } from "@/lib/i18n/locale";
 import { Icon, type IconName } from "./Icon";
 
 /** Shared frame for map-tool panels. */
@@ -15,9 +16,10 @@ export function ToolPanel({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { m } = useLocale();
   return (
-    <section aria-label={`${title} tool`} className="panel pointer-events-auto max-h-[calc(100dvh-12rem)] w-72 overflow-y-auto p-4">
-      <div className="flex items-center justify-between gap-2">
+    <section aria-label={m.tools.toolAria(title)} className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden p-4">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm text-ink">
           <Icon name={icon} className="size-4 text-accent" />
           {title}
@@ -25,14 +27,14 @@ export function ToolPanel({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close tool"
-          title="Close (Esc)"
+          aria-label={m.tools.closeTool}
+          title={m.tools.closeEsc}
           className="focus-ring grid size-7 place-items-center rounded-md text-muted hover:bg-white/6 hover:text-ink"
         >
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
-      {children}
+      <div className="mt-1 min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</div>
     </section>
   );
 }

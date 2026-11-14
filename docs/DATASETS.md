@@ -193,9 +193,11 @@ and the smaller islands, which are each smaller than one cell, would be lost. Ce
 become NaN. MODIS is masked to the polygon on the server by AppEEARS, as two areas:
 `peninsula_baleares_ceuta_melilla` and `canarias`.
 
-**Boundary.** Eurostat GISCO NUTS 2021, level 2, 1:1 million (`CNTR_CODE = ES`), © EuroGeographics.
-It includes ES53 Illes Balears, ES63 Ceuta, ES64 Melilla and ES70 Canarias. The minor sovereign
-territories (plazas de soberanía) are not in NUTS. See D19.
+**Boundary.** Eurostat GISCO NUTS 2021, 1:1 million (`CNTR_CODE = ES`), © EuroGeographics.
+Level 2 is the 19 CCAA / ciudades autónomas (including ES53 Illes Balears, ES63 Ceuta, ES64
+Melilla and ES70 Canarias). Level 3 is grouped to the 52 INE provinces (island NUTS-3 units are
+unioned for Illes Balears, Las Palmas and Santa Cruz de Tenerife). The minor sovereign
+territories (plazas de soberanía) are not in NUTS. See D19 and D64.
 
 **Storage.** GPM and MERRA-2 for Spain come to under 0.5 GB. The full MODIS history is estimated
 at 185–500 GB for raw plus processed files, which is far more than the ~22 GB free on the

@@ -10,6 +10,11 @@ export function formatMetres(value: number): string {
 }
 
 /** Terrain elevation with its reference surface, e.g. "≈1,721 m a.s.l." or "1,768 m ellipsoidal". */
-export function formatElevation(e: { metres: number; datum: "ellipsoid-wgs84" | "orthometric"; approximate: boolean }): string {
-  return `${e.approximate ? "≈" : ""}${formatMetres(e.metres)} ${e.datum === "orthometric" ? "a.s.l." : "ellipsoidal"}`;
+export function formatElevation(
+  e: { metres: number; datum: "ellipsoid-wgs84" | "orthometric"; approximate: boolean },
+  locale: "en" | "es" = "en",
+): string {
+  const surface =
+    e.datum === "orthometric" ? (locale === "es" ? "s.n.m." : "a.s.l.") : locale === "es" ? "elipsoidal" : "ellipsoidal";
+  return `${e.approximate ? "≈" : ""}${formatMetres(e.metres)} ${surface}`;
 }

@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { ILLUSTRATIVE_TURBINE_HEIGHT_M } from "@/lib/globe/cesium/illustrative-model";
+import { ENERGY_RESEARCH_CASES, type EnergyResearchCase } from "@/lib/globe/energy-research-cases";
+import { useLocale } from "@/lib/i18n/locale";
+import type { Locale, Messages } from "@/lib/i18n/messages";
 import {
-  CONCEPTUAL_DISCLAIMER,
-  ILLUSTRATIVE_DISCLAIMER,
-  ILLUSTRATIVE_TURBINE_HEIGHT_M,
-} from "@/lib/globe/cesium/illustrative-model";
-import { ENERGY_RESEARCH_CASES, type CaseTechFrame, type EnergyResearchCase } from "@/lib/globe/energy-research-cases";
+  caseNarrative,
+  localizeRegionName,
+  localizeResourceContext,
+  localizeSeriesLabel,
+  localizeSeriesUnits,
+} from "@/lib/i18n/science-copy";
 import { Icon } from "./Icon";
 
 type CardSeries = {
@@ -59,12 +64,6 @@ function findCardVisuals(raw: unknown, cardId: string): { series: CardSeries; tr
   return { series, trend };
 }
 
-const FRAME_LABEL: Record<CaseTechFrame, string> = {
-  hybrid: "Solar–wind resource complementarity",
-  wind_focus: "Wind resource context",
-  solar_focus: "Solar resource context",
-};
-
 function catalogCode(study: EnergyResearchCase): string {
   const index = ENERGY_RESEARCH_CASES.findIndex((c) => c.id === study.id);
   return String((index >= 0 ? index : 0) + 1).padStart(3, "0");
@@ -76,6 +75,7 @@ export function EnergyCasePanel({
   showPlantRegister,
   appearance,
   conceptualOpacity,
+  allowInfrastructureControls,
   onSelectCase,
   onShowModel,
   onShowPlantRegister,
@@ -90,6 +90,7 @@ export function EnergyCasePanel({
   showPlantRegister: boolean;
   appearance: "existing" | "conceptual";
   conceptualOpacity: number;
+  allowInfrastructureControls: boolean;
   onSelectCase: (id: string) => void;
   onShowModel: (show: boolean) => void;
   onShowPlantRegister: (show: boolean) => void;
@@ -99,6 +100,9 @@ export function EnergyCasePanel({
   onReturnOverview: () => void;
   onClose: () => void;
 }) {
+  const { locale, m } = useLocale();
+  const c = m.casePanel;
+  const story = caseNarrative(study, locale);
   const t = study.primary;
   const cmp = study.complementarityPrimary;
   const [visuals, setVisuals] = useState<{ series: CardSeries; trend: CardTrendLine } | null>(null);
@@ -130,125 +134,116 @@ export function EnergyCasePanel({
 
   return (
     <section
-      aria-label="Energy research case"
-      className="panel pointer-events-auto max-h-[calc(100dvh-12rem)] w-[min(24rem,calc(100vw-5rem))] overflow-y-auto p-4"
+      aria-label={c.aria}
+      className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-y-auto p-4"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-mono text-[10px] tracking-[0.16em] text-nav uppercase">Research cases</h2>
+        <h2 className="font-mono text-[10px] tracking-[0.16em] text-nav uppercase">{c.title}</h2>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close research case"
+          aria-label={c.close}
           className="focus-ring grid size-7 place-items-center rounded-md text-muted hover:bg-white/6 hover:text-ink"
         >
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1" role="tablist" aria-label="Gate B regions">
-        {ENERGY_RESEARCH_CASES.map((c) => {
-          const selected = c.id === study.id;
+      <div className="mt-2 flex flex-wrap gap-1" role="tablist" aria-label={c.regions}>
+        {ENERGY_RESEARCH_CASES.map((rc) => {
+          const selected = rc.id === study.id;
           return (
             <button
-              key={c.id}
+              key={rc.id}
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => onSelectCase(c.id)}
+              onClick={() => onSelectCase(rc.id)}
               className={`focus-ring rounded-md border px-2 py-1 text-[10px] ${
                 selected ? "border-accent/50 bg-accent/15 text-ink" : "border-line text-muted hover:bg-white/6 hover:text-ink"
               }`}
             >
-              {c.title}
+              {localizeRegionName(rc.title, locale)}
             </button>
           );
         })}
       </div>
 
-      <p className="mt-3 font-mono text-[10px] tracking-[0.14em] text-faint">Case study {catalogCode(study)}</p>
-      <p className="mt-1 text-sm font-medium tracking-wide text-ink uppercase">{study.regionName}</p>
-      <p className="mt-1 text-[11px] text-muted">{FRAME_LABEL[study.techFrame]}</p>
+      <p className="mt-3 font-mono text-[10px] tracking-[0.14em] text-faint">{c.caseStudy(catalogCode(study))}</p>
+      <p className="mt-1 text-sm font-medium tracking-wide text-ink uppercase">{localizeRegionName(study.regionName, locale)}</p>
+      <p className="mt-1 text-[11px] text-muted">{c.frames[study.techFrame]}</p>
       <p className="mt-1 font-mono text-[10px] text-faint">
-        Historical NASA evidence · Regional investigation ·{" "}
-        {study.nuts2 === "R0" ? "Peninsula + Balearics" : `NUTS-2 ${study.nuts2}`} · {t.cardId}
+        {c.historical(study.nuts2 === "R0" ? c.nationalNuts : c.nuts(study.nuts2))} · {t.cardId}
       </p>
 
       <p className="mt-2 rounded-md border border-amber-300/25 bg-amber-400/10 px-2 py-1 text-[10px] tracking-wide text-amber-100 uppercase">
-        EXPLORATORY · quotes Python · 5/5 regions insufficient evidence
+        {c.banner}
       </p>
 
       <div className="mt-2 rounded-md border border-white/20 bg-white/8 px-2 py-2">
-        <p className="text-[10px] tracking-[0.12em] text-faint uppercase">Verdict</p>
+        <p className="text-[10px] tracking-[0.12em] text-faint uppercase">{c.verdict}</p>
         <p className="text-sm text-ink">
           <span aria-hidden className="mr-1">
             ?
           </span>
-          Insufficient evidence
+          {c.insufficient}
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted">{study.significanceNote}</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted">{story.significanceNote}</p>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-ink">{study.techFrameNote}</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-ink">{story.techFrameNote}</p>
 
       {visuals ? (
-        <HorizonChart series={visuals.series} trend={visuals.trend} />
+        <HorizonChart series={visuals.series} trend={visuals.trend} locale={locale} c={c} />
       ) : visualsError ? (
-        <p className="mt-2 text-[11px] text-amber-100">Series not loaded: {visualsError}</p>
+        <p className="mt-2 text-[11px] text-amber-100">{c.seriesError(visualsError)}</p>
       ) : (
-        <p className="mt-2 text-[11px] text-faint">Loading observed series…</p>
+        <p className="mt-2 text-[11px] text-faint">{c.loading}</p>
       )}
 
       <dl className="mt-2 space-y-1 text-[11px] text-ink">
-        <Row label="Trend">
-          {signed(t.slopePerDecade)} {t.units} (CI {signed(t.ciLow)} to {signed(t.ciHigh)})
+        <Row label={c.trend}>
+          {c.ci(signed(t.slopePerDecade), story.units, signed(t.ciLow), signed(t.ciHigh))}
         </Row>
-        <Row label="n / median">
-          {t.nYears} years · {t.medianPerYear} days/year
-        </Row>
-        <Row label="p / BH p">
-          {t.p.toFixed(3)} · {t.pAdjustedBh.toFixed(3)} (family of 5)
-        </Row>
-        <Row label="E0 solar">{study.solarContext}</Row>
-        <Row label="E0 wind">{study.windContext}</Row>
+        <Row label={c.nMedianLabel}>{c.nMedian(t.nYears, t.medianPerYear)}</Row>
+        <Row label={c.pLabel}>{c.pFamily(t.p.toFixed(3), t.pAdjustedBh.toFixed(3))}</Row>
+        <Row label={c.e0Solar}>{localizeResourceContext(study.solarContext, locale)}</Row>
+        <Row label={c.e0Wind}>{localizeResourceContext(study.windContext, locale)}</Row>
       </dl>
 
-      <ComplementarityBars observed={cmp.observed} expected={cmp.expectedMean} ratio={cmp.ratio} />
+      <ComplementarityBars observed={cmp.observed} expected={cmp.expectedMean} ratio={cmp.ratio} c={c} />
 
-      <Section title="Globe overlay (context, not a score)">
-        The map clips to this region so you see which cells belong to the case. That heatmap is the climate
-        dimension you already picked — not a fruitfulness or suitability layer. Joint-low evidence lives in the
-        chart above (POWER regional mean), not as a per-cell overlay.
-      </Section>
+      <Section title={c.overlay}>{c.overlayBody}</Section>
 
-      <Section title="Why this region">{study.whySelected}</Section>
-      <Section title="Where / when">
-        {study.where} {study.when}
+      <Section title={c.why}>{story.whySelected}</Section>
+      <Section title={c.whereWhen}>
+        {story.where} {story.when}
       </Section>
-      <Section title="Current context">
-        {study.currentContext} {study.installationsNote}
+      <Section title={c.current}>
+        {story.currentContext} {story.installationsNote}
       </Section>
-      <Section title="Horizon 2032–2040 (not a forecast)">{study.futureHorizon}</Section>
-      <p className="mt-2 text-[10px] leading-relaxed text-faint">{study.doNotConclude}</p>
+      <Section title={c.horizon}>{story.futureHorizon}</Section>
+      <p className="mt-2 text-[10px] leading-relaxed text-faint">{story.doNotConclude}</p>
       <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10px] text-faint">
-        {study.limitations.map((line) => (
+        {story.limitations.map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>
 
       <p className="mt-2 text-[10px] text-muted">
-        Reference: {study.comparisonName} — difference not tested.
+        {c.reference(localizeRegionName(study.comparisonName, locale))}
       </p>
       <button
         type="button"
         onClick={() => onSelectCase(study.comparisonCaseId)}
         className="focus-ring mt-1 rounded-md border border-line px-2 py-1 text-[11px] text-ink hover:bg-white/6"
       >
-        Open {study.comparisonName}
+        {c.open(localizeRegionName(study.comparisonName, locale))}
       </button>
 
-      {study.hasPlantRegister && (
+      {allowInfrastructureControls && study.hasPlantRegister && (
         <div className="mt-3 space-y-2 rounded-md border border-line p-2">
-          <p className="text-[10px] tracking-[0.12em] text-faint uppercase">CyL register (optional overlay)</p>
+          <p className="text-[10px] tracking-[0.12em] text-faint uppercase">{c.register}</p>
           <label className="flex items-center gap-2 text-[11px] text-ink">
             <input
               type="checkbox"
@@ -256,11 +251,10 @@ export function EnergyCasePanel({
               onChange={(e) => onShowPlantRegister(e.target.checked)}
               className="accent-teal-300"
             />
-            Show 652 registered plants
+            {c.showPlants}
           </label>
           <p className="text-[10px] leading-relaxed text-faint">
-            Off by default. Other CCAA have no plant layer here, so a dense CyL map is not evidence that this
-            region is uniquely built-out or uniquely fruitful.
+            {c.plantsNote}
           </p>
           <label className="flex items-center gap-2 text-[11px] text-ink">
             <input
@@ -269,13 +263,13 @@ export function EnergyCasePanel({
               onChange={(e) => onShowModel(e.target.checked)}
               className="accent-teal-300"
             />
-            Illustrative 3D at Buniel
+            {c.showModel}
           </label>
           <p className="text-[10px] leading-relaxed text-faint">
-            {ILLUSTRATIVE_DISCLAIMER} Drawn ~{ILLUSTRATIVE_TURBINE_HEIGHT_M} m tall so it reads on the globe.
+            {c.illustrativeDisclaimer} {c.modelDrawn(ILLUSTRATIVE_TURBINE_HEIGHT_M)}
           </p>
           <fieldset className="text-[11px] text-ink">
-            <legend className="text-[10px] text-faint">Appearance</legend>
+            <legend className="text-[10px] text-faint">{c.appearance}</legend>
             <label className="mr-3">
               <input
                 type="radio"
@@ -284,7 +278,7 @@ export function EnergyCasePanel({
                 onChange={() => onAppearance("existing")}
                 className="mr-1 accent-teal-300"
               />
-              Existing — verified
+              {c.existing}
             </label>
             <label>
               <input
@@ -294,12 +288,12 @@ export function EnergyCasePanel({
                 onChange={() => onAppearance("conceptual")}
                 className="mr-1 accent-sky-300"
               />
-              Conceptual — not an approved project
+              {c.conceptual}
             </label>
           </fieldset>
           {appearance === "conceptual" && (
             <label className="block text-[10px] text-muted">
-              Ghost opacity
+              {c.opacity}
               <input
                 type="range"
                 min={0.2}
@@ -309,7 +303,7 @@ export function EnergyCasePanel({
                 onChange={(e) => onOpacity(Number(e.target.value))}
                 className="mt-1 w-full"
               />
-              <span className="block pt-1 text-faint">{CONCEPTUAL_DISCLAIMER}</span>
+              <span className="block pt-1 text-faint">{c.conceptualDisclaimer}</span>
             </label>
           )}
         </div>
@@ -321,21 +315,33 @@ export function EnergyCasePanel({
           onClick={onOpenEvidence}
           className="focus-ring rounded-md border border-line px-2.5 py-1 text-[11px] text-ink hover:bg-white/6"
         >
-          Open EvidenceCard
+          {c.openCard}
         </button>
         <button
           type="button"
           onClick={onReturnOverview}
           className="focus-ring rounded-md border border-line px-2.5 py-1 text-[11px] text-ink hover:bg-white/6"
         >
-          Return to Spain
+          {c.returnSpain}
         </button>
       </div>
     </section>
   );
 }
 
-function HorizonChart({ series, trend }: { series: CardSeries; trend: CardTrendLine }) {
+function HorizonChart({
+  series,
+  trend,
+  locale,
+  c,
+}: {
+  series: CardSeries;
+  trend: CardTrendLine;
+  locale: Locale;
+  c: Messages["casePanel"];
+}) {
+  const label = localizeSeriesLabel(series.label, locale);
+  const units = localizeSeriesUnits(series.units, locale);
   const w = 280;
   const h = 128;
   const pl = 28;
@@ -359,7 +365,7 @@ function HorizonChart({ series, trend }: { series: CardSeries; trend: CardTrendL
 
   return (
     <figure className="mt-3">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${series.label}, observed ${xMin}–${lastObs}, no projection after ${lastObs}`}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={c.chartAria(label, xMin, lastObs)}>
         <defs>
           <pattern id="no-forecast-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <line x1="0" y1="0" x2="0" y2="6" stroke="rgb(251 191 36 / 0.35)" strokeWidth="2" />
@@ -367,7 +373,7 @@ function HorizonChart({ series, trend }: { series: CardSeries; trend: CardTrendL
         </defs>
         <rect x={hatchX} y={pt} width={Math.max(0, hatchW)} height={h - pt - pb} fill="url(#no-forecast-hatch)" />
         <text x={hatchX + 4} y={pt + 10} className="fill-amber-100/80 text-[7px]">
-          No validated projection
+          {c.noProjection}
         </text>
         <line x1={pl} y1={h - pb} x2={w - pr} y2={h - pb} stroke="rgb(255 255 255 / 0.2)" />
         <line x1={fx(lastObs)} y1={pt} x2={fx(lastObs)} y2={h - pb} stroke="rgb(255 255 255 / 0.25)" strokeDasharray="2 2" />
@@ -408,23 +414,32 @@ function HorizonChart({ series, trend }: { series: CardSeries; trend: CardTrendL
         />
       </svg>
       <figcaption className="text-[10px] text-faint">
-        {series.label} ({series.units}). Solid: observed years. Dashed: Theil–Sen on 2001–{lastObs} only. Hatched
-        2026–2040: no validated projection — not a forecast.
+        {c.chartCaption(label, units, lastObs)}
       </figcaption>
     </figure>
   );
 }
 
-function ComplementarityBars({ observed, expected, ratio }: { observed: number; expected: number; ratio: number }) {
+function ComplementarityBars({
+  observed,
+  expected,
+  ratio,
+  c,
+}: {
+  observed: number;
+  expected: number;
+  ratio: number;
+  c: Messages["casePanel"];
+}) {
   const max = Math.max(observed, expected, 1);
   return (
     <div className="mt-2">
-      <h3 className="text-[10px] tracking-[0.12em] text-faint uppercase">Complementarity (descriptive)</h3>
-      <p className="mt-0.5 mb-1 text-[10px] text-faint">Joint-low days 2001–2025 vs year-shift independence. Not a trend.</p>
-      <Bar label="Observed" value={observed} max={max} className="bg-sky-300/80" />
-      <Bar label="If independent" value={expected} max={max} className="bg-white/25" />
+      <h3 className="text-[10px] tracking-[0.12em] text-faint uppercase">{c.complementarity}</h3>
+      <p className="mt-0.5 mb-1 text-[10px] text-faint">{c.complementarityNote}</p>
+      <Bar label={c.observed} value={observed} max={max} className="bg-sky-300/80" />
+      <Bar label={c.independent} value={expected} max={max} className="bg-white/25" />
       <p className="mt-1 text-[11px] text-ink">
-        Ratio {ratio.toFixed(2)} — joint lows about {Math.round(ratio * 100)}% as often as independence would suggest.
+        {c.ratio(ratio.toFixed(2), Math.round(ratio * 100))}
       </p>
     </div>
   );

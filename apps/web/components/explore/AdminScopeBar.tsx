@@ -7,6 +7,7 @@ import {
   type AdminScopeSelection,
   type ResolvedAdminScope,
 } from "@/lib/globe/admin-scope";
+import { useLocale } from "@/lib/i18n/locale";
 import { Icon } from "./Icon";
 
 interface AdminScopeBarProps {
@@ -16,12 +17,6 @@ interface AdminScopeBarProps {
   onChange: (next: AdminScopeSelection, fly?: boolean) => void;
   onFocusCamera: () => void;
 }
-
-const LEVELS: { id: AdminScopeLevel; label: string }[] = [
-  { id: "age", label: "Spain" },
-  { id: "ccaa", label: "Region" },
-  { id: "provincia", label: "Province" },
-];
 
 const fold = (s: string) =>
   s
@@ -36,6 +31,12 @@ export function AdminScopeBar({
   onChange,
   onFocusCamera,
 }: AdminScopeBarProps) {
+  const { m } = useLocale();
+  const levels: { id: AdminScopeLevel; label: string }[] = [
+    { id: "age", label: m.places.spain },
+    { id: "ccaa", label: m.places.region },
+    { id: "provincia", label: m.places.province },
+  ];
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [onlyCurrentCcaa, setOnlyCurrentCcaa] = useState(false);
@@ -128,22 +129,22 @@ export function AdminScopeBar({
 
   const placeName =
     scope.level === "age"
-      ? "All of Spain"
+      ? m.places.allSpain
       : scope.level === "provincia"
         ? resolved.province?.name ?? resolved.name
         : resolved.name;
 
   return (
     <section
-      aria-label="Place"
+      aria-label={m.places.aria}
       className="panel pointer-events-auto w-[min(18rem,calc(100vw-2rem))] overflow-hidden p-2 shadow-2xl"
     >
       <div
         role="tablist"
-        aria-label="Place scale"
+        aria-label={m.places.scale}
         className="grid grid-cols-3 gap-0.5 rounded-lg bg-black/35 p-0.5"
       >
-        {LEVELS.map((lv) => {
+        {levels.map((lv) => {
           const active = scope.level === lv.id;
           return (
             <button
@@ -168,7 +169,7 @@ export function AdminScopeBar({
           onClick={() => (scope.level === "age" ? onFocusCamera() : setPickerOpen((o) => !o))}
           aria-expanded={pickerOpen}
           className="focus-ring min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-[11px] font-medium text-ink hover:bg-white/8"
-          title={scope.level === "age" ? "Fit Spain in view" : "Choose another place"}
+          title={scope.level === "age" ? m.places.fit : m.places.choose}
         >
           {placeName}
         </button>
@@ -177,20 +178,20 @@ export function AdminScopeBar({
             type="button"
             role="switch"
             aria-checked={scope.clipToScope}
-            aria-label="Clip map to this place"
-            title="Clip map to this place"
+            aria-label={m.places.clip}
+            title={m.places.clip}
             onClick={() => onChange({ ...scope, clipToScope: !scope.clipToScope }, false)}
             className={`focus-ring rounded-md px-1.5 py-1 text-[9px] font-medium ${
               scope.clipToScope ? "bg-amber-400/20 text-amber-200" : "text-faint hover:text-muted"
             }`}
           >
-            Clip
+            {m.places.clipShort}
           </button>
         )}
         <button
           type="button"
           onClick={onFocusCamera}
-          title="Focus this place"
+          title={m.places.focus}
           className="focus-ring rounded-md p-1 text-muted hover:bg-white/10 hover:text-ink"
         >
           <Icon name="target" className="size-3.5" />
@@ -210,7 +211,7 @@ export function AdminScopeBar({
                       if (e.key === "Escape") setPickerOpen(false);
                     }}
                     placeholder={
-                      scope.level === "ccaa" ? "Search region…" : "Search province…"
+                      scope.level === "ccaa" ? m.places.searchRegion : m.places.searchProvince
                     }
                     className="w-full bg-transparent text-[11px] text-ink placeholder:text-faint focus:outline-none"
                   />
@@ -228,7 +229,7 @@ export function AdminScopeBar({
                           : "bg-white/4 text-muted hover:text-ink"
                       }`}
                     >
-                      All (52)
+                      {m.places.all52}
                     </button>
                     <button
                       type="button"
@@ -239,7 +240,7 @@ export function AdminScopeBar({
                           : "bg-white/4 text-muted hover:text-ink"
                       }`}
                     >
-                      {resolved.ccaa?.name ?? "This region"} ({siblingProvinces.length})
+                      {resolved.ccaa?.name ?? m.places.region} ({siblingProvinces.length})
                     </button>
                   </div>
                 )}
@@ -264,7 +265,7 @@ export function AdminScopeBar({
                           >
                             <span className="truncate">{c.name}</span>
                             <span className="shrink-0 rounded-full bg-white/8 px-1.5 py-px font-mono text-[9px] text-muted">
-                              {pCount} {pCount === 1 ? "prov" : "provs"}
+                              {pCount} {pCount === 1 ? m.places.prov : m.places.provs}
                             </span>
                           </button>
                         );

@@ -8,6 +8,7 @@ import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera"
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
+import { attachSpaceAmbiance } from "@/lib/globe/cesium/space-ambiance";
 import { syncIllustrativeWindTurbine, type IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
 import { pickCoordinate, pickOverlayFeature } from "@/lib/globe/cesium/picking";
 import {
@@ -56,6 +57,8 @@ export interface GlobeProps {
   onReady?: (controller: GlobeController | null) => void;
   /** Element that receives imagery/terrain attribution. */
   creditContainer?: HTMLElement | null;
+  /** Accessible name of the globe, including its keyboard help (localized by the caller). */
+  ariaLabel?: string;
   /** One illustrative / conceptual 3D symbol; null hides it. Point markers stay. */
   illustrativeAsset?: IllustrativeAssetView | null;
   className?: string;
@@ -130,6 +133,7 @@ export default function Globe(props: GlobeProps) {
     let handler: CesiumNS.ScreenSpaceEventHandler | undefined;
     let layers: CesiumLayerManager | undefined;
     let stopFrameWatch: (() => void) | undefined;
+    let stopSpaceAmbiance: (() => void) | undefined;
     let frame = 0;
 
     const detected = detectQualityProfile();
@@ -265,6 +269,9 @@ export default function Globe(props: GlobeProps) {
       noon.setUTCHours(12, 0, 0, 0);
       v.clock.currentTime = Cesium.JulianDate.fromDate(noon);
       v.clock.shouldAnimate = false;
+      stopSpaceAmbiance = attachSpaceAmbiance(Cesium, v, {
+        reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      });
 
       ctrl.enableCollisionDetection = true;
       v.cesiumWidget.screenSpaceEventHandler.removeInputAction(
@@ -507,6 +514,7 @@ export default function Globe(props: GlobeProps) {
       propsRef.current.onReady?.(null);
       engine.current = null;
       stopFrameWatch?.();
+      stopSpaceAmbiance?.();
       layers?.destroy();
       if (handler && !handler.isDestroyed()) handler.destroy();
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
@@ -580,7 +588,10 @@ export default function Globe(props: GlobeProps) {
       style={props.measure ? { cursor: "crosshair" } : undefined}
       tabIndex={0}
       role="application"
-      aria-label="Interactive 3D globe. Drag to rotate, scroll or pinch to zoom, Ctrl-drag or middle-drag to tilt. Keyboard: arrow keys rotate and tilt, plus and minus zoom, N resets north."
+      aria-label={
+        props.ariaLabel ??
+        "Interactive 3D globe. Drag to rotate, scroll or pinch to zoom, Ctrl-drag or middle-drag to tilt. Keyboard: arrow keys rotate and tilt, plus and minus zoom, N resets north."
+      }
       onKeyDown={onKeyDown}
     />
   );

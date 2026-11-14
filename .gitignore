@@ -61,6 +61,7 @@ data/processed/*
 data/processed/spain/*
 !data/processed/spain/README.md
 !data/processed/spain/spain_boundary_nuts2021_01m.geojson
+!data/processed/spain/spain_nuts3_2021_01m.geojson
 !data/processed/spain/gpm/
 !data/processed/spain/merra2/
 !data/processed/spain/gldas/

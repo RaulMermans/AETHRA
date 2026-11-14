@@ -43,7 +43,7 @@ Tick only once you've checked it yourself. Owner: unassigned unless filled in.
 - [ ] Public project link (repo and/or deployed app) opens in a private window with no login
 - [ ] Project Demo: one public link, ≤ 7 slides incl. cover **or** ≤ 30 s video, opens without permissions
 - [ ] Demo shows only what exists. Exploratory/extrapolated content labelled
-- [ ] Deployed/demo build is **judge mode** (no `NEXT_PUBLIC_ENABLE_EXPLORATORY`); check `/explore?lab=energy` shows no Energy Lab
+- [ ] Deployed/demo build is **judge mode** (no `NEXT_PUBLIC_ENABLE_EXPLORATORY`); check `/explore?lab=energy` shows no Energy Lab, no infrastructure tool, no Buniel 3D, no CyL plant overlay from research cases (D61)
 - [ ] Second-person scientific sign-off done (`SCIENTIFIC_REVIEW.md` §5) and D53 decided
 - [ ] Non-NASA data credited: NOAA GHCN-Daily; Eurostat GISCO; Cesium ion, Esri, EOX Sentinel-2 cloudless, NASA GIBS imagery (globe credits)
 - [ ] No NASA logos in generated content. No identifiable minors

@@ -79,10 +79,13 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 - [ ] **P0-P2** Slide 5 written from a gate-checked result only. Claim review by a second person.
 - [ ] **P0-P3** Rehearsed demo ≤ 2:00 with a fallback screen recording.
 
-**Immediate next action (updated 14 Nov, final sprint):** a second team member works through the
-PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and decides D53. Then P0-P1–P3 (submission
-checklist, slide 5 from the approved claims in `DEMO_AND_SUBMISSION.md`, rehearsal + fallback recording).
-**Do not implement spatial/3D enhancements (D54) while these boxes are open.** Spec only: `docs/SPATIAL_EXPERIENCE.md`.
+**Immediate next action (updated 14 Nov, late evening):** a named second team member works through the
+PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and **decides D53** (Python significance
+rule). Judge-facing Trend badges already hide unadjusted rain/runoff Supported labels (D60) — that
+is presentation, not a method change. Then P0-P1–P3 (submission checklist, slide 5 from the approved
+claims in `DEMO_AND_SUBMISSION.md`, rehearsal + fallback recording).
+Do not implement AETHRA Intelligence (D63) while these boxes are open.
+TARO knowledge architecture (D68) was started on a human waiver in the same pattern as D65: documentation + deterministic retrieval only. It must not delay P0-P1–P3 or D53.
 
 ## P1 — only after P0 is green
 
@@ -91,6 +94,7 @@ checklist, slide 5 from the approved claims in `DEMO_AND_SUBMISSION.md`, rehears
   variants on this question (`ENERGY_RESEARCH.md` §10b).
 - Regional comparison with a proper difference test.
 - GPM precipitation and GLDAS soil moisture through the same gates (secondary context).
+- **TARO / AETHRA Core knowledge layer (D68).** Taxonomy, source registry, five evidence-safe flows, evaluation bank. LLM still off. Not a trained specialist until evals + human gold review say so.
 - A concise energy-relevance interpretation, written only from Gate 3 results.
 - **P1 CONDITIONAL — observed generation comparison.** Only with independently verified generation time
   series at a compatible spatial/temporal scale: compare NASA resource conditions with observed generation,
@@ -108,7 +112,7 @@ Plant-by-plant performance rankings · investment suitability scores · energy o
 optimisation · site recommendations · site selection or ranking · generation/production modelling · storage sizing · grid dispatch,
 outage or price prediction · investment/ROI recommendations · 2030–2040 projections or any
 extrapolation shown as a forecast · ML forecasting · causal attribution · universal dataset explorer
-· AI agent producing findings · new map tools, terrain or visual effects · **final logo / full brand system** (visible AETHRA chrome + tokens landed as D56; emblem still deferred)
+· AI agent producing findings · new map tools, terrain or visual effects · **vector logo / full brand system** (AETHRA chrome + raster kit landed as D56/D58; SVG master still deferred)
 · nationwide 3D plant reconstruction · digital twins without surveyed geometry · **ghost / conceptual infrastructure in 3D** (D54 Feature D — prototype only after P1C, always off in judge mode)
 · construction feasibility simulation.
 
