@@ -19,15 +19,17 @@ export interface GeoCoordinate {
   elevation?: Elevation;
 }
 
-/** Identified overlay under the cursor (NOAA station, basin hub, river, lake or reservoir). */
+/** Identified overlay under the cursor (NOAA station, basin hub, river, lake, reservoir, registered energy installation). */
 export interface OverlayFeature {
-  kind: "station" | "basin-hub" | "river-line" | "lake" | "reservoir" | "lagoon";
+  kind: "station" | "basin-hub" | "river-line" | "lake" | "reservoir" | "lagoon" | "installation";
   id: string;
   name: string;
   value?: number;
   units?: string;
   elevationM?: number;
   basin?: string;
+  /** Secondary line for the hover card (e.g. technology · municipality). */
+  detail?: string;
   latitude: number;
   longitude: number;
 }
@@ -193,7 +195,7 @@ export interface GlobeStatus {
 /** Map tools that take clicks on the globe. Add new ids here and in components/explore/ToolsBar.tsx. */
 export type ClickToolId = "distance" | "offset" | "area" | "radius" | "profile";
 /** Tools that only open a panel (no clicks on the globe). */
-export type PanelToolId = "stations" | "evidence";
+export type PanelToolId = "stations" | "evidence" | "infrastructure";
 /** Tools shown in the /explore Map tools bar (click tools are not exposed in the UI — see D45). */
 export type ToolId = PanelToolId;
 

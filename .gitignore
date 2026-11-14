@@ -45,6 +45,7 @@ data/raw/*
 !data/raw/merra2/
 !data/raw/gldas/
 !data/raw/boundary/
+!data/raw/energy_infrastructure/
 data/raw/boundary/*
 !data/raw/boundary/NUTS_RG_01M_2021_4326_LEVL_2.geojson
 !data/raw/gpm/**/*.nc4

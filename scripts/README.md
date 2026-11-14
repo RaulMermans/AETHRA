@@ -67,3 +67,19 @@ Output locations:
   result and failure.
 
 `data/raw/` and `data/processed/` are gitignored.
+
+## `build_energy_infrastructure.py`: registered energy installations (D49, not NASA)
+
+Builds `apps/web/public/data/energy-infrastructure.json` for the opt-in **Energy infrastructure** map
+tool: wind farms and PV plants in operation in **Castilla y León** from the Junta de Castilla y León
+register layer (©Junta de Castilla y León, IGCYL licence), each linked to the MERRA-2 cell that
+contains it and to its province's precomputed NASA scope. Metadata only: no generation, capacity
+factors, scores or rankings.
+
+```bash
+.venv/bin/python scripts/build_energy_infrastructure.py             # uses the committed raw snapshot
+.venv/bin/python scripts/build_energy_infrastructure.py --download  # refresh the snapshot (new SHA-256)
+.venv/bin/python tests/test_energy_infrastructure.py
+```
+
+Re-run after `build_climate_bundle.py` or `build_admin_boundaries.py` change (their hashes are recorded).

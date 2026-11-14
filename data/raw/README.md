@@ -8,6 +8,7 @@ Files exactly as delivered by NASA (Harmony subsetting service), before clipping
 | `gpm/<year>/` | 🌧️ GPM IMERG monthly rain (`GPM_3IMERGM` V07), one `.nc4` per month | 2000-01 → 2025-09 | ~309 |
 | `merra2/<year>/` | 🌡️ MERRA-2 monthly 2 m air temperature (`M2TMNXSLV`, variable `T2M` in Kelvin) | 2000-01 → 2026-09 | ~321 |
 | `modis/pilot/<region>/` | 🌱 MOD13Q1 v061 NDVI/EVI (AppEEARS bundle), **one composite** | 2000-02-18 | 2 regions (peninsula + Canarias) |
+| `energy_infrastructure/jcyl/` | ⚡ Junta de Castilla y León renewable-installation perimeters (register layer, **not NASA**, D49) + `manifest.json` (URL, retrieval date, SHA-256, licence) | snapshot 2026-11-14 | 2 |
 | `boundary/` | 🗺️ Eurostat NUTS 2021 regions (level 2, 1:1M), used to cut out Spain | — | 1 |
 
 Rebuild everything with `scripts/download_nasa_data.py` (needs a free NASA Earthdata account).

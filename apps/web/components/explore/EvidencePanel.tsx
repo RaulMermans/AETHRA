@@ -308,6 +308,17 @@ export function EvidencePanel({
             Do not conclude: not a forecast, not a cause, not energy production or site suitability.
           </p>
 
+          {/* Review check (data/results/scope_multiplicity/scope_bh.json): non-temperature regional labels are
+              not robust to testing ~72 regions. Labels are unchanged pending a team decision; the caveat is shown. */}
+          {config.dimension !== "temperature" && st && (
+            <p className="rounded-md border border-white/20 bg-white/5 px-2 py-1.5 text-[11px] text-muted">
+              <span aria-hidden className="mr-1">⚠</span>
+              EXPLORATORY: each region is tested on its own, without adjustment for the ~72 regions offered here. After a
+              Benjamini–Hochberg adjustment, none of the regional rain or rain-anomaly labels and only 1 of 17 modelled-runoff
+              labels stay supported. Temperature labels are unaffected.
+            </p>
+          )}
+
           {bundle && config.dimension === "precipitation" && (
             <div className="flex flex-wrap gap-1" aria-label="Basin bounding boxes">
               {bundle.rivers.map((b: RiverBasin) => {

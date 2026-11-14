@@ -10,12 +10,12 @@ confirm each rule marked ⚠️**.
 | Rule | Value | Source / status |
 |---|---|---|
 | Development start | Sat 14 Nov 2026, 09:00 local. Prior work must be declared | Local guide |
-| **Submit for Judging deadline** | **Sun 15 Nov 2026, before 23:59 local time** (no later edits) | Local guide; official site ⚠️ verify |
+| **Submit for Judging deadline** | **Sun 15 Nov 2026, 23:59 local time**, final, no later edits | Local guide + two independent web sources (14 Nov). Official 2026 submission guide could not be fetched (TLS error) ⚠️ human confirms on the site |
 | Local cut-off | Málaga may set an earlier local cut-off for review/pitches. It does **not** replace NASA's 23:59 | Local guide |
-| Team | Registered members, same Local Event, added to the team. Guide p.3 says "pair or up to 6"; our older note said 1–6 | ⚠️ confirm minimum |
+| Team | Registered members, same Local Event, added to the team. Guide p.3 says "pair or up to 6"; a 2025 official guide excerpt says 1–6 | ⚠️ confirm minimum on the 2026 site |
 | NASA resource | At least one NASA resource from the challenge, and its real role explained. Partners (NOAA) complement, never replace | Local guide |
 | Language | Project page, slides, written material in **English**. Video in another language only with English subtitles | Local guide |
-| **Project Demo** | **One public link**: ≤ **7 slides** (cover included) **or** ≤ **30 s video** | Local guide ("regla oficial") |
+| **Project Demo** | **One public link**: ≤ **7 slides** (cover included) **or** ≤ **30 s video** | Local guide ("regla oficial"). Not found in web sources; official 2026 guide unreadable from here ⚠️ |
 | AI | Allowed. Declare the tools and how they were used. Team verifies generated content. Visible marking on generated images/video | Local guide |
 | Branding / minors | No NASA logos/insignia in generated content. No identifiable minors | Local guide |
 | Judging | Impact · Creativity · Validity · Relevance · Presentation, 1–5 each | Local guide. **Weights not fixed**: one jury FAQ says 20 % each, mentoring guide says local scales may differ. Don't assume weights |
@@ -43,43 +43,108 @@ Tick only once you've checked it yourself. Owner: unassigned unless filled in.
 - [ ] Public project link (repo and/or deployed app) opens in a private window with no login
 - [ ] Project Demo: one public link, ≤ 7 slides incl. cover **or** ≤ 30 s video, opens without permissions
 - [ ] Demo shows only what exists. Exploratory/extrapolated content labelled
+- [ ] Deployed/demo build is **judge mode** (no `NEXT_PUBLIC_ENABLE_EXPLORATORY`); check `/explore?lab=energy` shows no Energy Lab
+- [ ] Second-person scientific sign-off done (`SCIENTIFIC_REVIEW.md` §5) and D53 decided
+- [ ] Non-NASA data credited: NOAA GHCN-Daily; Eurostat GISCO; Cesium ion, Esri, EOX Sentinel-2 cloudless, NASA GIBS imagery (globe credits)
 - [ ] No NASA logos in generated content. No identifiable minors
 - [ ] **Submit for Judging** pressed, confirmation screen/email captured (target: Sun 21:00, hard limit 23:59)
 - [ ] Local pitch format confirmed with organizers. Laptop/support tested at 16:30
 
-## One-sentence pitch
+## Approved claim wording (pending second-person review — do not change numbers or strength)
 
-*Draft. Update once a finding is verified.*
-"We use NASA Earth data to show, region by region across Spain, whether environmental conditions
-really changed — by how much, how sure we are, and where the evidence comes from — starting with
-the conditions that matter for clean energy."
+Use these sentences as written. Each traces to a recorded file.
 
-## Demo flow (target ~90 s live)
+1. **Headline (Gate A).** "In NASA's MERRA-2 reanalysis, annual near-surface air temperature over
+   Peninsular Spain and the Balearics rose by about **0.6 °C per decade** from 2000 to 2025 (95 % CI
+   0.31–0.87 °C; Theil–Sen with Mann–Kendall, p < 0.001; 26 complete years). The trend is positive in
+   all six analysis windows we tested, with magnitudes from 0.41 to 0.83 °C per decade."
+   — `data/results/gate_a_temperature/analysis_bundle.json`
+2. **Independent check.** "All 64 long-record NOAA weather stations we compared also warmed, and for 53
+   of them the station trend is within 0.2 °C per decade of the reanalysis cell around it."
+   — `data/results/noaa_validation/analysis_bundle.json`
+3. **Energy question (Gate B, honest null).** "We found **no detectable change** in how often solar and
+   wind resources are low on the same day (Peninsula + Balearics, 2001–2025: 0.0 days per decade, 95 %
+   CI −1.8 to +2.2). The result is *insufficient evidence* in all five pre-registered regions."
+   — `data/results/energy_gap/analysis_bundle.json`
+4. **Descriptive context (never a headline on its own).** "In NASA POWER data, days when both
+   resources are low occur about half as often as they would if solar and wind were independent
+   (183 vs about 370 over 25 years). That describes the resource data. It is not a trend and not a
+   measure of grid reliability." — `data/results/energy_gap/independence_check.json`
 
-1. Open `/explore` on Spain (Cesium globe).
-2. Pick the variable (Gate A: MERRA-2 2 m air temperature, or Gate B result if passed).
-3. Pick a region (Spain analysis extent → one CCAA).
-4. Read the time series with the observed years only, and the period stated.
-5. Read the trend: slope ± 95 % CI per decade, test, n, outcome state.
-6. Open the EvidenceCard: dataset, version/DOI, spatial support, QA, limitations, "do not conclude".
-7. Optional: compare a second region. Show that a difference between regions needs its own test.
+**Never say:** the energy gap is growing/shrinking · renewables are becoming more/less reliable ·
+warming reduces/increases solar or wind output · anything about 2030 or the future · best sites ·
+"proves", "caused by", "due to" · that temperature results say anything about energy production.
+Regional rain or runoff "Supported" labels are not presentable (D53).
+
+## One-sentence value proposition
+
+"GRIDSHIFT turns NASA Earth data into traceable evidence about how Spain's environment has actually
+changed — region by region, with the uncertainty and the sources attached — starting with the
+conditions behind clean energy."
+*(Note: the app header still reads "Trend Detective"; GRIDSHIFT is a working name, D34. Pick one name
+for slides, page and app title before submitting.)*
+
+## 30-second demo script (video or opening of the live demo)
+
+> (0–5 s, globe on Spain) "This is GRIDSHIFT: NASA Earth data for Spain, turned into evidence."
+> (5–15 s, Temperature → Trend) "Air temperature from NASA MERRA-2, 2000 to 2025: up about 0.6 °C per
+> decade, confidence interval shown, supported — and 64 NOAA stations agree on the direction."
+> (15–25 s, Evidence cards → Solar + wind) "For clean energy we asked whether days with both low sun
+> and low wind are becoming more common. Honest answer: no detectable change."
+> (25–30 s, Sources) "Every number links back to its NASA source and its limits."
+
+## Two-minute pitch (~270 words)
+
+**Act 1 — Opportunity (15 s).** Spain is building one of Europe's largest solar and wind fleets. To plan
+it well, people need to know how the environment behind it is changing.
+
+**Act 2 — Blind spot (15 s).** Averages hide timing. Plenty of sun and wind on average doesn't tell you
+how often both are low on the same day, or whether that is changing.
+
+**Act 3 — NASA data and method (20 s).** We use MERRA-2 reanalysis and NASA POWER solar and wind data,
+clipped to Spanish regions, with complete years only. Trends use Theil–Sen slopes, Mann–Kendall tests
+checked for autocorrelation, 95 % confidence intervals, and a method we wrote down before looking.
+
+**Act 4 — Verified finding (20 s).** Air temperature over Peninsular Spain and the Balearics rose about
+0.6 °C per decade from 2000 to 2025, interval 0.31 to 0.87, in every window we tried. 64 independent
+NOAA stations warmed too.
+
+**Act 5 — Energy investigation (20 s).** In NASA's resource data, days when solar and wind are both low
+happen about half as often as they would if the two were independent. But we find no detectable change in how often they happen since 2001, in any of
+five regions. That's inconclusive, and we show it as inconclusive.
+
+**Act 6 — Product (20 s).** On the globe, pick a variable and a region, see the series and the trend, and
+open an EvidenceCard with region, period, method, uncertainty, sources and a "do not conclude" line.
+If we have no card for a region, it says so.
+
+**Act 7 — Relevance, limits, next steps (10 s).** These are reanalysis and satellite data, not plant
+output, not forecasts, not causes. Next: link real infrastructure and observed generation, carefully.
+
+## Demo flow (live, ~90 s, verified 3× on the production build 14 Nov)
+
+1. `/explore` opens on Spain, Temperature, judge mode.
+2. Trend → Peninsula + Balearics: Supported increase +0.60 °C/decade (CI +0.31 to +0.87).
+3. Region → Galicia: the Trend panel shows Galicia's own MERRA-2 result.
+4. Map tools → Evidence cards: "Selected region: Galicia". Air temperature: "No air-temperature
+   EvidenceCard for Galicia" + optional, labelled national reference. Solar + wind: "Result for Galicia",
+   Insufficient evidence.
+5. Open Sources & provenance and the "Do not conclude" line.
+6. Back to Spain: national cards. Close (Esc).
 
 ## 7-slide outline (Project Demo, cover included)
 
-Slide 5's content is **not written yet on purpose**. It holds only a verified finding.
-
 | # | Slide | Content |
 |---|---|---|
-| 1 | Cover + human problem | Title, team, challenge #02. "Having abundant renewable resources is not the same as having them when needed." (context, not a finding) |
-| 2 | The overlooked question | Averages hide timing and joint shortfalls. Our question: *what changed, where, how much, and is it supported?* Energy question shown as the motivating application |
-| 3 | Why NASA data | Decades of consistent coverage across all of Spain. Named products (MERRA-2, GPM IMERG, GLDAS, POWER if used) and the type of each (reanalysis / satellite-gauge / model). NOAA stations as independent check |
-| 4 | Method + evidence chain | Source → QA → series → Theil–Sen + Mann–Kendall (autocorrelation-checked) → CI → outcome state → EvidenceCard. One diagram |
-| 5 | **The verified finding** | **Candidate text, use only after second-person review:** "Across Peninsular Spain, days when sunshine *and* wind are both scarce happen about half as often as chance would predict, in every year 2001–2025. Over those 25 years we find no detectable change in how often they occur (0.0 days/decade, 95 % CI −1.8 to +2.2; NASA POWER: CERES SYN1deg + MERRA-2). Meanwhile the air warmed +0.60 °C/decade (95 % CI 0.31–0.87; MERRA-2)." Show the E1 chart and the EvidenceCard |
-| 6 | Product demo + user value | Screenshot/GIF of region → series → EvidenceCard. What the analyst gets in seconds |
-| 7 | Impact, limits, next steps | What it does not prove (no generation, no site viability, no forecast). Next: Gate B research or regional comparison. AI and data credits |
+| 1 | Cover | Name, team, Challenge #02. One line: "Plenty of sun and wind on average is not the same as having them when needed." (context, not a finding) |
+| 2 | The blind spot | Averages hide timing and joint shortfalls. Our questions: what changed, where, how much, is it supported? |
+| 3 | NASA data + method | MERRA-2 M2TMNXSLV 5.12.4 (reanalysis), NASA POWER (CERES SYN1deg + MERRA-2 wind); NOAA GHCN-Daily as independent check. Evidence chain diagram: source → QA → series → Theil–Sen/MK + CI → outcome → EvidenceCard |
+| 4 | Verified finding | Claim 1 + chart (`gate_a_temperature/t2m.svg`) + claim 2 with `noaa_validation/slopes.svg` |
+| 5 | Energy investigation | Claim 3 with the E1 chart; claim 4 in smaller type, labelled "descriptive" |
+| 6 | Product | Screenshot: region → series → EvidenceCard with "Result for …", sources and "do not conclude" |
+| 7 | Relevance, limits, next steps | What it does not show (generation, reliability, sites, forecasts, causes). Next: P1 infrastructure context, conditional generation comparison. Data credits + AI use declaration |
 
 ## Story arc (follows the evidence, never ahead of it)
 
 Promise (Spain's clean-energy ambition) → Blind spot (averages hide timing) → Investigation (NASA
-data, pre-defined method) → Evidence (the real result, or an honest "inconclusive") → Why it matters
+data, pre-defined method) → Evidence (the real result, and an honest "inconclusive") → Why it matters
 (what further study it justifies). Avoid: "We built a NASA-powered renewable-energy dashboard."

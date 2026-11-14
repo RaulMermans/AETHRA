@@ -1,0 +1,1706 @@
+{
+ "bundle_version": "noaa_validation/v1",
+ "status": "EXPLORATORY until reviewed by a second team member (P0-S5)",
+ "design": "P0-S5 independent check: MERRA-2 T2M vs NOAA GHCN-Daily station air temperature.\n\nDesign fixed before running (14 Nov 2026), not tuned afterwards:\n- Variable match: air temperature vs air temperature. Station value = annual mean of daily\n  (TMAX + TMIN) / 2 — ONE definition for every day (the bundle's `tavg` mixes reported TAVG and\n  (TMAX+TMIN)/2 day by day, which can create spurious steps, so it is not used here). GHCN-D\n  quality flags drop values (same rule as build_climate_bundle.py). A station-year counts only\n  with >= 330 days having both TMAX and TMIN.\n- MERRA-2: annual mean of the 12 monthly T2M means (M2TMNXSLV 5.12.4) of the 0.5° × 0.625° cell\n  that contains the station. Same complete-year rule as Gate A.\n- Stations: inside the Peninsula + Balearics polygon used by Gate A (Canarias, Ceuta, Melilla\n  excluded), with >= 23 valid years in 2001–2025. Each station is compared only on its own valid\n  years, with its own cell (paired), so changes in network composition cannot bias a pair.\n- Per pair: Theil–Sen slope (°C/decade, packages/science) for station and cell on identical years,\n  slope difference (cell − station), Pearson r of annual values, mean offset (cell − station).\n- Summary: sign agreement, median and IQR of slope difference, median r, median offset.\n\nExpected and NOT errors: a point vs a ~50 km cell (elevation, coast, land use, urban heat),\nunhomogenized stations, (TMAX+TMIN)/2 vs a 24-hour mean. NOAA is an independent check, not exact\nground truth for any MERRA-2 cell.",
+ "inclusion": {
+  "min_valid_days_per_year": 330,
+  "min_years": 23,
+  "period": "2001–2025",
+  "region": "Peninsula + Balearics (Gate A polygon)"
+ },
+ "summary": {
+  "n_stations": 64,
+  "station_slope_median": 0.55,
+  "merra2_slope_median": 0.589,
+  "stations_positive": 64,
+  "cells_positive": 64,
+  "sign_agreement": 64,
+  "slope_diff_median": 0.004,
+  "slope_diff_iqr": [
+   -0.072,
+   0.102
+  ],
+  "abs_slope_diff_le_0_2": 53,
+  "pearson_r_median": 0.934,
+  "pearson_r_min": 0.52,
+  "mean_offset_median": -1.05,
+  "largest_disagreements": [
+   {
+    "name": "SEVILLA SAN PABLO, SP",
+    "station_slope": 0.064,
+    "merra2_slope": 0.631,
+    "elevation_m": 34.0
+   },
+   {
+    "name": "IBIZA ESCODOLA, SP",
+    "station_slope": 0.082,
+    "merra2_slope": 0.647,
+    "elevation_m": 6.0
+   },
+   {
+    "name": "MENORCA MAO, SP",
+    "station_slope": 0.134,
+    "merra2_slope": 0.674,
+    "elevation_m": 91.0
+   },
+   {
+    "name": "DAROCA, SP",
+    "station_slope": 0.178,
+    "merra2_slope": 0.66,
+    "elevation_m": 779.0
+   },
+   {
+    "name": "CORDOBA AEROPUERTO, SP",
+    "station_slope": 0.303,
+    "merra2_slope": 0.707,
+    "elevation_m": 90.0
+   }
+  ]
+ },
+ "pairs": [
+  {
+   "station": "SP000003195",
+   "name": "MADRID RETIRO, SP",
+   "lat": 40.4117,
+   "lon": -3.6781,
+   "elevation_m": 667.0,
+   "n_years": 24,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.658,
+   "station_ci": [
+    0.298,
+    1.005
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.591,
+   "merra2_ci": [
+    0.238,
+    0.928
+   ],
+   "merra2_p": 0.0019,
+   "slope_diff_cell_minus_station": -0.067,
+   "pearson_r_annual": 0.984,
+   "mean_offset_cell_minus_station": -2.17
+  },
+  {
+   "station": "SP000004452",
+   "name": "BADAJOZ TALAVERA LA REAL, SP",
+   "lat": 38.8831,
+   "lon": -6.8292,
+   "elevation_m": 185.0,
+   "n_years": 25,
+   "cell_lat": 39.0,
+   "cell_lon": -6.875,
+   "station_slope": 0.497,
+   "station_ci": [
+    0.249,
+    0.71
+   ],
+   "station_p": 0.0014,
+   "merra2_slope": 0.592,
+   "merra2_ci": [
+    0.352,
+    0.917
+   ],
+   "merra2_p": 0.0002,
+   "slope_diff_cell_minus_station": 0.095,
+   "pearson_r_annual": 0.914,
+   "mean_offset_cell_minus_station": -1.25
+  },
+  {
+   "station": "SP000006155",
+   "name": "MALAGA AEROPUERTO, SP",
+   "lat": 36.6667,
+   "lon": -4.4881,
+   "elevation_m": 7.0,
+   "n_years": 25,
+   "cell_lat": 36.5,
+   "cell_lon": -4.375,
+   "station_slope": 0.51,
+   "station_ci": [
+    0.291,
+    0.703
+   ],
+   "station_p": 0.0002,
+   "merra2_slope": 0.439,
+   "merra2_ci": [
+    0.225,
+    0.673
+   ],
+   "merra2_p": 0.0003,
+   "slope_diff_cell_minus_station": -0.071,
+   "pearson_r_annual": 0.92,
+   "mean_offset_cell_minus_station": -1.23
+  },
+  {
+   "station": "SP000008027",
+   "name": "SAN SEBASTIAN IGUELDO, SP",
+   "lat": 43.3075,
+   "lon": -2.0392,
+   "elevation_m": 251.0,
+   "n_years": 25,
+   "cell_lat": 43.5,
+   "cell_lon": -1.875,
+   "station_slope": 0.436,
+   "station_ci": [
+    0.07,
+    0.739
+   ],
+   "station_p": 0.0235,
+   "merra2_slope": 0.487,
+   "merra2_ci": [
+    0.169,
+    0.788
+   ],
+   "merra2_p": 0.0095,
+   "slope_diff_cell_minus_station": 0.051,
+   "pearson_r_annual": 0.987,
+   "mean_offset_cell_minus_station": 0.58
+  },
+  {
+   "station": "SP000008181",
+   "name": "BARCELONA AEROPUERTO, SP",
+   "lat": 41.2928,
+   "lon": 2.0697,
+   "elevation_m": 4.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": 1.875,
+   "station_slope": 0.733,
+   "station_ci": [
+    0.425,
+    1.052
+   ],
+   "station_p": 0.0,
+   "merra2_slope": 0.571,
+   "merra2_ci": [
+    0.225,
+    0.888
+   ],
+   "merra2_p": 0.0016,
+   "slope_diff_cell_minus_station": -0.163,
+   "pearson_r_annual": 0.756,
+   "mean_offset_cell_minus_station": -1.43
+  },
+  {
+   "station": "SP000008202",
+   "name": "SALAMANCA AEROPUERTO, SP",
+   "lat": 40.9592,
+   "lon": -5.4981,
+   "elevation_m": 790.0,
+   "n_years": 25,
+   "cell_lat": 41.0,
+   "cell_lon": -5.625,
+   "station_slope": 0.437,
+   "station_ci": [
+    0.162,
+    0.701
+   ],
+   "station_p": 0.0041,
+   "merra2_slope": 0.731,
+   "merra2_ci": [
+    0.427,
+    1.074
+   ],
+   "merra2_p": 0.0002,
+   "slope_diff_cell_minus_station": 0.294,
+   "pearson_r_annual": 0.926,
+   "mean_offset_cell_minus_station": -0.03
+  },
+  {
+   "station": "SP000008215",
+   "name": "NAVACERRADA, SP",
+   "lat": 40.7806,
+   "lon": -4.0103,
+   "elevation_m": 1894.0,
+   "n_years": 25,
+   "cell_lat": 41.0,
+   "cell_lon": -3.75,
+   "station_slope": 0.765,
+   "station_ci": [
+    0.369,
+    1.093
+   ],
+   "station_p": 0.0005,
+   "merra2_slope": 0.603,
+   "merra2_ci": [
+    0.295,
+    0.947
+   ],
+   "merra2_p": 0.0014,
+   "slope_diff_cell_minus_station": -0.163,
+   "pearson_r_annual": 0.954,
+   "mean_offset_cell_minus_station": 3.53
+  },
+  {
+   "station": "SP000008280",
+   "name": "ALBACETE LOS LLANOS, SP",
+   "lat": 38.9519,
+   "lon": -1.8631,
+   "elevation_m": 704.0,
+   "n_years": 25,
+   "cell_lat": 39.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.545,
+   "station_ci": [
+    0.173,
+    0.835
+   ],
+   "station_p": 0.0041,
+   "merra2_slope": 0.643,
+   "merra2_ci": [
+    0.304,
+    0.964
+   ],
+   "merra2_p": 0.0012,
+   "slope_diff_cell_minus_station": 0.098,
+   "pearson_r_annual": 0.973,
+   "mean_offset_cell_minus_station": -0.7
+  },
+  {
+   "station": "SP000008410",
+   "name": "CORDOBA AEROPUERTO, SP",
+   "lat": 37.8442,
+   "lon": -4.8458,
+   "elevation_m": 90.0,
+   "n_years": 25,
+   "cell_lat": 38.0,
+   "cell_lon": -5.0,
+   "station_slope": 0.303,
+   "station_ci": [
+    0.05,
+    0.512
+   ],
+   "station_p": 0.0109,
+   "merra2_slope": 0.707,
+   "merra2_ci": [
+    0.415,
+    0.971
+   ],
+   "merra2_p": 0.0003,
+   "slope_diff_cell_minus_station": 0.404,
+   "pearson_r_annual": 0.849,
+   "mean_offset_cell_minus_station": -1.65
+  },
+  {
+   "station": "SP000009434",
+   "name": "ZARAGOZA AEROPUERTO, SP",
+   "lat": 41.6617,
+   "lon": -1.0081,
+   "elevation_m": 247.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": -1.25,
+   "station_slope": 0.564,
+   "station_ci": [
+    0.279,
+    0.852
+   ],
+   "station_p": 0.001,
+   "merra2_slope": 0.624,
+   "merra2_ci": [
+    0.257,
+    0.985
+   ],
+   "merra2_p": 0.001,
+   "slope_diff_cell_minus_station": 0.06,
+   "pearson_r_annual": 0.96,
+   "mean_offset_cell_minus_station": -2.22
+  },
+  {
+   "station": "SP000009981",
+   "name": "TORTOSA OBSERVATORIO DEL EBR, SP",
+   "lat": 40.8206,
+   "lon": 0.4914,
+   "elevation_m": 44.0,
+   "n_years": 25,
+   "cell_lat": 41.0,
+   "cell_lon": 0.625,
+   "station_slope": 0.584,
+   "station_ci": [
+    0.367,
+    0.836
+   ],
+   "station_p": 0.0,
+   "merra2_slope": 0.667,
+   "merra2_ci": [
+    0.345,
+    0.948
+   ],
+   "merra2_p": 0.0002,
+   "slope_diff_cell_minus_station": 0.084,
+   "pearson_r_annual": 0.971,
+   "mean_offset_cell_minus_station": -2.43
+  },
+  {
+   "station": "SPE00119711",
+   "name": "A CORUNA, SP",
+   "lat": 43.3669,
+   "lon": -8.4192,
+   "elevation_m": 58.0,
+   "n_years": 25,
+   "cell_lat": 43.5,
+   "cell_lon": -8.125,
+   "station_slope": 0.326,
+   "station_ci": [
+    0.121,
+    0.513
+   ],
+   "station_p": 0.0047,
+   "merra2_slope": 0.338,
+   "merra2_ci": [
+    0.119,
+    0.599
+   ],
+   "merra2_p": 0.0035,
+   "slope_diff_cell_minus_station": 0.013,
+   "pearson_r_annual": 0.958,
+   "mean_offset_cell_minus_station": -1.75
+  },
+  {
+   "station": "SPE00119720",
+   "name": "A CORUNA ALVEDRO, SP",
+   "lat": 43.3067,
+   "lon": -8.3719,
+   "elevation_m": 98.0,
+   "n_years": 25,
+   "cell_lat": 43.5,
+   "cell_lon": -8.125,
+   "station_slope": 0.362,
+   "station_ci": [
+    0.042,
+    0.654
+   ],
+   "station_p": 0.0183,
+   "merra2_slope": 0.338,
+   "merra2_ci": [
+    0.119,
+    0.599
+   ],
+   "merra2_p": 0.0035,
+   "slope_diff_cell_minus_station": -0.024,
+   "pearson_r_annual": 0.755,
+   "mean_offset_cell_minus_station": -0.71
+  },
+  {
+   "station": "SPE00119729",
+   "name": "SANTIAGO DE COMPOSTELA LABACOL, SP",
+   "lat": 42.8878,
+   "lon": -8.4106,
+   "elevation_m": 370.0,
+   "n_years": 25,
+   "cell_lat": 43.0,
+   "cell_lon": -8.125,
+   "station_slope": 0.33,
+   "station_ci": [
+    0.049,
+    0.534
+   ],
+   "station_p": 0.0265,
+   "merra2_slope": 0.482,
+   "merra2_ci": [
+    0.226,
+    0.756
+   ],
+   "merra2_p": 0.0019,
+   "slope_diff_cell_minus_station": 0.152,
+   "pearson_r_annual": 0.783,
+   "mean_offset_cell_minus_station": -0.89
+  },
+  {
+   "station": "SPE00119747",
+   "name": "VITORIA FORONDA, SP",
+   "lat": 42.8717,
+   "lon": -2.7331,
+   "elevation_m": 513.0,
+   "n_years": 24,
+   "cell_lat": 43.0,
+   "cell_lon": -2.5,
+   "station_slope": 0.502,
+   "station_ci": [
+    0.155,
+    0.86
+   ],
+   "station_p": 0.0106,
+   "merra2_slope": 0.531,
+   "merra2_ci": [
+    0.096,
+    0.941
+   ],
+   "merra2_p": 0.0161,
+   "slope_diff_cell_minus_station": 0.029,
+   "pearson_r_annual": 0.927,
+   "mean_offset_cell_minus_station": -0.25
+  },
+  {
+   "station": "SPE00119756",
+   "name": "ALBACETE OBS., SP",
+   "lat": 39.0067,
+   "lon": -1.8606,
+   "elevation_m": 674.0,
+   "n_years": 25,
+   "cell_lat": 39.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.473,
+   "station_ci": [
+    0.211,
+    0.727
+   ],
+   "station_p": 0.0019,
+   "merra2_slope": 0.643,
+   "merra2_ci": [
+    0.304,
+    0.964
+   ],
+   "merra2_p": 0.0012,
+   "slope_diff_cell_minus_station": 0.17,
+   "pearson_r_annual": 0.952,
+   "mean_offset_cell_minus_station": -1.48
+  },
+  {
+   "station": "SPE00119783",
+   "name": "ALMERIA AEROPUERTO, SP",
+   "lat": 36.8464,
+   "lon": -2.3567,
+   "elevation_m": 21.0,
+   "n_years": 25,
+   "cell_lat": 37.0,
+   "cell_lon": -2.5,
+   "station_slope": 0.575,
+   "station_ci": [
+    0.286,
+    0.84
+   ],
+   "station_p": 0.0008,
+   "merra2_slope": 0.612,
+   "merra2_ci": [
+    0.316,
+    0.862
+   ],
+   "merra2_p": 0.0002,
+   "slope_diff_cell_minus_station": 0.037,
+   "pearson_r_annual": 0.874,
+   "mean_offset_cell_minus_station": -3.09
+  },
+  {
+   "station": "SPE00119792",
+   "name": "ASTURIAS AVILES, SP",
+   "lat": 43.5667,
+   "lon": -6.0442,
+   "elevation_m": 127.0,
+   "n_years": 25,
+   "cell_lat": 43.5,
+   "cell_lon": -6.25,
+   "station_slope": 0.457,
+   "station_ci": [
+    0.114,
+    0.708
+   ],
+   "station_p": 0.0072,
+   "merra2_slope": 0.409,
+   "merra2_ci": [
+    0.098,
+    0.704
+   ],
+   "merra2_p": 0.0109,
+   "slope_diff_cell_minus_station": -0.048,
+   "pearson_r_annual": 0.824,
+   "mean_offset_cell_minus_station": -0.34
+  },
+  {
+   "station": "SPE00119837",
+   "name": "AVILA, SP",
+   "lat": 40.6592,
+   "lon": -4.68,
+   "elevation_m": 1130.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -4.375,
+   "station_slope": 0.653,
+   "station_ci": [
+    0.331,
+    0.939
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.558,
+   "merra2_ci": [
+    0.25,
+    0.86
+   ],
+   "merra2_p": 0.0007,
+   "slope_diff_cell_minus_station": -0.094,
+   "pearson_r_annual": 0.971,
+   "mean_offset_cell_minus_station": 0.74
+  },
+  {
+   "station": "SPE00119855",
+   "name": "IBIZA ESCODOLA, SP",
+   "lat": 38.8764,
+   "lon": 1.3842,
+   "elevation_m": 6.0,
+   "n_years": 25,
+   "cell_lat": 39.0,
+   "cell_lon": 1.25,
+   "station_slope": 0.082,
+   "station_ci": [
+    -0.25,
+    0.38
+   ],
+   "station_p": 0.6572,
+   "merra2_slope": 0.647,
+   "merra2_ci": [
+    0.43,
+    0.831
+   ],
+   "merra2_p": 0.0,
+   "slope_diff_cell_minus_station": 0.565,
+   "pearson_r_annual": 0.52,
+   "mean_offset_cell_minus_station": 0.71
+  },
+  {
+   "station": "SPE00119864",
+   "name": "MENORCA MAO, SP",
+   "lat": 39.8544,
+   "lon": 4.2156,
+   "elevation_m": 91.0,
+   "n_years": 25,
+   "cell_lat": 40.0,
+   "cell_lon": 4.375,
+   "station_slope": 0.134,
+   "station_ci": [
+    -0.111,
+    0.443
+   ],
+   "station_p": 0.3153,
+   "merra2_slope": 0.674,
+   "merra2_ci": [
+    0.409,
+    0.88
+   ],
+   "merra2_p": 0.0,
+   "slope_diff_cell_minus_station": 0.541,
+   "pearson_r_annual": 0.682,
+   "mean_offset_cell_minus_station": 0.96
+  },
+  {
+   "station": "SPE00119882",
+   "name": "PALMA DE MALLORCA CMT, SP",
+   "lat": 39.5556,
+   "lon": 2.6264,
+   "elevation_m": 3.0,
+   "n_years": 25,
+   "cell_lat": 39.5,
+   "cell_lon": 2.5,
+   "station_slope": 0.691,
+   "station_ci": [
+    0.362,
+    1.092
+   ],
+   "station_p": 0.0002,
+   "merra2_slope": 0.681,
+   "merra2_ci": [
+    0.426,
+    0.891
+   ],
+   "merra2_p": 0.0,
+   "slope_diff_cell_minus_station": -0.01,
+   "pearson_r_annual": 0.953,
+   "mean_offset_cell_minus_station": -0.0
+  },
+  {
+   "station": "SPE00119909",
+   "name": "BURGOS VILLAFRIA, SP",
+   "lat": 42.3558,
+   "lon": -3.6325,
+   "elevation_m": 890.0,
+   "n_years": 25,
+   "cell_lat": 42.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.316,
+   "station_ci": [
+    -0.061,
+    0.691
+   ],
+   "station_p": 0.0973,
+   "merra2_slope": 0.628,
+   "merra2_ci": [
+    0.287,
+    0.988
+   ],
+   "merra2_p": 0.0041,
+   "slope_diff_cell_minus_station": 0.312,
+   "pearson_r_annual": 0.908,
+   "mean_offset_cell_minus_station": -0.89
+  },
+  {
+   "station": "SPE00119945",
+   "name": "JEREZ DE LA FRONTERA, SP",
+   "lat": 36.7506,
+   "lon": -6.0556,
+   "elevation_m": 27.0,
+   "n_years": 25,
+   "cell_lat": 37.0,
+   "cell_lon": -6.25,
+   "station_slope": 0.229,
+   "station_ci": [
+    -0.039,
+    0.5
+   ],
+   "station_p": 0.1682,
+   "merra2_slope": 0.492,
+   "merra2_ci": [
+    0.248,
+    0.714
+   ],
+   "merra2_p": 0.0014,
+   "slope_diff_cell_minus_station": 0.264,
+   "pearson_r_annual": 0.734,
+   "mean_offset_cell_minus_station": 0.11
+  },
+  {
+   "station": "SPE00119954",
+   "name": "ROTA, SP",
+   "lat": 36.6389,
+   "lon": -6.3317,
+   "elevation_m": 21.0,
+   "n_years": 25,
+   "cell_lat": 36.5,
+   "cell_lon": -6.25,
+   "station_slope": 0.499,
+   "station_ci": [
+    0.28,
+    0.717
+   ],
+   "station_p": 0.0006,
+   "merra2_slope": 0.437,
+   "merra2_ci": [
+    0.249,
+    0.65
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": -0.062,
+   "pearson_r_annual": 0.941,
+   "mean_offset_cell_minus_station": -0.03
+  },
+  {
+   "station": "SPE00119981",
+   "name": "SANTANDER CMT, SP",
+   "lat": 43.4917,
+   "lon": -3.7994,
+   "elevation_m": 52.0,
+   "n_years": 24,
+   "cell_lat": 43.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.297,
+   "station_ci": [
+    0.043,
+    0.627
+   ],
+   "station_p": 0.0122,
+   "merra2_slope": 0.399,
+   "merra2_ci": [
+    0.087,
+    0.78
+   ],
+   "merra2_p": 0.0092,
+   "slope_diff_cell_minus_station": 0.102,
+   "pearson_r_annual": 0.96,
+   "mean_offset_cell_minus_station": -0.35
+  },
+  {
+   "station": "SPE00120035",
+   "name": "CIUDAD REAL, SP",
+   "lat": 38.9892,
+   "lon": -3.9194,
+   "elevation_m": 628.0,
+   "n_years": 25,
+   "cell_lat": 39.0,
+   "cell_lon": -3.75,
+   "station_slope": 0.518,
+   "station_ci": [
+    0.191,
+    0.874
+   ],
+   "station_p": 0.0047,
+   "merra2_slope": 0.684,
+   "merra2_ci": [
+    0.398,
+    1.025
+   ],
+   "merra2_p": 0.0004,
+   "slope_diff_cell_minus_station": 0.166,
+   "pearson_r_annual": 0.951,
+   "mean_offset_cell_minus_station": -0.96
+  },
+  {
+   "station": "SPE00120062",
+   "name": "CUENCA, SP",
+   "lat": 40.0667,
+   "lon": -2.1381,
+   "elevation_m": 945.0,
+   "n_years": 25,
+   "cell_lat": 40.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.685,
+   "station_ci": [
+    0.385,
+    0.976
+   ],
+   "station_p": 0.0003,
+   "merra2_slope": 0.648,
+   "merra2_ci": [
+    0.324,
+    0.91
+   ],
+   "merra2_p": 0.001,
+   "slope_diff_cell_minus_station": -0.037,
+   "pearson_r_annual": 0.975,
+   "mean_offset_cell_minus_station": -2.16
+  },
+  {
+   "station": "SPE00120080",
+   "name": "GIRONA COSTA BRAVA, SP",
+   "lat": 41.9117,
+   "lon": 2.7631,
+   "elevation_m": 143.0,
+   "n_years": 24,
+   "cell_lat": 42.0,
+   "cell_lon": 2.5,
+   "station_slope": 0.663,
+   "station_ci": [
+    0.298,
+    1.004
+   ],
+   "station_p": 0.0027,
+   "merra2_slope": 0.547,
+   "merra2_ci": [
+    0.159,
+    0.92
+   ],
+   "merra2_p": 0.0106,
+   "slope_diff_cell_minus_station": -0.116,
+   "pearson_r_annual": 0.856,
+   "mean_offset_cell_minus_station": -1.92
+  },
+  {
+   "station": "SPE00120089",
+   "name": "GRANADA AEROPUERTO, SP",
+   "lat": 37.1894,
+   "lon": -3.7892,
+   "elevation_m": 567.0,
+   "n_years": 25,
+   "cell_lat": 37.0,
+   "cell_lon": -3.75,
+   "station_slope": 0.72,
+   "station_ci": [
+    0.368,
+    1.23
+   ],
+   "station_p": 0.0019,
+   "merra2_slope": 0.643,
+   "merra2_ci": [
+    0.378,
+    0.978
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": -0.077,
+   "pearson_r_annual": 0.817,
+   "mean_offset_cell_minus_station": 0.11
+  },
+  {
+   "station": "SPE00120125",
+   "name": "MOLINA DE ARAGON, SP",
+   "lat": 40.8442,
+   "lon": -1.8853,
+   "elevation_m": 1056.0,
+   "n_years": 24,
+   "cell_lat": 41.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.54,
+   "station_ci": [
+    0.278,
+    0.868
+   ],
+   "station_p": 0.0004,
+   "merra2_slope": 0.629,
+   "merra2_ci": [
+    0.333,
+    1.006
+   ],
+   "merra2_p": 0.0014,
+   "slope_diff_cell_minus_station": 0.089,
+   "pearson_r_annual": 0.919,
+   "mean_offset_cell_minus_station": 0.28
+  },
+  {
+   "station": "SPE00120143",
+   "name": "HUELVA RONDA DEL ESTE, SP",
+   "lat": 37.28,
+   "lon": -6.9094,
+   "elevation_m": 19.0,
+   "n_years": 25,
+   "cell_lat": 37.5,
+   "cell_lon": -6.875,
+   "station_slope": 0.502,
+   "station_ci": [
+    0.289,
+    0.721
+   ],
+   "station_p": 0.0004,
+   "merra2_slope": 0.497,
+   "merra2_ci": [
+    0.271,
+    0.76
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": -0.005,
+   "pearson_r_annual": 0.9,
+   "mean_offset_cell_minus_station": -0.62
+  },
+  {
+   "station": "SPE00120161",
+   "name": "HUESCA, SP",
+   "lat": 42.0831,
+   "lon": 0.3264,
+   "elevation_m": 541.0,
+   "n_years": 25,
+   "cell_lat": 42.0,
+   "cell_lon": 0.625,
+   "station_slope": 0.441,
+   "station_ci": [
+    0.115,
+    0.775
+   ],
+   "station_p": 0.0125,
+   "merra2_slope": 0.611,
+   "merra2_ci": [
+    0.256,
+    0.967
+   ],
+   "merra2_p": 0.0019,
+   "slope_diff_cell_minus_station": 0.17,
+   "pearson_r_annual": 0.863,
+   "mean_offset_cell_minus_station": -0.88
+  },
+  {
+   "station": "SPE00120170",
+   "name": "JAEN, SP",
+   "lat": 37.7778,
+   "lon": -3.8075,
+   "elevation_m": 582.0,
+   "n_years": 25,
+   "cell_lat": 38.0,
+   "cell_lon": -3.75,
+   "station_slope": 0.715,
+   "station_ci": [
+    0.439,
+    1.018
+   ],
+   "station_p": 0.0004,
+   "merra2_slope": 0.762,
+   "merra2_ci": [
+    0.467,
+    1.062
+   ],
+   "merra2_p": 0.0004,
+   "slope_diff_cell_minus_station": 0.047,
+   "pearson_r_annual": 0.973,
+   "mean_offset_cell_minus_station": -1.0
+  },
+  {
+   "station": "SPE00120188",
+   "name": "LOGRONO AGONCILLO, SP",
+   "lat": 42.4519,
+   "lon": -2.3308,
+   "elevation_m": 353.0,
+   "n_years": 25,
+   "cell_lat": 42.5,
+   "cell_lon": -2.5,
+   "station_slope": 0.293,
+   "station_ci": [
+    0.009,
+    0.571
+   ],
+   "station_p": 0.0377,
+   "merra2_slope": 0.641,
+   "merra2_ci": [
+    0.228,
+    1.111
+   ],
+   "merra2_p": 0.0035,
+   "slope_diff_cell_minus_station": 0.347,
+   "pearson_r_annual": 0.85,
+   "mean_offset_cell_minus_station": -2.43
+  },
+  {
+   "station": "SPE00120224",
+   "name": "LEON VIRGEN DEL CAMINO, SP",
+   "lat": 42.5889,
+   "lon": -5.6492,
+   "elevation_m": 916.0,
+   "n_years": 25,
+   "cell_lat": 42.5,
+   "cell_lon": -5.625,
+   "station_slope": 0.669,
+   "station_ci": [
+    0.351,
+    0.915
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.478,
+   "merra2_ci": [
+    0.224,
+    0.843
+   ],
+   "merra2_p": 0.0035,
+   "slope_diff_cell_minus_station": -0.191,
+   "pearson_r_annual": 0.901,
+   "mean_offset_cell_minus_station": -0.55
+  },
+  {
+   "station": "SPE00120233",
+   "name": "PONFERRADA, SP",
+   "lat": 42.5639,
+   "lon": -6.6,
+   "elevation_m": 534.0,
+   "n_years": 25,
+   "cell_lat": 42.5,
+   "cell_lon": -6.875,
+   "station_slope": 0.638,
+   "station_ci": [
+    0.396,
+    0.927
+   ],
+   "station_p": 0.0001,
+   "merra2_slope": 0.528,
+   "merra2_ci": [
+    0.271,
+    0.836
+   ],
+   "merra2_p": 0.0007,
+   "slope_diff_cell_minus_station": -0.11,
+   "pearson_r_annual": 0.902,
+   "mean_offset_cell_minus_station": -3.22
+  },
+  {
+   "station": "SPE00120242",
+   "name": "LLEIDA, SP",
+   "lat": 41.6256,
+   "lon": 0.595,
+   "elevation_m": 192.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": 0.625,
+   "station_slope": 0.649,
+   "station_ci": [
+    0.297,
+    0.915
+   ],
+   "station_p": 0.0008,
+   "merra2_slope": 0.666,
+   "merra2_ci": [
+    0.278,
+    0.963
+   ],
+   "merra2_p": 0.0026,
+   "slope_diff_cell_minus_station": 0.016,
+   "pearson_r_annual": 0.973,
+   "mean_offset_cell_minus_station": -0.74
+  },
+  {
+   "station": "SPE00120260",
+   "name": "LUGO ROZAS, SP",
+   "lat": 43.1153,
+   "lon": -7.4558,
+   "elevation_m": 445.0,
+   "n_years": 23,
+   "cell_lat": 43.0,
+   "cell_lon": -7.5,
+   "station_slope": 0.611,
+   "station_ci": [
+    0.404,
+    0.966
+   ],
+   "station_p": 0.0001,
+   "merra2_slope": 0.509,
+   "merra2_ci": [
+    0.178,
+    0.827
+   ],
+   "merra2_p": 0.0083,
+   "slope_diff_cell_minus_station": -0.102,
+   "pearson_r_annual": 0.888,
+   "mean_offset_cell_minus_station": -0.24
+  },
+  {
+   "station": "SPE00120269",
+   "name": "COLMENAR VIEJO FAMET, SP",
+   "lat": 40.6983,
+   "lon": -3.7642,
+   "elevation_m": 1004.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.652,
+   "station_ci": [
+    0.336,
+    0.96
+   ],
+   "station_p": 0.0012,
+   "merra2_slope": 0.588,
+   "merra2_ci": [
+    0.281,
+    0.897
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": -0.064,
+   "pearson_r_annual": 0.978,
+   "mean_offset_cell_minus_station": -0.16
+  },
+  {
+   "station": "SPE00120278",
+   "name": "MADRID BARAJAS, SP",
+   "lat": 40.4667,
+   "lon": -3.5556,
+   "elevation_m": 609.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.749,
+   "station_ci": [
+    0.426,
+    1.019
+   ],
+   "station_p": 0.0002,
+   "merra2_slope": 0.588,
+   "merra2_ci": [
+    0.281,
+    0.897
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": -0.161,
+   "pearson_r_annual": 0.903,
+   "mean_offset_cell_minus_station": -1.6
+  },
+  {
+   "station": "SPE00120287",
+   "name": "MADRID CUATROVIENTOS, SP",
+   "lat": 40.3778,
+   "lon": -3.7892,
+   "elevation_m": 687.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.645,
+   "station_ci": [
+    0.362,
+    0.924
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.588,
+   "merra2_ci": [
+    0.281,
+    0.897
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": -0.057,
+   "pearson_r_annual": 0.984,
+   "mean_offset_cell_minus_station": -2.12
+  },
+  {
+   "station": "SPE00120296",
+   "name": "MADRID GETAFE, SP",
+   "lat": 40.3,
+   "lon": -3.7225,
+   "elevation_m": 617.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.683,
+   "station_ci": [
+    0.364,
+    0.934
+   ],
+   "station_p": 0.0001,
+   "merra2_slope": 0.588,
+   "merra2_ci": [
+    0.281,
+    0.897
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": -0.095,
+   "pearson_r_annual": 0.977,
+   "mean_offset_cell_minus_station": -2.37
+  },
+  {
+   "station": "SPE00120305",
+   "name": "MADRID TORREJON, SP",
+   "lat": 40.4831,
+   "lon": -3.4503,
+   "elevation_m": 611.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -3.75,
+   "station_slope": 0.213,
+   "station_ci": [
+    -0.118,
+    0.509
+   ],
+   "station_p": 0.2158,
+   "merra2_slope": 0.588,
+   "merra2_ci": [
+    0.281,
+    0.897
+   ],
+   "merra2_p": 0.0006,
+   "slope_diff_cell_minus_station": 0.375,
+   "pearson_r_annual": 0.833,
+   "mean_offset_cell_minus_station": -1.39
+  },
+  {
+   "station": "SPE00120323",
+   "name": "MURCIA, SP",
+   "lat": 38.0028,
+   "lon": -1.1692,
+   "elevation_m": 61.0,
+   "n_years": 25,
+   "cell_lat": 38.0,
+   "cell_lon": -1.25,
+   "station_slope": 0.725,
+   "station_ci": [
+    0.505,
+    0.952
+   ],
+   "station_p": 0.0,
+   "merra2_slope": 0.577,
+   "merra2_ci": [
+    0.286,
+    0.917
+   ],
+   "merra2_p": 0.0003,
+   "slope_diff_cell_minus_station": -0.148,
+   "pearson_r_annual": 0.955,
+   "mean_offset_cell_minus_station": -1.98
+  },
+  {
+   "station": "SPE00120332",
+   "name": "MURCIA ALCANTARILLA, SP",
+   "lat": 37.9578,
+   "lon": -1.2294,
+   "elevation_m": 85.0,
+   "n_years": 25,
+   "cell_lat": 38.0,
+   "cell_lon": -1.25,
+   "station_slope": 0.616,
+   "station_ci": [
+    0.376,
+    0.87
+   ],
+   "station_p": 0.0002,
+   "merra2_slope": 0.577,
+   "merra2_ci": [
+    0.286,
+    0.917
+   ],
+   "merra2_p": 0.0003,
+   "slope_diff_cell_minus_station": -0.038,
+   "pearson_r_annual": 0.973,
+   "mean_offset_cell_minus_station": -1.39
+  },
+  {
+   "station": "SPE00120350",
+   "name": "PAMPLONA OBSERVATORIO, SP",
+   "lat": 42.8175,
+   "lon": -1.6364,
+   "elevation_m": 442.0,
+   "n_years": 24,
+   "cell_lat": 43.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.737,
+   "station_ci": [
+    0.363,
+    1.03
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.435,
+   "merra2_ci": [
+    -0.006,
+    0.817
+   ],
+   "merra2_p": 0.05,
+   "slope_diff_cell_minus_station": -0.302,
+   "pearson_r_annual": 0.899,
+   "mean_offset_cell_minus_station": -2.07
+  },
+  {
+   "station": "SPE00120359",
+   "name": "PAMPLONA, SP",
+   "lat": 42.7767,
+   "lon": -1.65,
+   "elevation_m": 459.0,
+   "n_years": 25,
+   "cell_lat": 43.0,
+   "cell_lon": -1.875,
+   "station_slope": 0.298,
+   "station_ci": [
+    0.027,
+    0.633
+   ],
+   "station_p": 0.0422,
+   "merra2_slope": 0.477,
+   "merra2_ci": [
+    0.085,
+    0.851
+   ],
+   "merra2_p": 0.0208,
+   "slope_diff_cell_minus_station": 0.179,
+   "pearson_r_annual": 0.835,
+   "mean_offset_cell_minus_station": -1.69
+  },
+  {
+   "station": "SPE00120368",
+   "name": "OURENSE, SP",
+   "lat": 42.3278,
+   "lon": -7.8603,
+   "elevation_m": 143.0,
+   "n_years": 24,
+   "cell_lat": 42.5,
+   "cell_lon": -8.125,
+   "station_slope": 0.514,
+   "station_ci": [
+    0.246,
+    0.784
+   ],
+   "station_p": 0.0014,
+   "merra2_slope": 0.512,
+   "merra2_ci": [
+    0.264,
+    0.788
+   ],
+   "merra2_p": 0.001,
+   "slope_diff_cell_minus_station": -0.002,
+   "pearson_r_annual": 0.949,
+   "mean_offset_cell_minus_station": -3.05
+  },
+  {
+   "station": "SPE00120395",
+   "name": "PONTEVEDRA, SP",
+   "lat": 42.44,
+   "lon": -8.6164,
+   "elevation_m": 108.0,
+   "n_years": 25,
+   "cell_lat": 42.5,
+   "cell_lon": -8.75,
+   "station_slope": 0.411,
+   "station_ci": [
+    0.118,
+    0.721
+   ],
+   "station_p": 0.0054,
+   "merra2_slope": 0.384,
+   "merra2_ci": [
+    0.126,
+    0.654
+   ],
+   "merra2_p": 0.0022,
+   "slope_diff_cell_minus_station": -0.027,
+   "pearson_r_annual": 0.974,
+   "mean_offset_cell_minus_station": -0.86
+  },
+  {
+   "station": "SPE00120413",
+   "name": "VIGO PEINADOR, SP",
+   "lat": 42.2392,
+   "lon": -8.6239,
+   "elevation_m": 261.0,
+   "n_years": 25,
+   "cell_lat": 42.0,
+   "cell_lon": -8.75,
+   "station_slope": 0.49,
+   "station_ci": [
+    0.185,
+    0.704
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.387,
+   "merra2_ci": [
+    0.123,
+    0.607
+   ],
+   "merra2_p": 0.0035,
+   "slope_diff_cell_minus_station": -0.103,
+   "pearson_r_annual": 0.758,
+   "mean_offset_cell_minus_station": -0.01
+  },
+  {
+   "station": "SPE00120422",
+   "name": "SALAMANCA OBS., SP",
+   "lat": 40.9564,
+   "lon": -5.6614,
+   "elevation_m": 775.0,
+   "n_years": 24,
+   "cell_lat": 41.0,
+   "cell_lon": -5.625,
+   "station_slope": 0.689,
+   "station_ci": [
+    0.472,
+    1.035
+   ],
+   "station_p": 0.0001,
+   "merra2_slope": 0.731,
+   "merra2_ci": [
+    0.437,
+    1.044
+   ],
+   "merra2_p": 0.0003,
+   "slope_diff_cell_minus_station": 0.042,
+   "pearson_r_annual": 0.949,
+   "mean_offset_cell_minus_station": -1.39
+  },
+  {
+   "station": "SPE00120485",
+   "name": "SEGOVIA, SP",
+   "lat": 40.9478,
+   "lon": -4.1269,
+   "elevation_m": 1005.0,
+   "n_years": 25,
+   "cell_lat": 41.0,
+   "cell_lon": -4.375,
+   "station_slope": 0.555,
+   "station_ci": [
+    0.253,
+    0.943
+   ],
+   "station_p": 0.0022,
+   "merra2_slope": 0.57,
+   "merra2_ci": [
+    0.27,
+    0.929
+   ],
+   "merra2_p": 0.0019,
+   "slope_diff_cell_minus_station": 0.015,
+   "pearson_r_annual": 0.974,
+   "mean_offset_cell_minus_station": -1.21
+  },
+  {
+   "station": "SPE00120503",
+   "name": "MORON DE LA FRONTERA, SP",
+   "lat": 37.1581,
+   "lon": -5.6156,
+   "elevation_m": 87.0,
+   "n_years": 25,
+   "cell_lat": 37.0,
+   "cell_lon": -5.625,
+   "station_slope": 0.665,
+   "station_ci": [
+    0.447,
+    0.955
+   ],
+   "station_p": 0.0003,
+   "merra2_slope": 0.616,
+   "merra2_ci": [
+    0.373,
+    0.882
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": -0.049,
+   "pearson_r_annual": 0.906,
+   "mean_offset_cell_minus_station": -1.1
+  },
+  {
+   "station": "SPE00120512",
+   "name": "SEVILLA SAN PABLO, SP",
+   "lat": 37.4167,
+   "lon": -5.8792,
+   "elevation_m": 34.0,
+   "n_years": 25,
+   "cell_lat": 37.5,
+   "cell_lon": -5.625,
+   "station_slope": 0.064,
+   "station_ci": [
+    -0.154,
+    0.368
+   ],
+   "station_p": 0.4691,
+   "merra2_slope": 0.631,
+   "merra2_ci": [
+    0.373,
+    0.87
+   ],
+   "merra2_p": 0.0002,
+   "slope_diff_cell_minus_station": 0.567,
+   "pearson_r_annual": 0.566,
+   "mean_offset_cell_minus_station": -1.43
+  },
+  {
+   "station": "SPE00120521",
+   "name": "SORIA, SP",
+   "lat": 41.775,
+   "lon": -2.4831,
+   "elevation_m": 1082.0,
+   "n_years": 24,
+   "cell_lat": 42.0,
+   "cell_lon": -2.5,
+   "station_slope": 0.691,
+   "station_ci": [
+    0.359,
+    1.16
+   ],
+   "station_p": 0.0023,
+   "merra2_slope": 0.702,
+   "merra2_ci": [
+    0.325,
+    1.053
+   ],
+   "merra2_p": 0.0014,
+   "slope_diff_cell_minus_station": 0.011,
+   "pearson_r_annual": 0.956,
+   "mean_offset_cell_minus_station": -2.28
+  },
+  {
+   "station": "SPE00120530",
+   "name": "REUS AEROPUERTO, SP",
+   "lat": 41.1494,
+   "lon": 1.1789,
+   "elevation_m": 71.0,
+   "n_years": 24,
+   "cell_lat": 41.0,
+   "cell_lon": 1.25,
+   "station_slope": 0.569,
+   "station_ci": [
+    0.288,
+    0.945
+   ],
+   "station_p": 0.0007,
+   "merra2_slope": 0.646,
+   "merra2_ci": [
+    0.382,
+    0.891
+   ],
+   "merra2_p": 0.0001,
+   "slope_diff_cell_minus_station": 0.077,
+   "pearson_r_annual": 0.793,
+   "mean_offset_cell_minus_station": 0.35
+  },
+  {
+   "station": "SPE00120557",
+   "name": "TERUEL, SP",
+   "lat": 40.3494,
+   "lon": -1.1167,
+   "elevation_m": 900.0,
+   "n_years": 25,
+   "cell_lat": 40.5,
+   "cell_lon": -1.25,
+   "station_slope": 0.854,
+   "station_ci": [
+    0.552,
+    1.113
+   ],
+   "station_p": 0.0001,
+   "merra2_slope": 0.68,
+   "merra2_ci": [
+    0.372,
+    1.005
+   ],
+   "merra2_p": 0.0007,
+   "slope_diff_cell_minus_station": -0.175,
+   "pearson_r_annual": 0.968,
+   "mean_offset_cell_minus_station": -2.23
+  },
+  {
+   "station": "SPE00120566",
+   "name": "TOLEDO, SP",
+   "lat": 39.8844,
+   "lon": -4.0492,
+   "elevation_m": 515.0,
+   "n_years": 25,
+   "cell_lat": 40.0,
+   "cell_lon": -3.75,
+   "station_slope": 0.677,
+   "station_ci": [
+    0.376,
+    1.009
+   ],
+   "station_p": 0.0002,
+   "merra2_slope": 0.579,
+   "merra2_ci": [
+    0.274,
+    0.891
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": -0.098,
+   "pearson_r_annual": 0.98,
+   "mean_offset_cell_minus_station": -1.67
+  },
+  {
+   "station": "SPE00120593",
+   "name": "VALLADOLID, SP",
+   "lat": 41.65,
+   "lon": -4.7667,
+   "elevation_m": 735.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": -5.0,
+   "station_slope": 0.682,
+   "station_ci": [
+    0.359,
+    1.01
+   ],
+   "station_p": 0.001,
+   "merra2_slope": 0.622,
+   "merra2_ci": [
+    0.318,
+    1.028
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": -0.06,
+   "pearson_r_annual": 0.958,
+   "mean_offset_cell_minus_station": -0.74
+  },
+  {
+   "station": "SPE00120602",
+   "name": "VALLADOLID VILLANUBLA, SP",
+   "lat": 41.7,
+   "lon": -4.85,
+   "elevation_m": 846.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": -5.0,
+   "station_slope": 0.518,
+   "station_ci": [
+    0.232,
+    0.828
+   ],
+   "station_p": 0.0047,
+   "merra2_slope": 0.622,
+   "merra2_ci": [
+    0.318,
+    1.028
+   ],
+   "merra2_p": 0.0008,
+   "slope_diff_cell_minus_station": 0.104,
+   "pearson_r_annual": 0.949,
+   "mean_offset_cell_minus_station": 0.7
+  },
+  {
+   "station": "SPE00120611",
+   "name": "BILBAO AEROPUERTO, SP",
+   "lat": 43.2981,
+   "lon": -2.9056,
+   "elevation_m": 42.0,
+   "n_years": 25,
+   "cell_lat": 43.5,
+   "cell_lon": -3.125,
+   "station_slope": 0.464,
+   "station_ci": [
+    0.114,
+    0.768
+   ],
+   "station_p": 0.0072,
+   "merra2_slope": 0.438,
+   "merra2_ci": [
+    0.148,
+    0.753
+   ],
+   "merra2_p": 0.003,
+   "slope_diff_cell_minus_station": -0.027,
+   "pearson_r_annual": 0.941,
+   "mean_offset_cell_minus_station": -0.15
+  },
+  {
+   "station": "SPE00120620",
+   "name": "ZAMORA, SP",
+   "lat": 41.5167,
+   "lon": -5.7333,
+   "elevation_m": 656.0,
+   "n_years": 25,
+   "cell_lat": 41.5,
+   "cell_lon": -5.625,
+   "station_slope": 0.815,
+   "station_ci": [
+    0.521,
+    1.169
+   ],
+   "station_p": 0.0,
+   "merra2_slope": 0.635,
+   "merra2_ci": [
+    0.349,
+    0.983
+   ],
+   "merra2_p": 0.0004,
+   "slope_diff_cell_minus_station": -0.18,
+   "pearson_r_annual": 0.954,
+   "mean_offset_cell_minus_station": -1.27
+  },
+  {
+   "station": "SPE00120629",
+   "name": "DAROCA, SP",
+   "lat": 41.1144,
+   "lon": -1.4106,
+   "elevation_m": 779.0,
+   "n_years": 25,
+   "cell_lat": 41.0,
+   "cell_lon": -1.25,
+   "station_slope": 0.178,
+   "station_ci": [
+    -0.155,
+    0.504
+   ],
+   "station_p": 0.3153,
+   "merra2_slope": 0.66,
+   "merra2_ci": [
+    0.34,
+    1.019
+   ],
+   "merra2_p": 0.001,
+   "slope_diff_cell_minus_station": 0.482,
+   "pearson_r_annual": 0.875,
+   "mean_offset_cell_minus_station": -1.52
+  }
+ ],
+ "provenance": {
+  "noaa_files_sha256": {
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2001-2004_metric.csv": "d343edfd74efd0bf96cb0b5b4e60cbde5dbfebf962514c621cc6801011af0c5f",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2005-2007_metric.csv": "075d779d979abb7cfe81ad575bc4f0db03ec602f2b738b4c0addf2a6812353ae",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2008-2010_metric.csv": "15b1009f24b3540fa1acdd6a323c3fc9f9f02f494959c26cfc2192bab92d129d",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2011-2011_metric.csv": "ba2139bb6dcbcfde34d858cf04a809e832ebed0a839fc74d6040b438da46bafd",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2012-2014_metric.csv": "6b4fd5faa48cfede6b56e61a260ec084f321d95e12ce1754fc49827658bc82aa",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2015-2017_metric.csv": "6854a811c835a92f7279241537a98e89938f2390adc9c53b973144ee9630e92a",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2018-2020_metric.csv": "5c35e80817cb1e18fd5cecbe810a3a632dab61cfecb10f1a984d7805ce1fdea9",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2021-2023_metric.csv": "1a3fd45cef1d0836a69a43e6f8cd58caa85870ac79e5c0758c5aa62a7e33b5ed",
+   "data/noaa_ghcnd_spain_daily/ghcnd_spain_daily_2024-2026_metric.csv": "72cbbefa5f60ee226d581a581648a8f22260836fb70e289fde9caaf89cee01cb"
+  },
+  "merra2_files_sha256": {
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2001.nc": "06d6bb9b42e5088b057f3efef73f41745e53fd49e0e628609fbf989240d46b34",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2002.nc": "c1ec9f1309b11e91b5289fe299adcf9dc296c3bdeac199986143b659ffad0d9f",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2003.nc": "297017e7ab0fa59afa6b58e28f9bd13a3ce09c31a26629f951e9f7c22e38efac",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2004.nc": "587f11091ea36c8bd04a6128309bbe0ada51aacdbd71316099d2adaac41d4bfc",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2005.nc": "d1d9aa4b25370e31db58412542f5288fb82aed7e0db4e6a3fb17a0ecb984017e",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2006.nc": "d16ed78b357fae329f2326b3c4be5556cd2a3b7ed19a5738463ff9530eed8568",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2007.nc": "727e79b946a34e9b40617306466afdfe85cb8b8921989c327b704e3cf4a28a9d",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2008.nc": "06cf18a4b04c936122032984108055bd50fabf8ff06af5e8daf4122a23ea3432",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2009.nc": "3e7e47a0f03014e45dc432553aeb4fc37ffc66b797728dd53206f6bce6a40561",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2010.nc": "70a90d60f5a98488e222e65b8787b516ddf205ee3e527be10c3cbf78d2d91ae5",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2011.nc": "214decbb078b80992a72677f70eb405def081103462444382e50de2086242261",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2012.nc": "e2786c134db826828516c9c4ca36a1147e0a05e1ec019f8bed5ca28a970ee4e9",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2013.nc": "62471057947f237c8e2a5cc48eb7dd3ceac0a92cdc3fb70392feff04cc80d4e0",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2014.nc": "b93c4c3d892b84ff6d530007a639108ca5259f954c1d622694fd121afddd22fc",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2015.nc": "0e39b703c8c2c8acfaf2e09e2872cecee6599e3dfcfa94eba2a55c72d7b2de5a",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2016.nc": "637a628370e0e77ef2a863d26e25ff1f8870f2270abeb4173f775abfcf7b15af",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2017.nc": "c9df4d662089b92e69a0331056cf0f3ca64740530229da18dbb6901818544932",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2018.nc": "070eef05f90103d6e7ae95506b89f9441e354bb6b4cbaf215f13f75aa42da5f5",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2019.nc": "66eac580f653000faf66497ecd9f82276b7c08626cfacd5e094e02644249b098",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2020.nc": "efb0e83c648c42a7fc9bbb7f8cd45022c5328ce9db1ddf9118c98f2f1c212e25",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2021.nc": "f8bfc65fe5c9c67cdb75c344b963f0fd249c4f0205be2d0d1791c5b9f1850647",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2022.nc": "f2dc9c423f8c5873990a42816c47ac7b16966277cfbaf6eb7d5ea2514c428391",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2023.nc": "ee7cc33ee0912311f10e9d2248f066d07a4037c36e4f48f984c8a0d6b6a388e5",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2024.nc": "72111af9724b0739e679ca0394281bb17815f2ef80c07e92c19758e90f62dd5c",
+   "data/processed/spain/merra2/M2TMNXSLV_5.12.4_spain_2025.nc": "3edcd99e095034a95286879f25833900f3f3d6b6caf270a96d1907da54377806"
+  },
+  "code": {
+   "scripts/validate_merra2_vs_noaa.py": "d4b23d7f72cf3d852c098a39acafe1be71e8afa428dbac88fc8683aa29a4d180",
+   "packages/science/trends.py": "30e79cc5326798036281431b1b18cd6bf7e9017d7ec8fcaf07b42e6f562efc51"
+  }
+ }
+}

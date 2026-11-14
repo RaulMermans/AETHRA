@@ -54,7 +54,7 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
   check (14 Nov, unweighted series): sign stable and MK p < 0.03 in all windows tried, magnitude
   0.34 (2000–2020) to 0.74 (2005–2025) °C/decade, residual lag-1 r ≈ 0.03.* Accept: the claim
   states the range, not a single value with false precision.
-- [ ] **P0-S5 Independent check.** *Not done: NOAA stations now have clean per-station trends (BH-controlled), but no MERRA-2 vs station comparison is written up yet.*
+- [x] **P0-S5 Independent check.** *Computed 14 Nov (D52, `scripts/validate_merra2_vs_noaa.py`): 64 paired stations, 64/64 same sign, median slope difference +0.004 °C/decade, median r 0.93; 5 disagreements documented. Second-person review PENDING (`docs/SCIENTIFIC_REVIEW.md`).*
 - [x] **P0-S6 Map multiplicity.** *Done: maps show slope only (legend says so); `cell_q_value` stored (MERRA-2 99.6 % of cells q < 0.05; GPM 0 %); station catalog uses BH q.*
 - [x] **P0-S7 Period.** *Decided by default: 2000–2025 (data on disk). 1980 extension not done; D37 stays OPEN for after submission.*
 
@@ -68,7 +68,7 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 ### Frontend & experience (owner: unassigned)
 
 - [x] **P0-F1 Render, don't recompute.** *Done (D47): browser statistics removed; guard test.*
-- [x] **P0-F2 EvidenceCard.** *`EvidenceCardPanel.tsx` (map tool "Evidence cards") renders `public/data/evidence-cards.json` from `scripts/export_evidence_cards.py`; typecheck + lint pass; **not yet checked visually in a browser**.* What / where / when / how much / evidence / trust, plus "do not
+- [x] **P0-F2 EvidenceCard.** *`EvidenceCardPanel.tsx` (map tool "Evidence cards") renders `public/data/evidence-cards.json` from `scripts/export_evidence_cards.py`; typecheck + lint pass. **Checked in a browser 14 Nov (production build, judge mode): full demo path 3× in a row, 0 console errors; scope-exact since D50.*** What / where / when / how much / evidence / trust, plus "do not
   conclude" line. Reachable in one click from the chart.
 - [x] **P0-F3 Outcome states** *(EvidencePanel + EvidenceCardPanel: text + glyph, exhaustive switch)*
 - [x] **P0-F4 Demo path hygiene.** *Done on the climate path (D47): no 2030 mode, slider ends at 2025, no Decision Matrix. The Energy Tech Lab tab (D44, EXPLORATORY) still contains rankings and 2030 series; it is opt-in and off the demo path.*
@@ -79,9 +79,9 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 - [ ] **P0-P2** Slide 5 written from a gate-checked result only. Claim review by a second person.
 - [ ] **P0-P3** Rehearsed demo ≤ 2:00 with a fallback screen recording.
 
-**Immediate next action (updated 14 Nov ~21:15):** open `/explore` in a browser and click through
-the demo path (Spain → Temperature → a CCAA → Trend panel → Evidence cards) three times; then a
-second team member reviews both EvidenceCards (`data/results/README.md`). Then P0-S5.
+**Immediate next action (updated 14 Nov, final sprint):** a second team member works through the
+PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and decides D53. Then P0-P1–P3 (submission
+checklist, slide 5 from the approved claims in `DEMO_AND_SUBMISSION.md`, rehearsal + fallback recording).
 
 ## P1 — only after P0 is green
 
@@ -91,10 +91,17 @@ second team member reviews both EvidenceCards (`data/results/README.md`). Then P
 - Regional comparison with a proper difference test.
 - GPM precipitation and GLDAS soil moisture through the same gates (secondary context).
 - A concise energy-relevance interpretation, written only from Gate 3 results.
+- **P1 CONDITIONAL — observed generation comparison.** Only with independently verified generation time
+  series at a compatible spatial/temporal scale: compare NASA resource conditions with observed generation,
+  keep MW, MWh, capacity factor and resource distinct, account for changing installed capacity and
+  operational constraints (curtailment, outages), never assign aggregate generation to single plants,
+  never read correlation as causation. Not started.
+- **Energy infrastructure context (D49).** *Built 14 Nov at the human's request while P0 was open; hidden in judge mode (D51); not a sprint deliverable.* DoD: a user selects one verified installation (Castilla y León register layer), sees its metadata, source and data date, the MERRA-2 cell vs the province support, and the province's precomputed NASA result. Generation comparison: not done (needs a separately validated plant-level series). Not shown in the demo unless P0 is green and a second person reviews it.
 
 ## P2 / DEFERRED
 
-Site selection or ranking · generation/production modelling · storage sizing · grid dispatch,
+Plant-by-plant performance rankings · investment suitability scores · energy output predictions · grid
+optimisation · site recommendations · site selection or ranking · generation/production modelling · storage sizing · grid dispatch,
 outage or price prediction · investment/ROI recommendations · 2030–2040 projections or any
 extrapolation shown as a forecast · ML forecasting · causal attribution · universal dataset explorer
 · AI agent producing findings · new map tools, terrain or visual effects · branding work.

@@ -10,7 +10,10 @@ values below are copied from the AnalysisBundles in this folder, generated 14 No
 .venv/bin/python packages/science/test_trends.py       # statistics tests (10 pass)
 .venv/bin/python scripts/analyze_energy_gap.py         # → energy_gap/
 .venv/bin/python scripts/analyze_gate_a_temperature.py # → gate_a_temperature/
+.venv/bin/python scripts/check_energy_gap_independence.py  # → energy_gap/independence_check.json
 .venv/bin/python scripts/export_evidence_cards.py      # → apps/web/public/data/evidence-cards.json
+.venv/bin/python scripts/validate_merra2_vs_noaa.py    # → noaa_validation/ (P0-S5)
+.venv/bin/python scripts/check_scope_multiplicity.py   # → scope_multiplicity/
 ```
 
 Two consecutive runs produced byte-identical `results`.
@@ -45,8 +48,10 @@ than about +2.2 or below −1.8 days per decade, around a typical 8 days/yr.
 ### Descriptive context (not confirmatory)
 
 - **Complementarity holds every year.** Joint-low days occur at about **half** the rate expected if
-  solar and wind were independent, given each year's own low-day rates: Peninsula 183 vs 370 expected
-  over 25 years (ratio 0.50). The ratio is 0.44–0.53 in Galicia, Castilla y León and Andalucía and
+  solar and wind were independent: Peninsula 183 vs 370 expected over 25 years (ratio 0.50). Now
+  reproducible and checked against three null models, incl. year-shift surrogates that keep seasonality
+  and persistence (95 % range 343–405): `independence_check.json` from
+  `scripts/check_energy_gap_independence.py`. Descriptive only: not a trend, not reliability. The ratio is 0.44–0.53 in Galicia, Castilla y León and Andalucía and
   **0.79 in Aragón**. Daily solar and wind anomalies are negatively rank-correlated in **25 of 25
   years** (median Kendall τ ≈ −0.2). Aragón is the weakest case (τ ≈ −0.07, 23/25 years).
 - **Marginal resources (E0):** no significant trend in annual mean insolation (Peninsula +0.03 kWh m⁻²
@@ -68,6 +73,19 @@ MERRA-2 M2TMNXSLV 5.12.4 `T2M`, annual mean, Peninsula + Balearics, area-weighte
 **+0.60 °C/decade (95 % CI +0.31 to +0.87), p = 0.0004**, lag-1 r = −0.05 (no correction needed).
 The sign is positive in all 6 windows tested. Magnitude ranges **+0.41 to +0.83 °C/decade** with the
 window. Outcome: **supported increase**. This is a reanalysis result. It says nothing about energy.
+
+## 3. NASA vs NOAA check (P0-S5), `noaa_validation/`
+
+`scripts/validate_merra2_vs_noaa.py`. 64 stations with ≥ 23 complete years (station (TMAX+TMIN)/2),
+each paired with its own MERRA-2 cell, 2001–2025: 64/64 same sign (all warming), median slope difference
+(cell − station) +0.004 °C/decade (IQR −0.07 to +0.10), median interannual r 0.93. Five stations warm
+0.4–0.6 °C/decade less than their cell (Sevilla San Pablo, Ibiza, Menorca, Daroca, Córdoba). Figure
+`slopes.svg`. Details and caveats: `docs/SCIENTIFIC_REVIEW.md` §3.
+
+## 4. Regional label multiplicity, `scope_multiplicity/`
+
+`scripts/check_scope_multiplicity.py`: with BH across ~72 UI regions, all temperature labels hold; 0/6 rain,
+0/6 rain-anomaly and 1/17 runoff "Supported" labels hold. UI labels unchanged (D53, decision pending).
 
 ## What these results do NOT show
 
