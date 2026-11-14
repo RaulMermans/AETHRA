@@ -1,13 +1,13 @@
-# 🌡️ Spain weather stations: daily data (2015 → 2026)
+# 🌡️ Spain weather stations: daily data (2012 → 2026)
 
 **What it is:** real thermometer and rain-gauge readings from **~177 weather stations across Spain**, one row per station per day.
 **Source:** NOAA GHCN-Daily (Global Historical Climatology Network). 🇪🇸 **Not NASA**: we use it as *ground truth* to validate NASA data.
 
 | | |
 |---|---|
-| 📅 Period | 2015-01-01 → 2026-11-07 |
+| 📅 Period | 2012-01-01 → 2026-11-07 |
 | 📍 Stations | ~177 (Madrid Retiro, Málaga, Sevilla, Puigcerdà, Izaña…) |
-| 🧾 Rows | ~700,000 |
+| 🧾 Rows | ~880,000 |
 | 📏 Units | °C and mm |
 | 📁 Files | one CSV per 3 years: `ghcnd_spain_daily_<from>-<to>_metric.csv` |
 
@@ -38,7 +38,7 @@ SP000003195  MADRID RETIRO, SP  40.4117  -3.6781   667.0     2025-07-10  0.0   3
 - Plot a station's temperature or rain over time
 - Spot heatwaves, cold snaps and extreme rain
 - **Check NASA satellite/model data against real measurements** (main use in this project)
-- ⚠️ ~12 years is short for a *climate* trend; aim for 30+ years before claiming one
+- ⚠️ ~15 years is short for a *climate* trend; aim for 30+ years before claiming one
 
 ## Quick start (Python)
 
