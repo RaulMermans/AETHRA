@@ -1,0 +1,301 @@
+{
+ "generated_by": "scripts/export_evidence_cards.py",
+ "cards": [
+  {
+   "id": "energy-gap-R0",
+   "status": "EXPLORATORY until reviewed by a second team member (Gate 3)",
+   "question": "Have days with jointly low solar and wind resources become more or less frequent since 2001?",
+   "outcome": "insufficient_evidence",
+   "outcome_label": "Insufficient evidence",
+   "what": "Days per year when BOTH daily solar insolation and daily mean 50 m wind speed fall below their own monthly 20th percentile (reference 2001–2020)",
+   "where": "Peninsula + Balearics — regional mean of NASA POWER cells (solar 1° × 1°, wind 0.5° × 0.625°)",
+   "when": "2001–2025, calendar years, daily data in local solar time",
+   "how_much": {
+    "slope_per_decade": 0.0,
+    "ci95_per_decade": [
+     -1.85,
+     2.16
+    ],
+    "units": "days per decade",
+    "median_per_year": 8.0,
+    "expected_if_independent": 14.6
+   },
+   "evidence": {
+    "method": "Theil-Sen slope + Gilbert 95% CI; Mann-Kendall (ties-corrected), no autocorrelation correction needed",
+    "n_years": 25,
+    "p": 0.759,
+    "p_adjusted_bh": 0.794,
+    "lag1_autocorr": -0.31,
+    "min_detectable_trend_per_decade": 2.56,
+    "sensitivity": {
+     "P10_ref2001-2020": 0.0,
+     "P30_ref2001-2020": 1.25,
+     "P20_ref2001-2010": 0.0
+    }
+   },
+   "context": {
+    "solar_mean_trend": "+0.032 (95% CI -0.018 to +0.097; p = 0.13) kWh m⁻² day⁻¹ per decade",
+    "wind_mean_trend": "-0.043 (95% CI -0.127 to +0.033; p = 0.34) m s⁻¹ per decade",
+    "solar_wind_rank_correlation_median": -0.2
+   },
+   "do_not_conclude": "Not electricity generation, not grid reliability or outage risk, not site suitability, not a forecast.",
+   "limitations": [
+    "Solar is a 1° satellite-derived product (CERES SYN1deg); wind is MERRA-2 reanalysis with known biases (underestimates Mediterranean wind power).",
+    "Daily totals and means; sub-daily lulls are not resolved.",
+    "25 annual values: limited power to detect small trends.",
+    "Pre-registered single definition (P20); sensitivity to P10/P30 shown above."
+   ],
+   "series": {
+    "label": "Joint-low days",
+    "units": "days per year",
+    "years": [
+     2001,
+     2002,
+     2003,
+     2004,
+     2005,
+     2006,
+     2007,
+     2008,
+     2009,
+     2010,
+     2011,
+     2012,
+     2013,
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021,
+     2022,
+     2023,
+     2024,
+     2025
+    ],
+    "values": [
+     5,
+     3,
+     8,
+     10,
+     4,
+     10,
+     12,
+     8,
+     6,
+     11,
+     5,
+     8,
+     6,
+     10,
+     2,
+     7,
+     4,
+     9,
+     5,
+     8,
+     13,
+     5,
+     11,
+     5,
+     8
+    ],
+    "complete": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "trend_line": {
+    "intercept": 8.0,
+    "slope_per_decade": 0.0
+   },
+   "sources": [
+    {
+     "name": "NASA POWER ALLSKY_SFC_SW_DWN (CERES SYN1deg Ed4.2)",
+     "role": "daily solar insolation",
+     "url": "https://power.larc.nasa.gov/docs/"
+    },
+    {
+     "name": "NASA POWER WS50M (GMAO MERRA-2)",
+     "role": "daily 50 m wind speed",
+     "url": "https://power.larc.nasa.gov/docs/"
+    }
+   ],
+   "provenance": {
+    "bundle": "data/results/energy_gap/analysis_bundle.json",
+    "bundle_sha256": "047f2e4355905227f569449791279a60e8324c20ae2795aba953d36a431a44e6",
+    "git": "b9415b6e968a47bb6758ff77c8dc41c50a57d9b7+uncommitted"
+   }
+  },
+  {
+   "id": "gate-a-temperature-R0",
+   "status": "EXPLORATORY until reviewed (Gate 2); D36 still PROPOSED",
+   "question": "Has near-surface air temperature changed over Peninsular Spain and the Balearics since 2000?",
+   "outcome": "supported_increase",
+   "outcome_label": "Supported increase",
+   "what": "Annual mean 2 m air temperature (MERRA-2 reanalysis)",
+   "where": "Peninsula + Balearics — area-weighted mean of 0.5° × 0.625° cells",
+   "when": "2000–2025, complete calendar years",
+   "how_much": {
+    "slope_per_decade": 0.6,
+    "ci95_per_decade": [
+     0.31,
+     0.87
+    ],
+    "units": "°C per decade",
+    "window_range_per_decade": [
+     0.41,
+     0.83
+    ]
+   },
+   "evidence": {
+    "method": "Theil-Sen slope + Gilbert 95% CI; Mann-Kendall (ties-corrected), no autocorrelation correction needed",
+    "n_years": 26,
+    "p": 0.0004,
+    "lag1_autocorr": -0.05,
+    "sensitivity": {
+     "2000-2025": 0.6,
+     "2001-2025": 0.61,
+     "2005-2025": 0.83,
+     "2000-2020": 0.41,
+     "2000-2022": 0.46,
+     "2003-2023": 0.62
+    }
+   },
+   "do_not_conclude": "Not a cause of warming, not a forecast, not evidence about energy production.",
+   "limitations": [
+    "Reanalysis (model + data assimilation), ~50 km cells: not a station measurement.",
+    "26 years; magnitude depends on the window (range shown), the sign does not."
+   ],
+   "series": {
+    "label": "Annual mean T2M",
+    "units": "°C",
+    "years": [
+     2000,
+     2001,
+     2002,
+     2003,
+     2004,
+     2005,
+     2006,
+     2007,
+     2008,
+     2009,
+     2010,
+     2011,
+     2012,
+     2013,
+     2014,
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020,
+     2021,
+     2022,
+     2023,
+     2024,
+     2025
+    ],
+    "values": [
+     13.4,
+     13.386,
+     13.561,
+     13.878,
+     13.379,
+     13.472,
+     14.116,
+     13.166,
+     13.148,
+     13.933,
+     12.869,
+     14.107,
+     13.576,
+     12.979,
+     14.061,
+     14.292,
+     13.982,
+     14.485,
+     13.609,
+     14.157,
+     14.382,
+     13.884,
+     15.32,
+     15.041,
+     14.902,
+     14.857
+    ],
+    "complete": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "trend_line": {
+    "intercept": -105.873605,
+    "slope_per_decade": 0.595752
+   },
+   "sources": [
+    {
+     "name": "NASA MERRA-2 M2TMNXSLV 5.12.4 (DOI 10.5067/AP1B0BA5PD2K)",
+     "role": "monthly 2 m air temperature",
+     "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+    }
+   ],
+   "provenance": {
+    "bundle": "data/results/gate_a_temperature/analysis_bundle.json",
+    "bundle_sha256": "b55cb69f2a0469056df583d0bb927c8910d9fba68f105044309a3f9219dad46b",
+    "git": "b9415b6e968a47bb6758ff77c8dc41c50a57d9b7+uncommitted"
+   }
+  }
+ ]
+}

@@ -1,34 +1,58 @@
-# Guidelines for AI Coding Agents
+# Guardrails for AI Coding Agents
 
-These are guidelines, not gates. Use judgment and move fast; the hackathon clock matters more than
-process.
+Move fast on code, but never cut corners on science. A result we can't defend loses more points under
+*Validity* than a missing feature does. If a request conflicts with a rule below, stop and ask the
+human. Don't work around it.
 
-| Working on… | Useful context |
+| Working on… | Read first |
 |---|---|
-| Anything | `docs/PROJECT.md`, `docs/DECISIONS.md` |
+| Anything | `docs/PROJECT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md` |
 | Git | `docs/TEAM_WORKFLOW.md` |
-| `apps/web` or any UI | `docs/UX_UI_RULES.md` |
-| `data/`, `packages/science`, `services/api` | `docs/DATASETS.md` |
+| `apps/web` or any UI | `docs/UX_UI_RULES.md`, `docs/adr/001-cesium-globe.md` |
+| `data/`, `scripts/`, `packages/science`, `services/api` | `docs/DATASETS.md`, `docs/adr/002-evidence-chain-alignment.md` |
+| Solar / wind / energy work | `docs/ENERGY_RESEARCH.md` |
+| Demo, slides, submission text | `docs/DEMO_AND_SUBMISSION.md` |
+| Any task (hard stops, claim review) | skill `.agents/skills/non-negotiables` |
+| Scoping, priorities, submission | skill `.agents/skills/challenge-contract` |
+| Framing, features, copy, energy angle | skill `.agents/skills/product-thesis` |
+| UI, charts, maps, UI text | skill `.agents/skills/scientific-ux-ui` |
+| Any code change | skill `.agents/skills/code-quality-gate` |
+| `.ts` / `.tsx` | skill `.agents/skills/typescript-strict` |
+| `.py` | skill `.agents/skills/python-typed` |
 
-## General
+## Never do silently (ask a human, then record it in `docs/DECISIONS.md`)
 
-1. Look at existing files before changing them and don't throw away teammates' work by accident.
-2. Implementation is open — build features whenever useful.
-3. Prefer small, simple changes; add dependencies when they help.
-4. Decisions in `docs/DECISIONS.md` can be changed; just record the change there.
-5. Pushing to `main` is fine; always pull before pushing and **never force push to `main`**
-   (see `docs/TEAM_WORKFLOW.md`).
-6. Never commit secrets (`.env`, `~/.netrc`, tokens). Keep data files under 50 MB each.
+1. Change a dataset, version, variable, baseline, analysis period, spatial support or trend method.
+2. Upgrade a dataset or result to READY or validated (see readiness classes in `DATASETS.md`).
+   Only a recorded gate check can do that.
+3. Add a scientific claim to UI, docs or slides that no recorded result supports. That includes causal
+   wording, energy-production or grid claims, and any statement about 2030.
+4. Start a new feature area (new tools, new industries, forecasting, ML, site ranking). P2 items in
+   `ROADMAP.md` are off-limits until P0 is green.
+5. Edit a **LOCKED** decision, or change the MVP's primary scientific question.
+6. Compute or redefine a scientific conclusion (slope, p-value, CI, significance label, aggregation of
+   statistics) in frontend code. The browser renders values produced by the Python pipeline.
+7. Change thresholds, event definitions or tests in `ENERGY_RESEARCH.md` after seeing results, or
+   report only the most significant of several variants.
+8. Push over teammates' work: no force push, no `reset --hard`, no `clean -f`, no history rewrite,
+   and don't discard uncommitted changes you didn't make.
+9. Push, merge, open PRs or change GitHub settings unless the human asked in this session.
 
-## Data and science (recommended practices)
+## Always
 
-- Record where data came from (dataset, version, units, period) when you can — it helps the
-  *Validity* judging criterion.
-- Label placeholder or synthetic data as such so the team knows what is real.
-- Prefer careful wording ("trend", "associated with") over causal claims in the UI.
-- Exploratory data, quick computations and prototypes are welcome anywhere, including the browser.
+- Look at existing files (including uncommitted changes) before editing them. Preserve working code.
+- Record provenance with every number: dataset, version or DOI, variable, units, period, spatial
+  support, method.
+- Label placeholder, synthetic, extrapolated and exploratory values as exactly that, in code, data
+  files and UI.
+- Use the honest outcome states from `UX_UI_RULES.md`. "No robust trend" and "insufficient
+  evidence" are valid results.
+- Report what you actually ran (tests, lint, typecheck) and what you didn't.
+- Update `docs/` when you change something others rely on.
+- Never commit secrets (`.env`, `~/.netrc`, tokens). Keep each data file under 50 MB.
 
-## Before finishing
+## Allowed without asking
 
-- Run the relevant tests/linters and report the result.
-- Update `docs/` if you changed something others rely on.
+- Exploratory notebooks or scripts clearly marked EXPLORATORY and kept out of the demo path.
+- UI work that doesn't alter scientific values or claims.
+- Tests, documentation fixes, refactors that don't change outputs.

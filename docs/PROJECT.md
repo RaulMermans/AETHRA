@@ -1,78 +1,91 @@
 # Project
 
-## Challenge
+## 1. Official challenge contract (highest priority)
 
-**NASA Space Apps Challenge 2026 — "Be An Earth System Trend Detective!"**
-(Málaga local event: challenge 02, *Detective de tendencias de la Tierra*:
-"Analyze environmental data to discover what is changing in the Earth system.")
+**NASA Space Apps Challenge 2026 — Challenge #02 "Be An Earth System Trend Detective!"**
+(Málaga local event: *Detective de tendencias de la Tierra*.)
+Official page: <https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/>
 
-| Resource | Link |
-|---|---|
-| Challenges 2026 (full statement + resources) | https://www.spaceappschallenge.org/2026/challenges/ |
-| Space Apps 2026 (registration, Project page) | https://www.spaceappschallenge.org/2026/ |
-| Málaga local event | https://www.spaceappschallenge.org/2026/local-events/malaga/ |
-| Participant FAQs | https://www.spaceappschallenge.org/resources/participant-faqs/ |
-| Legal / terms | https://www.spaceappschallenge.org/legal/ |
-| Earthdata Search | https://search.earthdata.nasa.gov/ |
+> **Unverified:** the official page renders client-side and could not be read automatically on
+> 14 Nov 2026. The five tasks below come from the team brief. A human must check them against the live page,
+> along with its *Resources* list, then tick the box in `DEMO_AND_SUBMISSION.md`.
 
-Local reference material (Spanish) lives in this folder: participant guide, judging guide, UX guide
-and challenge posters (`[NASA] *.pdf`, `*.png`).
+The tool must:
 
-> **To verify:** the exact challenge page URL and its official "Resources" list. Record both here
-> once confirmed (ROADMAP: *NASA challenge requirements verified*).
+1. Identify relevant Earth-science variables from NASA observations or models.
+2. Obtain the corresponding data for a geographic region.
+3. Generate and visualize a time series over a scientifically meaningful period.
+4. Determine the direction and magnitude of the trend.
+5. Evaluate whether the trend is statistically significant.
 
-## Event rules that affect this repository
+Every result we show answers **WHAT** (variable, units), **WHERE** (region and native resolution),
+**WHEN** (period, temporal resolution), **HOW MUCH** (rate with uncertainty), **EVIDENCE** (method,
+test, n), **TRUST** (QA, limitations, outcome state).
 
-From the Málaga participant guide (revised 14 Nov 2026). Confirm any change with the organizers.
+The challenge takes precedence over the energy theme, aesthetics, new features and storytelling. A
+globe without a reproducible trend analysis is not a solution.
 
-- **Development starts Saturday 14 Nov 2026, 09:00 local.** Before that: team formation, reading
-  challenges and preparing tools only. Any prior work must be declared.
-- **Official deadline: Sunday 15 Nov 2026, before 23:59 local** — via *Submit for Judging*.
-- Team of 1–6 registered members.
-- **At least one NASA resource from the challenge** must be used, and its real role explained.
-  Partner-agency data (e.g. NOAA) may complement but never replace it.
-- Project page, slides and written material **in English**.
-- Project Demo: one public link — **≤ 7 slides** (cover included) **or ≤ 30 s video**.
-- AI use is allowed and must be declared; generated content must be verified and marked.
-- No NASA logos/insignia in generated content. No identifiable minors in submitted material.
-- Judging criteria (1–5 each): **Impact, Creativity, Validity, Relevance, Presentation.**
+Event rules, deadlines and submission requirements: [DEMO_AND_SUBMISSION.md](DEMO_AND_SUBMISSION.md).
 
-## Objective
+## 2. Product thesis
 
-Help users explore how the environment in **Spain** has changed, using NASA Earth observation or
-model data, and answer with evidence:
+**Evidence-first Earth-system trend investigation for Spain.**
+North Star: *minimize time-to-evidence*, the time it takes to get from an Earth-system question to a
+quantified conclusion that traces back to NASA data. The unit of value is the **Evidence-Backed
+Insight** (EvidenceCard), not a layer, a chart or a recommendation.
 
-1. **What** changed? (variable, units)
-2. **Where?** (region, with spatial resolution stated)
-3. **When?** (period, temporal resolution stated)
-4. **How much?** (magnitude with uncertainty)
-5. **Is it statistically significant?** (validated method, or "insufficient evidence")
+### Strategic vision vs what the MVP actually is
 
-## Geographic scope
+| | Strategic vision (motivation) | MVP (what we will demonstrate) |
+|---|---|---|
+| Question | How are the environmental conditions behind clean energy in Spain changing? | Did a NASA variable change over a defined region and period, by how much, and is that supported? |
+| Variables | Solar irradiance, wind, a joint low-resource indicator | One validated NASA variable (Gate A). Solar/wind only if Gate B passes |
+| Output | Better-informed choice of what to study next | EvidenceCard: series, slope + CI, test, outcome state, provenance |
+| Status | **Proposed** (D34, pending approval) | **P0** |
 
-Spain. Default analysis extent: Peninsula + Balearic Islands, bbox `-9.5, 35.9, 4.4, 43.9`
-(lon/lat, WGS84). Canary Islands (`-18.3, 27.6, ...`) are OPEN — see `DECISIONS.md`.
+The motivating long-term question is *"How attractive could regions of Spain be for future
+clean-energy infrastructure, and how are the conditions shaping that changing?"*. We use it for
+ambition and context. The MVP cannot answer it, and we don't claim that it does.
 
-## Scientific good practice
+### What we are not building (anti-goals)
 
-Recommended (they help the *Validity* score):
+A generic climate dashboard · a static solar/wind atlas · a PVGIS / Worldview / GIS replacement · an
+investment recommendation engine · a site-selection tool · a grid-failure or price predictor · a
+climate forecasting platform · an AI that invents findings.
 
-- Show which dataset, period and method a result comes from.
-- Mention units and how missing data was handled.
-- Report significance with the test used, or say "insufficient evidence".
-- Prefer "associated with" over causal wording.
+## 3. User, problem, hypothesis
 
-## MVP boundaries
+- **Target user (hypothesis, not validated):** a renewable-energy resource analyst or early-stage
+  infrastructure planner looking at regional solar and wind behavior. For the Gate A MVP, the same user
+  (or a regional environmental analyst) needs trustworthy trends for a territory.
+- **User's job:** "Show me how resource conditions have changed in a region, whether the change is
+  statistically supported, and what further study it justifies."
+- **Problem:** averages hide timing. Plentiful renewable resources don't guarantee availability when
+  needed, and periods when solar and wind are *jointly* low may matter more than means.
+- **Scientific hypothesis (unconfirmed):** the frequency, persistence or seasonality of jointly low
+  solar and wind conditions may differ by region and may be changing. See
+  [ENERGY_RESEARCH.md](ENERGY_RESEARCH.md).
+- **Human benefit (plausible, not demonstrated):** better evidence for deciding where reliable
+  clean-energy development and adaptation need further study. We do **not** claim lower prices,
+  better grid stability, avoided blackouts, higher production, optimal sites or emission cuts.
 
-**In:** one environmental variable · one validated NASA dataset · Spain · one trend method · a map, a
-time-series chart and a provenance panel.
+## 4. Geographic scope
 
-**Later, if time allows:** multiple variables, forecasting, user accounts, real-time ingestion.
+Spain. Data are clipped to all of Spain (D19). The **analysis extent** for headline results must be
+stated explicitly. Default: Peninsula + Balearics (D5). The Canary Islands are a separate climate
+regime (D6, OPEN) and should be reported separately, not averaged in silently. Note: current
+MERRA-2 "Spain mean" values average every ~50 km cell touching any part of Spain, Canarias
+included. Gate 2 must fix this (see ROADMAP P0-S2).
 
-## Success criteria
+## 5. Success criteria
 
-- A user can select a region of Spain and get a trend with magnitude, period, units, significance
-  and provenance.
-- Results reproduce from the documented pipeline.
-- Limitations and missing data are visible in the UI.
-- Submission meets every event rule above before 23:59 Sunday.
+**Gate A (P0, mandatory).** One complete, reproducible evidence chain:
+NASA source → ingestion → metadata/QA → spatial/temporal preparation → time series → trend
+analysis → statistical evidence → provenance → EvidenceCard → visualization.
+It counts as done when every Gate 1, 2, 4 and 5 criterion in [ROADMAP.md](ROADMAP.md) is checked with evidence.
+
+**Gate B (P1, conditional).** The same chain for solar and wind resources plus a pre-registered
+joint low-resource indicator (Gate 3). It becomes the primary demo only if it passes. Otherwise it is
+presented as the next research step.
+
+**Never:** present a generic result (e.g. warming) as evidence about renewable-energy potential.

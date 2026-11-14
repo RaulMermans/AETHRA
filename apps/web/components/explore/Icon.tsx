@@ -1,6 +1,8 @@
 const PATHS = {
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
+  lock: "M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4",
+  unlock: "M6 11h12v10H6zM8 11V7a4 4 0 0 1 7.5-2",
   tiltUp: "M4 17l8-8 8 8M4 12l8-8 8 8",
   tiltDown: "M4 7l8 8 8-8M4 12l8 8 8-8",
   rotateLeft: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
@@ -10,6 +12,7 @@ const PATHS = {
   layers: "M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
   chevron: "M9 6l6 6-6 6",
   close: "M6 6l12 12M18 6L6 18",
+  station: "M12 21v-7M8 21h8M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 7h.01M5 4a9 9 0 0 0 0 10M19 4a9 9 0 0 1 0 10",
   target: "M12 2v4M12 18v4M2 12h4M18 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   chart: "M3 3v18h18M7 15l4-4 3 3 5-6",
   info: "M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",

@@ -3,34 +3,49 @@ import {
   type AdminBundle,
   type ResolvedAdminScope,
 } from "./admin-scope";
+import { buildStationCatalog, stationMetricFor } from "./stations";
 import type { GeoBounds, GeoCoordinate } from "./types";
 
 export type DimensionId =
   | "temperature"
   | "precipitation"
   | "drought"
-  | "vegetation"
   | "snow"
   | "water_rivers"
   | "heat_extremes"
-  | "rain_extremes"
-  | "wind";
+  | "rain_extremes";
 
-export type ClimateDisplayMode = "value" | "trend" | "anomaly2030";
+/** Observed values or the decadal trend. No projection mode (D38: no 2030 extrapolation on the demo path). */
+export type ClimateDisplayMode = "value" | "trend";
 export type ProjectionScenario = "central" | "high" | "low";
 
 export type HeatSubMetric = "tropical_nights" | "hot_days_35";
 export type RainSubMetric = "max_dry_spell" | "wettest_day";
 export type VegSubMetric = "ndvi" | "evi";
 
+/** Trend result computed by scripts/build_climate_bundle.py (packages/science/trends.py). */
 export interface TrendStats {
   slope_decade: number;
   ci_low_decade: number;
   ci_high_decade: number;
   intercept_2000: number;
   p_value: number;
+  /** p < 0.05 AND 95% CI excludes 0. */
   significant: boolean;
   n: number;
+  outcome?: "supported_increase" | "supported_decrease" | "not_significant";
+  first_year?: number;
+  last_year?: number;
+  lag1_autocorr?: number;
+  hamed_rao_applied?: boolean;
+  /** Benjamini–Hochberg q within its family (map cells, station network). */
+  q_value_bh?: number;
+  significant_fdr?: boolean;
+}
+
+export interface ScopeSeries {
+  readonly series: Readonly<Record<string, number | null>>;
+  readonly stats: TrendStats | null;
 }
 
 export interface NoaaStationYearRecord {
@@ -42,8 +57,8 @@ export interface NoaaStationYearRecord {
   prcp: number | null;
   wettest_day: number | null;
   max_dry_spell: number | null;
-  snow_days: number;
-  max_snwd: number;
+  snow_days: number | null;
+  max_snwd: number | null;
 }
 
 export interface NoaaStation {
@@ -52,8 +67,8 @@ export interface NoaaStation {
   lat: number;
   lon: number;
   elevation: number;
-  wind_mean_ms: number;
-  wind_gust_ms: number;
+  /** Observed NOAA AWND mean; null when the station has no wind record (most of them). */
+  wind_mean_ms: number | null;
   wind_source: string;
   has_snow: boolean;
   years: Record<string, NoaaStationYearRecord>;
@@ -68,16 +83,18 @@ export interface RiverBasin {
   lon: number;
   bbox: [number, number, number, number];
   coords: [number, number][];
-  reservoir_capacity_hm3: number;
-  hydro_mw: number;
+  /** Not in the v2 bundle (no sourced value); kept optional for older bundles. */
+  reservoir_capacity_hm3?: number;
+  hydro_mw?: number;
   rain_mm: Record<string, number>;
-  runoff_mm: Record<string, number>;
-  evap_mm: Record<string, number>;
-  soil_mm?: Record<string, number>;
-  runoff_stats: TrendStats;
+  /** GLDAS Noah model output over the basin box (modelled runoff, not gauged discharge). */
+  runoff_mm?: Record<string, number | null>;
+  evap_mm?: Record<string, number | null>;
+  soil_mm?: Record<string, number | null>;
   rain_stats: TrendStats;
-  evap_stats?: TrendStats;
-  soil_stats?: TrendStats;
+  runoff_stats?: TrendStats | null;
+  evap_stats?: TrendStats | null;
+  soil_stats?: TrendStats | null;
 }
 
 export interface SwotReservoir {
@@ -88,8 +105,9 @@ export interface SwotReservoir {
   provinceId: string;
   provinceName: string;
   ccaaId: string;
-  basinId: string;
-  basinName: string;
+  province_match?: "inside_polygon" | "nearest_centre";
+  basinId: string | null;
+  basinName: string | null;
   n_obs: number;
   area_mean_km2: number;
   area_min_km2: number;
@@ -97,13 +115,14 @@ export interface SwotReservoir {
   area_cv: number;
   wse_mean_m: number;
   wse_std_m: number;
-  temp_mean_c: number;
-  temp_slope_decade: number;
-  evap_mean_mm: number;
-  evap_slope_decade: number;
-  rain_mean_mm: number;
-  rain_slope_decade: number;
-  fpv_score: number;
+  temp_mean_c: number | null;
+  temp_slope_decade: number | null;
+  evap_mean_mm: number | null;
+  evap_slope_decade: number | null;
+  rain_mean_mm: number | null;
+  rain_slope_decade: number | null;
+  /** EXPLORATORY heuristic (hand-picked weights), not a validated suitability result. */
+  fpv_score: number | null;
   swot_series: Array<{
     ym: string;
     area_km2: number;
@@ -119,46 +138,56 @@ export interface AdminClimateProfile {
   ccaaId: string;
   ccaaName: string;
   series: {
-    temp_c: number[];
-    summer_temp_c: number[];
-    rain_mm: number[];
-    runoff_mm: number[];
-    evap_mm: number[];
-    soil_mm: number[];
-    swe_mm: number[];
-    hot_days_35: number[];
-    tropical_nights: number[];
-    max_dry_spell: number[];
-    dtr_c: number[];
+    temp_c: (number | null)[];
+    summer_temp_c: (number | null)[];
+    rain_mm: (number | null)[];
+    runoff_mm: (number | null)[];
+    evap_mm: (number | null)[];
+    soil_mm: (number | null)[];
+    swe_mm: (number | null)[];
+    hot_days_35: (number | null)[];
+    tropical_nights: (number | null)[];
+    max_dry_spell: (number | null)[];
+    dtr_c: (number | null)[];
   };
   stats: {
-    temp_c: TrendStats;
-    summer_temp_c: TrendStats;
-    rain_mm: TrendStats;
-    runoff_mm: TrendStats;
-    evap_mm: TrendStats;
-    soil_mm: TrendStats;
-    swe_mm: TrendStats;
-    hot_days_35: TrendStats;
-    tropical_nights: TrendStats;
-    max_dry_spell: TrendStats;
-    dtr_c: TrendStats;
+    temp_c: TrendStats | null;
+    summer_temp_c: TrendStats | null;
+    rain_mm: TrendStats | null;
+    runoff_mm: TrendStats | null;
+    evap_mm: TrendStats | null;
+    soil_mm: TrendStats | null;
+    swe_mm: TrendStats | null;
+    hot_days_35: TrendStats | null;
+    tropical_nights: TrendStats | null;
+    max_dry_spell: TrendStats | null;
+    dtr_c: TrendStats | null;
   };
-  wind_mean_ms: number;
-  wind_slope_decade: number;
-  ndvi_mean: number;
-  ndvi_slope_decade: number;
+  noaa_station_count?: number;
+  /** Observed NOAA AWND mean of stations in the unit; null when none observe wind. */
+  wind_mean_ms: number | null;
+  wind_slope_decade: number | null;
+  wind_source?: string;
+  /** No MODIS NDVI series in the v2 bundle (D29): always null. */
+  ndvi_mean: number | null;
+  ndvi_slope_decade: number | null;
   swot_count: number;
   swot_area_km2: number;
-  swot_cv: number;
-  swot_fpv_score: number;
+  swot_cv: number | null;
+  swot_fpv_score: number | null;
 }
 
 export interface ClimateBundle {
-  generated_at: string;
+  bundle_version: string;
   scope: string;
-  projection_horizon: number;
   method: string;
+  last_complete_year: Record<string, number>;
+  /** Precomputed series + trend per scope key: "age" (Peninsula + Balearics), "ccaa:<id>", "provincia:<id>". */
+  scopes: Record<
+    string,
+    { name: string; temperature?: ScopeSeries; precipitation?: ScopeSeries; drought?: ScopeSeries; water_rivers?: ScopeSeries }
+  >;
+  provenance: Record<string, unknown>;
   merra2: {
     dataset: string;
     doi: string;
@@ -179,8 +208,11 @@ export interface ClimateBundle {
     cell_ci_high_decade: number[];
     cell_p_value: number[];
     cell_intercept_2000: number[];
-    spain_annual: Record<string, number>;
+    cell_q_value: number[];
+    spain_annual: Record<string, number | null>;
     spain_stats: TrendStats;
+    canarias_annual: Record<string, number | null>;
+    canarias_stats: TrendStats | null;
   };
   gpm: {
     dataset: string;
@@ -204,8 +236,12 @@ export interface ClimateBundle {
     cell_intercept_2000: number[];
     cell_max_slope_decade: number[];
     cell_max_intercept_2000: number[];
-    spain_annual: Record<string, number>;
+    cell_q_value: number[];
+    spi_definition: string;
+    spain_annual: Record<string, number | null>;
     spain_stats: TrendStats;
+    anomaly_spain_annual: Record<string, number | null>;
+    anomaly_spain_stats: TrendStats | null;
   };
   gldas: {
     dataset: string;
@@ -224,7 +260,7 @@ export interface ClimateBundle {
         soil_moisture_0_10cm_mm: number;
       }
     >;
-    stats: Record<string, TrendStats>;
+    stats: Record<string, TrendStats | null>;
     grid?: {
       n_lat: number;
       n_lon: number;
@@ -254,27 +290,11 @@ export interface ClimateBundle {
     stations: NoaaStation[];
   };
   rivers: RiverBasin[];
-  modis: {
-    dataset: string;
-    doi: string;
-    date: string;
-    resolution: string;
-    units: string;
-    ndvi_2000_02_18: number[];
-    evi_2000_02_18: number[];
-    ndvi_slope_decade: number[];
-  };
-  wind: {
-    dataset: string;
-    units: string;
-    resolution: string;
-    synthetic_note: string;
-    wind_mean_ms: number[];
-    wind_slope_decade: number[];
-    wind_dir_deg: number[];
-  };
   swot_reservoirs?: SwotReservoir[];
+  /** EXPLORATORY (Energy Tech Lab, D44). */
   admin_profiles?: {
+    status?: string;
+    note?: string;
     years: number[];
     provinces: Record<string, AdminClimateProfile>;
     ccaa: Record<string, AdminClimateProfile>;
@@ -333,19 +353,19 @@ export const DIMENSIONS: DimensionMeta[] = [
     datasets: "NASA GPM IMERG Final V07 + NOAA GHCN-Daily",
     units: "mm",
     trendUnits: "mm/decade",
-    spatialNote: "0.1° satellite grid + station points",
-    valueDomain: [150, 1400],
+    spatialNote: "0.2° GPM grid (native 0.1° subsampled) + station points",
+    valueDomain: [40, 2100],
     trendDomain: [-120, 120],
     palette: "precip",
     trendPalette: "brbg",
   },
   {
     id: "drought",
-    label: "Drought (SPI + Soil)",
+    label: "Dry / wet years",
     shortLabel: "Drought",
-    description: "Rainfall anomaly / SPI-12 heatmap (GPM) paired with Spain topsoil moisture 0–10 cm (NASA GLDAS).",
-    datasets: "NASA GPM IMERG V07 (map) + NASA GLDAS v2.1 (Spain curve)",
-    units: "SPI (σ)",
+    description: "Standardized annual precipitation anomaly from NASA GPM IMERG (z-score vs 2000–2024; not the gamma-fitted SPI). NASA GLDAS topsoil moisture is a model companion curve.",
+    datasets: "NASA GPM IMERG V07 (anomaly map + series) + NASA GLDAS v2.1 (soil companion)",
+    units: "σ (z-score)",
     trendUnits: "σ/decade",
     spatialNote: "GPM anomaly map + GLDAS national curve",
     valueDomain: [-2.2, 2.2],
@@ -353,45 +373,17 @@ export const DIMENSIONS: DimensionMeta[] = [
     palette: "drought_spi",
     trendPalette: "brbg",
   },
-  {
-    id: "vegetation",
-    label: "Vegetation (NDVI/EVI)",
-    shortLabel: "NDVI",
-    badge: "Single composite + model",
-    description: "NASA Terra MODIS MOD13Q1 greenness index (2000-02-18 pilot composite + agro-climatic trend).",
-    datasets: "NASA MODIS MOD13Q1 v061 (250 m pilot 2000-02-18)",
-    units: "NDVI",
-    trendUnits: "NDVI/decade",
-    spatialNote: "Single date 2000-02-18 + bioclimatic trend",
-    synthetic: true,
-    valueDomain: [0.1, 0.85],
-    trendDomain: [-0.04, 0.04],
-    palette: "vegetation",
-    trendPalette: "brbg",
-  },
-  {
-    id: "snow",
-    label: "Snow Cover",
-    shortLabel: "Snow",
-    description: "Snow days & depth at mountain weather stations (NOAA) + Spain snow water equivalent (GLDAS).",
-    datasets: "NOAA GHCN-Daily (SNWD) + NASA GLDAS v2.1 (SWE)",
-    units: "days/yr",
-    trendUnits: "days/decade",
-    spatialNote: "Mountain stations (56 with snow) + Spain SWE curve",
-    valueDomain: [0, 35],
-    trendDomain: [-8, 8],
-    palette: "snow",
-    trendPalette: "brbg",
-  },
+  // "snow" hidden (hardening 14 Nov): no NOAA station-year has >= 330 valid SNWD days, so station snow
+  // days cannot be computed; GLDAS SWE alone does not support a snow-cover dimension.
   {
     id: "water_rivers",
     label: "Water & Rivers",
     shortLabel: "Rivers",
-    description: "River runoff & evapotranspiration (GLDAS Spain balance) + major Spanish river basins (GPM + GLDAS).",
-    datasets: "NASA GLDAS v2.1 + NASA GPM IMERG V07 (8 river basins)",
+    description: "Map: GPM rainfall in each major basin box. Chart: Spain-average GLDAS runoff (no river gauges).",
+    datasets: "NASA GPM IMERG V07 (basin map) + NASA GLDAS v2.1 (runoff series)",
     units: "mm/yr",
     trendUnits: "mm/decade",
-    spatialNote: "Spain water-balance curve + 8 major river basins",
+    spatialNote: "Eight basin boxes (GPM rain); GLDAS runoff is Spain-average only",
     valueDomain: [30, 420],
     trendDomain: [-80, 40],
     palette: "runoff",
@@ -405,7 +397,7 @@ export const DIMENSIONS: DimensionMeta[] = [
     datasets: "NOAA GHCN-Daily (~175 stations)",
     units: "days/yr",
     trendUnits: "days/decade",
-    spatialNote: "Station observations + IDW thermal field",
+    spatialNote: "NOAA stations; map is a ~50 km halo around each gauge",
     valueDomain: [0, 65],
     trendDomain: [-5, 18],
     palette: "heat_extreme",
@@ -419,26 +411,10 @@ export const DIMENSIONS: DimensionMeta[] = [
     datasets: "NOAA GHCN-Daily + NASA GPM IMERG V07",
     units: "days",
     trendUnits: "days/decade",
-    spatialNote: "Stations + GPM monthly intensity grid",
+    spatialNote: "NOAA stations; map is a ~50 km halo around each gauge",
     valueDomain: [15, 110],
     trendDomain: [-12, 18],
     palette: "heat_extreme",
-    trendPalette: "rdbu_rev",
-  },
-  {
-    id: "wind",
-    label: "Wind & Corridors",
-    shortLabel: "Wind",
-    badge: "Stations + Model",
-    description: "Surface wind speed (m/s), gusts and major Spanish wind corridors (Cierzo, Levante, Trade Winds, Galicia).",
-    datasets: "NOAA GHCN-Daily (AWND/WSFG) + MERRA-2 Diagnostics",
-    units: "m/s",
-    trendUnits: "m/s/decade",
-    spatialNote: "0.2° corridor field + station gusts",
-    synthetic: true,
-    valueDomain: [3.0, 8.5],
-    trendDomain: [-0.3, 0.3],
-    palette: "wind",
     trendPalette: "rdbu_rev",
   },
 ];
@@ -563,10 +539,10 @@ export function samplePaletteCss(palette: PaletteId, value: number, domain: [num
   return `rgb(${r},${g},${b})`;
 }
 
-export function paletteGradientCss(palette: PaletteId): string {
+export function paletteGradientCss(palette: PaletteId, axis: "x" | "y" = "x"): string {
   const stops = PALETTES[palette] ?? PALETTES.thermal;
   const parts = stops.map(([r, g, b], i) => `rgb(${r},${g},${b}) ${Math.round((i / (stops.length - 1)) * 100)}%`);
-  return `linear-gradient(90deg, ${parts.join(", ")})`;
+  return `linear-gradient(${axis === "y" ? "to top" : "to right"}, ${parts.join(", ")})`;
 }
 
 // --- Extrapolation helper (2000..2030) --------------------------------------------------
@@ -621,6 +597,48 @@ export const HEATMAP_BOUNDS: GeoBounds = {
   north: 44.1,
 };
 
+/** Last full calendar year in the compiled bundle (2026 files are partial: MERRA-2 Jan–Sep, GLDAS through Jul, GHCN through Nov). */
+export const LAST_COMPLETE_YEAR = 2025;
+
+export function dimensionHasSpatialGrid(_id: DimensionId): boolean {
+  return true;
+}
+
+/** Local halo around NOAA stations (~50 km). Not a national interpolated climate field. */
+const STATION_HALO_DEG = 0.55;
+
+function collectSampleValues(samples: {
+  kind: "grid" | "idw" | "basins";
+  grid?: Float32Array;
+  points?: { val: number }[];
+  basins?: { val: number }[];
+}): number[] {
+  const out: number[] = [];
+  if (samples.kind === "grid" && samples.grid) {
+    for (const v of samples.grid) if (Number.isFinite(v)) out.push(v);
+  } else if (samples.kind === "basins" && samples.basins) {
+    for (const b of samples.basins) if (Number.isFinite(b.val)) out.push(b.val);
+  } else if (samples.points) {
+    for (const p of samples.points) if (Number.isFinite(p.val)) out.push(p.val);
+  }
+  return out;
+}
+
+function domainFromValues(vals: number[], diverging: boolean, fallback: [number, number]): [number, number] {
+  if (vals.length < 8) return fallback;
+  const sorted = [...vals].sort((a, b) => a - b);
+  const at = (t: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(t * (sorted.length - 1))))];
+  const lo = at(0.02);
+  const hi = at(0.98);
+  if (!(hi > lo)) return fallback;
+  if (diverging) {
+    const m = Math.max(Math.abs(lo), Math.abs(hi), 0.4);
+    return [Number((-m).toFixed(2)), Number(m.toFixed(2))];
+  }
+  const pad = (hi - lo) * 0.05;
+  return [Number((lo - pad).toFixed(2)), Number((hi + pad).toFixed(2))];
+}
+
 export interface ActiveClimateConfig {
   dimension: DimensionId;
   year: number;
@@ -631,7 +649,7 @@ export interface ActiveClimateConfig {
   vegMetric: VegSubMetric;
 }
 
-export function getEffectiveMeta(cfg: ActiveClimateConfig): {
+export function getEffectiveMeta(cfg: ActiveClimateConfig, bundle?: ClimateBundle | null): {
   title: string;
   units: string;
   domain: [number, number];
@@ -666,10 +684,21 @@ export function getEffectiveMeta(cfg: ActiveClimateConfig): {
       valueDomain = [20, 120];
       trendDomain = [-12, 12];
     }
-  } else if (cfg.dimension === "vegetation") {
-    title = cfg.vegMetric === "evi" ? "MODIS EVI (Enhanced Vegetation)" : "MODIS NDVI (Greenness)";
-    units = cfg.vegMetric.toUpperCase();
-    valueDomain = cfg.vegMetric === "evi" ? [0.08, 0.65] : [0.1, 0.85];
+  }
+
+  const diverging = cfg.mode !== "value" || base.palette === "drought_spi";
+  if (
+    bundle &&
+    cfg.dimension !== "water_rivers" &&
+    (cfg.mode === "trend" || cfg.mode === "value")
+  ) {
+    const fromData = domainFromValues(
+      collectSampleValues(buildDimensionSamples(bundle, cfg)),
+      diverging,
+      cfg.mode === "value" ? valueDomain : trendDomain,
+    );
+    if (cfg.mode === "value") valueDomain = fromData;
+    else if (cfg.mode === "trend") trendDomain = fromData;
   }
 
   if (cfg.mode === "trend") {
@@ -678,24 +707,32 @@ export function getEffectiveMeta(cfg: ActiveClimateConfig): {
       units: `${units}/decade`,
       domain: trendDomain,
       palette: base.trendPalette,
-      subtitle: "Theil-Sen robust slope (2000–2026)",
-    };
-  }
-  if (cfg.mode === "anomaly2030") {
-    return {
-      title: `${title} · Projected Change by 2030`,
-      units: `Δ ${units}`,
-      domain: [trendDomain[0] * 2.5, trendDomain[1] * 2.5],
-      palette: base.trendPalette,
-      subtitle: `2030 projection vs 2000–2005 baseline (${cfg.scenario} scenario)`,
+      subtitle: "Theil–Sen slope per cell/station, complete years. Colour = slope only, not significance",
     };
   }
   return {
-    title: `${title} · ${cfg.year}${cfg.year > 2026 ? " (Projected)" : ""}`,
+    title: `${title} · ${cfg.year}`,
     units,
     domain: valueDomain,
     palette: base.palette,
-    subtitle: cfg.year > 2026 ? `Extrapolated to ${cfg.year} via Sen's slope (${cfg.scenario})` : `Observed / Reanalysis (${cfg.year})`,
+    subtitle: `${base.datasets.split("+")[0]?.trim() ?? "Observed"} (${cfg.year}). Blank = no complete-year data`,
+  };
+}
+
+export function getMapLegendMeta(cfg: ActiveClimateConfig, bundle?: ClimateBundle | null) {
+  const base = getEffectiveMeta(cfg, bundle);
+  if (cfg.dimension !== "water_rivers") return base;
+  const fallback: [number, number] = cfg.mode === "value" ? [40, 2100] : [-120, 120];
+  const fromData =
+    bundle != null
+      ? domainFromValues(collectSampleValues(buildDimensionSamples(bundle, cfg)), cfg.mode !== "value", fallback)
+      : fallback;
+  return {
+    ...base,
+    palette: (cfg.mode === "value" ? "precip" : "brbg") as PaletteId,
+    domain: fromData,
+    units: cfg.mode === "value" ? "mm" : cfg.mode === "trend" ? "mm/decade" : "Δ mm",
+    subtitle: "GPM rainfall in each basin box — not river discharge",
   };
 }
 
@@ -707,18 +744,36 @@ interface SamplePoint {
   val: number;
 }
 
+function stationMetricValue(
+  st: NoaaStation,
+  key: keyof NoaaStationYearRecord,
+  cfg: ActiveClimateConfig,
+): number | null {
+  const stStats = st.stats[key];
+  const rec = st.years[String(Math.min(cfg.year, LAST_COMPLETE_YEAR))];
+  if (cfg.mode === "trend") return stStats ? stStats.slope_decade : null;
+  if (cfg.mode !== "value") return null;
+  // Observed complete years only; a missing year stays missing (never filled with a trend line).
+  if (cfg.year <= LAST_COMPLETE_YEAR && rec && rec[key] !== null && rec[key] !== undefined) {
+    return Number(rec[key]);
+  }
+  return null;
+}
+
 function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig): {
-  kind: "grid" | "idw";
+  kind: "grid" | "idw" | "basins";
   nLat?: number;
   nLon?: number;
   lats?: number[];
   lons?: number[];
   grid?: Float32Array;
   points?: SamplePoint[];
+  basins?: { bbox: [number, number, number, number]; lat: number; lon: number; val: number }[];
+  haloDeg?: number;
 } {
-  const { dimension, year, mode, scenario, heatMetric, rainMetric, vegMetric } = cfg;
+  const { dimension, year, mode } = cfg;
 
-  // 1. MERRA-2 grid (Temperature)
+  // 1. MERRA-2 grid (Temperature). Value mode shows observed complete years only; no extrapolation.
   if (dimension === "temperature") {
     const m = bundle.merra2;
     const grid = new Float32Array(m.n_lat * m.n_lon).fill(Number.NaN);
@@ -727,103 +782,48 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
 
     for (let k = 0; k < m.valid_indices.length; k++) {
       const idx = m.valid_indices[k];
-      const slope = m.cell_slope_decade[k];
-      const ciLow = m.cell_ci_low_decade[k];
-      const ciHigh = m.cell_ci_high_decade[k];
-      const icpt = m.cell_intercept_2000[k];
-
       let v: number;
-      if (mode === "trend") {
-        v = slope;
-      } else if (mode === "anomaly2030") {
-        const v2030 = extrapolateValue(icpt, slope, 2030, scenario, ciLow, ciHigh);
-        const v2002 = extrapolateValue(icpt, slope, 2002, "central");
-        v = v2030 - v2002;
-      } else if (hist && year <= 2026) {
-        v = hist[k];
-      } else {
-        v = extrapolateValue(icpt, slope, year, scenario, ciLow, ciHigh);
-      }
+      if (mode === "trend") v = m.cell_slope_decade[k];
+      else if (mode === "value" && hist) v = hist[k];
+      else v = Number.NaN; // no observed data for this year
       grid[idx] = v;
     }
     return { kind: "grid", nLat: m.n_lat, nLon: m.n_lon, lats: m.lats, lons: m.lons, grid };
   }
 
-  // 2. GPM 0.2° grid (Precipitation, Drought SPI, Vegetation, Wind, Water/Rivers spatial field)
-  if (
-    dimension === "precipitation" ||
-    dimension === "drought" ||
-    dimension === "vegetation" ||
-    dimension === "wind" ||
-    dimension === "water_rivers"
-  ) {
+  if (dimension === "water_rivers") {
+    const basins: { bbox: [number, number, number, number]; lat: number; lon: number; val: number }[] = [];
+    for (const b of bundle.rivers) {
+      const obs = b.rain_mm[String(year)];
+      let val: number;
+      if (mode === "trend") val = b.rain_stats ? b.rain_stats.slope_decade : Number.NaN;
+      else if (mode === "value" && obs !== null && obs !== undefined) val = obs;
+      else val = Number.NaN;
+      if (!Number.isFinite(val)) continue;
+      basins.push({ bbox: b.bbox, lat: b.lat, lon: b.lon, val });
+    }
+    return { kind: "basins", basins };
+  }
+
+  // 2. GPM 0.2° grid (Precipitation, standardized dry/wet anomaly)
+  if (dimension === "precipitation" || dimension === "drought") {
     const g = bundle.gpm;
     const grid = new Float32Array(g.n_lat * g.n_lon).fill(Number.NaN);
-    const yrKey = String(Math.min(year, 2025));
+    const yrKey = String(year);
 
     for (let k = 0; k < g.valid_indices.length; k++) {
       const idx = g.valid_indices[k];
       let v = 0;
 
       if (dimension === "precipitation") {
-        const slope = g.cell_slope_decade[k];
-        const icpt = g.cell_intercept_2000[k];
-        if (mode === "trend") v = slope;
-        else if (mode === "anomaly2030") {
-          v = extrapolateValue(icpt, slope, 2030, scenario) - icpt;
-        } else if (year <= 2025 && g.annual_by_year[yrKey]) {
-          v = g.annual_by_year[yrKey][k];
-        } else {
-          v = Math.max(20, extrapolateValue(icpt, slope, year, scenario));
-        }
+        if (mode === "trend") v = g.cell_slope_decade[k];
+        else if (mode === "value" && g.annual_by_year[yrKey]) v = g.annual_by_year[yrKey][k];
+        else v = Number.NaN;
       } else if (dimension === "drought") {
-        const slopeMm = g.cell_slope_decade[k];
-        const stdMm = Math.max(g.cell_std[k], 15);
-        const spiSlope = slopeMm / stdMm;
-        const icptMm = g.cell_intercept_2000[k];
-        const meanMm = g.cell_mean[k];
-        const spiIcpt = (icptMm - meanMm) / stdMm;
-
-        if (mode === "trend") v = spiSlope;
-        else if (mode === "anomaly2030") {
-          v = extrapolateValue(spiIcpt, spiSlope, 2030, scenario) - spiIcpt;
-        } else if (year <= 2025 && g.spi_by_year[yrKey]) {
-          v = g.spi_by_year[yrKey][k];
-        } else {
-          v = extrapolateValue(spiIcpt, spiSlope, year, scenario);
-        }
-      } else if (dimension === "vegetation") {
-        const base =
-          vegMetric === "evi" ? bundle.modis.evi_2000_02_18[k] : bundle.modis.ndvi_2000_02_18[k];
-        const slope = bundle.modis.ndvi_slope_decade[k] * (vegMetric === "evi" ? 0.74 : 1.0);
-        if (mode === "trend") v = slope;
-        else if (mode === "anomaly2030") v = extrapolateValue(base, slope, 2030, scenario) - base;
-        else v = Math.max(0.05, Math.min(0.95, extrapolateValue(base, slope, year, scenario)));
-      } else if (dimension === "wind") {
-        const base = bundle.wind.wind_mean_ms[k];
-        const slope = bundle.wind.wind_slope_decade[k];
-        if (mode === "trend") v = slope;
-        else if (mode === "anomaly2030") v = extrapolateValue(base, slope, 2030, scenario) - base;
-        else {
-          // Small realistic interannual variation around trend
-          const wave = year <= 2026 ? 0.18 * Math.sin(year * 1.7 + k * 0.01) : 0;
-          v = Math.max(1.5, extrapolateValue(base, slope, year, scenario) + wave);
-        }
-      } else if (dimension === "water_rivers") {
-        // Available water runoff yield per cell (mm/yr) = Rain * runoff_fraction
-        const rainSlope = g.cell_slope_decade[k];
-        const rainIcpt = g.cell_intercept_2000[k];
-        const rainVal =
-          year <= 2025 && g.annual_by_year[yrKey]
-            ? g.annual_by_year[yrKey][k]
-            : Math.max(20, extrapolateValue(rainIcpt, rainSlope, year, scenario));
-        const runoffRatio = 0.24;
-        if (mode === "trend") v = rainSlope * runoffRatio - 4.5;
-        else if (mode === "anomaly2030") {
-          v = (extrapolateValue(rainIcpt, rainSlope, 2030, scenario) - rainIcpt) * runoffRatio - 12;
-        } else {
-          v = Math.max(5, rainVal * runoffRatio);
-        }
+        // Trend map: the pipeline's precipitation slope divided by the cell SD (display unit only).
+        if (mode === "trend") v = g.cell_std[k] > 0 ? g.cell_slope_decade[k] / g.cell_std[k] : Number.NaN;
+        else if (mode === "value" && g.spi_by_year[yrKey]) v = g.spi_by_year[yrKey][k];
+        else v = Number.NaN;
       }
 
       grid[idx] = v;
@@ -832,55 +832,15 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
     return { kind: "grid", nLat: g.n_lat, nLon: g.n_lon, lats: g.lats, lons: g.lons, grid };
   }
 
-  // 3. Station-driven IDW fields: Snow, Heat Extremes, Rain Extremes
-  const mKey =
-    dimension === "snow"
-      ? "snow_days"
-      : dimension === "heat_extremes"
-        ? heatMetric
-        : rainMetric;
-
+  const mKey: keyof NoaaStationYearRecord =
+    dimension === "snow" ? "snow_days" : dimension === "heat_extremes" ? cfg.heatMetric : cfg.rainMetric;
   const points: SamplePoint[] = [];
   for (const st of bundle.noaa.stations) {
-    const stStats = st.stats[mKey];
-    if (!stStats) continue;
-    const rec = st.years[String(Math.min(year, 2025))];
-    let val: number | null = null;
-
-    if (mode === "trend") {
-      val = stStats.slope_decade;
-    } else if (mode === "anomaly2030") {
-      val =
-        extrapolateValue(
-          stStats.intercept_2000,
-          stStats.slope_decade,
-          2030,
-          scenario,
-          stStats.ci_low_decade,
-          stStats.ci_high_decade,
-        ) - stStats.intercept_2000;
-    } else if (year <= 2025 && rec && rec[mKey as keyof NoaaStationYearRecord] !== null) {
-      val = Number(rec[mKey as keyof NoaaStationYearRecord]);
-    } else {
-      val = Math.max(
-        0,
-        extrapolateValue(
-          stStats.intercept_2000,
-          stStats.slope_decade,
-          year,
-          scenario,
-          stStats.ci_low_decade,
-          stStats.ci_high_decade,
-        ),
-      );
-    }
-
-    if (val !== null && Number.isFinite(val)) {
-      points.push({ lat: st.lat, lon: st.lon, val });
-    }
+    if (dimension === "snow" && !st.has_snow) continue;
+    const val = stationMetricValue(st, mKey, cfg);
+    if (val !== null && Number.isFinite(val)) points.push({ lat: st.lat, lon: st.lon, val });
   }
-
-  return { kind: "idw", points };
+  return { kind: "idw", points, haloDeg: STATION_HALO_DEG };
 }
 
 function bilinearSample(
@@ -945,7 +905,7 @@ export async function renderDimensionHeatmapDataUrl(
   if (cached) return cached;
 
   const multiPoly = await loadSpainMultiPolygon();
-  const meta = getEffectiveMeta(cfg);
+  const meta = getMapLegendMeta(cfg, bundle);
   const samples = buildDimensionSamples(bundle, cfg);
 
   const width = 460;
@@ -975,24 +935,41 @@ export async function renderDimensionHeatmapDataUrl(
       if (lat > 30.0 && lon < -10.0) continue;
 
       let val = Number.NaN;
+      let alpha = 168;
       if (samples.kind === "grid" && samples.grid && samples.lats && samples.lons && samples.nLat && samples.nLon) {
         val = bilinearSample(samples.grid, samples.nLat, samples.nLon, samples.lats, samples.lons, lat, lon);
+      } else if (samples.kind === "basins" && samples.basins && samples.basins.length > 0) {
+        let bestD = Infinity;
+        for (const b of samples.basins) {
+          const [bw, bs, be, bn] = b.bbox;
+          if (lon < bw || lon > be || lat < bs || lat > bn) continue;
+          const d = (lat - b.lat) ** 2 + (lon - b.lon) ** 2;
+          if (d < bestD) {
+            bestD = d;
+            val = b.val;
+          }
+        }
+        alpha = 150;
       } else if (samples.kind === "idw" && samples.points && samples.points.length > 0) {
+        const halo = samples.haloDeg ?? STATION_HALO_DEG;
+        const maxD2 = halo * halo;
         let num = 0;
         let den = 0;
-        let minDist2 = 999;
+        let minDist2 = Infinity;
         for (let i = 0; i < samples.points.length; i++) {
           const p = samples.points[i];
           const dLat = lat - p.lat;
           const dLon = (lon - p.lon) * 0.8;
           const d2 = dLat * dLat + dLon * dLon;
+          if (d2 > maxD2) continue;
           if (d2 < minDist2) minDist2 = d2;
-          const w = 1.0 / (d2 + 0.08);
+          const w = 1.0 / (d2 + 0.02);
           num += p.val * w;
           den += w;
         }
-        if (minDist2 < 6.5 && den > 0) {
+        if (minDist2 <= maxD2 && den > 0) {
           val = num / den;
+          alpha = Math.round(40 + 150 * (1 - Math.sqrt(minDist2) / halo));
         }
       }
 
@@ -1003,7 +980,7 @@ export async function renderDimensionHeatmapDataUrl(
         data[offset] = r;
         data[offset + 1] = g;
         data[offset + 2] = b;
-        data[offset + 3] = 168;
+        data[offset + 3] = alpha;
       }
     }
   }
@@ -1079,7 +1056,7 @@ export function buildDimensionOverlayGeoJson(
     geometry: { type: "Point"; coordinates: [number, number] } | { type: "LineString"; coordinates: number[][] };
   }>;
 } {
-  const meta = getEffectiveMeta(cfg);
+  const meta = getEffectiveMeta(cfg, bundle);
   const features: Array<{
     type: "Feature";
     properties: Record<string, unknown>;
@@ -1088,8 +1065,9 @@ export function buildDimensionOverlayGeoJson(
 
   const filterByScope = Boolean(resolvedScope && resolvedScope.level !== "age" && resolvedScope.clipToScope);
 
-  // 1. Add Major Rivers & Basin Hubs when viewing water_rivers or drought
-  if (cfg.dimension === "water_rivers" || cfg.dimension === "drought") {
+  // Basin hubs: GPM rainfall in the basin box (real grid mean). Not gauged runoff.
+  if (cfg.dimension === "water_rivers") {
+    const rainDomain: [number, number] = [40, 2100];
     for (const b of bundle.rivers) {
       if (filterByScope && resolvedScope) {
         const [bw, bs, be, bn] = b.bbox;
@@ -1097,23 +1075,15 @@ export function buildDimensionOverlayGeoJson(
         const overlaps = !(be < sw || bw > se || bn < ss || bs > sn);
         if (!overlaps) continue;
       }
-      const yrKey = String(Math.min(cfg.year, 2025));
-      const st = b.runoff_stats;
+      const obs = b.rain_mm[String(cfg.year)];
       let val: number;
-      if (cfg.mode === "trend") val = st.slope_decade;
-      else if (cfg.mode === "anomaly2030") {
-        val =
-          extrapolateValue(st.intercept_2000, st.slope_decade, 2030, cfg.scenario, st.ci_low_decade, st.ci_high_decade) -
-          st.intercept_2000;
-      } else if (cfg.year <= 2025 && b.runoff_mm[yrKey] !== undefined) {
-        val = b.runoff_mm[yrKey];
-      } else {
-        val = Math.max(
-          5,
-          extrapolateValue(st.intercept_2000, st.slope_decade, cfg.year, cfg.scenario, st.ci_low_decade, st.ci_high_decade),
-        );
-      }
+      if (cfg.mode === "trend") val = b.rain_stats ? b.rain_stats.slope_decade : Number.NaN;
+      else if (cfg.mode === "value" && obs !== null && obs !== undefined) val = obs;
+      else val = Number.NaN;
+      if (!Number.isFinite(val)) continue; // no observed value: draw nothing
 
+      const rainPalette = cfg.mode === "value" ? "precip" : "brbg";
+      const rainUnits = cfg.mode === "value" ? "mm" : cfg.mode === "trend" ? "mm/decade" : "Δ mm";
       features.push({
         type: "Feature",
         properties: {
@@ -1123,8 +1093,8 @@ export function buildDimensionOverlayGeoJson(
           river: b.river,
           basin: b.name,
           value: val,
-          units: meta.units,
-          color: samplePaletteCss(meta.palette, val, meta.domain),
+          units: rainUnits,
+          color: samplePaletteCss(rainPalette, val, cfg.mode === "value" ? rainDomain : [-120, 120]),
           pixelSize: 11,
           latitude: b.lat,
           longitude: b.lon,
@@ -1137,28 +1107,19 @@ export function buildDimensionOverlayGeoJson(
     }
   }
 
-  // 2. Add NOAA Weather Station Markers
-  const stationMetricMap: Partial<Record<DimensionId, string>> = {
-    temperature: "tavg",
-    precipitation: "prcp",
-    snow: "snow_days",
-    heat_extremes: cfg.heatMetric,
-    rain_extremes: cfg.rainMetric,
-  };
-
-  const stMetric = stationMetricMap[cfg.dimension];
-  if (stMetric || cfg.dimension === "wind") {
-    let candidateStations = bundle.noaa.stations.filter((st) => {
-      if (cfg.dimension === "snow" && !st.has_snow) return false;
-      if (filterByScope && resolvedScope) {
-        return resolvedScope.contains(st.lat, st.lon);
-      }
-      return true;
-    });
+  // 2. NOAA station markers. National view: provincial reference network (1 per province, longest
+  // record). CCAA / province scope: every station inside it. Full list: station catalog panel.
+  const stMetric = stationMetricFor(cfg.dimension, cfg.heatMetric, cfg.rainMetric);
+  if (stMetric) {
+    const catalog = buildStationCatalog(bundle.noaa.stations, adminBundle ?? null, stMetric);
+    const referenceIds = new Set(catalog.filter((e) => e.reference).map((e) => e.station.id));
+    const pool = catalog.map((e) => e.station);
+    let candidateStations = filterByScope && resolvedScope
+      ? pool.filter((st) => resolvedScope.contains(st.lat, st.lon))
+      : pool.filter((st) => referenceIds.has(st.id));
 
     // Ensure at least the 2 closest stations are shown when zoomed into a small municipality/province
     if (filterByScope && resolvedScope && candidateStations.length === 0) {
-      const pool = bundle.noaa.stations.filter((st) => (cfg.dimension === "snow" ? st.has_snow : true));
       candidateStations = [...pool]
         .sort(
           (a, b) =>
@@ -1170,37 +1131,14 @@ export function buildDimensionOverlayGeoJson(
 
     for (const st of candidateStations) {
       let val: number | null = null;
-      if (cfg.dimension === "wind") {
-        val = cfg.mode === "trend" ? 0.09 : cfg.mode === "anomaly2030" ? 0.25 : st.wind_mean_ms;
-      } else if (stMetric) {
+      if (stMetric) {
         const stStats = st.stats[stMetric];
-        const rec = st.years[String(Math.min(cfg.year, 2025))];
+        const rec = st.years[String(Math.min(cfg.year, LAST_COMPLETE_YEAR))];
         if (cfg.mode === "trend" && stStats) {
           val = stStats.slope_decade;
-        } else if (cfg.mode === "anomaly2030" && stStats) {
-          val =
-            extrapolateValue(
-              stStats.intercept_2000,
-              stStats.slope_decade,
-              2030,
-              cfg.scenario,
-              stStats.ci_low_decade,
-              stStats.ci_high_decade,
-            ) - stStats.intercept_2000;
-        } else if (cfg.year <= 2025 && rec && rec[stMetric as keyof NoaaStationYearRecord] !== null) {
-          val = Number(rec[stMetric as keyof NoaaStationYearRecord]);
-        } else if (stStats) {
-          val = Math.max(
-            0,
-            extrapolateValue(
-              stStats.intercept_2000,
-              stStats.slope_decade,
-              cfg.year,
-              cfg.scenario,
-              stStats.ci_low_decade,
-              stStats.ci_high_decade,
-            ),
-          );
+        } else if (cfg.mode === "value" && rec) {
+          const obs = rec[stMetric as keyof NoaaStationYearRecord];
+          if (obs !== null && obs !== undefined) val = Number(obs); // missing years stay missing
         }
       }
 
@@ -1215,8 +1153,14 @@ export function buildDimensionOverlayGeoJson(
           value: Number(val.toFixed(1)),
           units: meta.units,
           elevation: st.elevation,
+          reference: referenceIds.has(st.id),
           color,
-          pixelSize: cfg.dimension === "snow" ? Math.min(13, 6 + val * 0.25) : 7.5,
+          pixelSize:
+            cfg.dimension === "snow"
+              ? Math.min(16, 7 + val * 0.28)
+              : cfg.dimension === "heat_extremes" || cfg.dimension === "rain_extremes"
+                ? Math.min(14, 6.5 + Math.abs(val) * 0.12)
+                : 7.5,
           latitude: st.lat,
           longitude: st.lon,
         },
@@ -1237,23 +1181,20 @@ export function buildDimensionOverlayGeoJson(
   return { type: "FeatureCollection", features };
 }
 
-// --- Location Analysis & 2030 Decision Engine -------------------------------------------
+// --- Location evidence (render-only; ADR-002) ---------------------------------------------
+// Every slope, CI, p-value and significance label below is read from climate-bundle.json, where
+// scripts/build_climate_bundle.py computed it with the tested kernels in packages/science.
+// Nothing here fits, averages or extrapolates statistics. When no precomputed result exists for the
+// requested place, `stats` is null and the UI says so.
 
 export interface TimeSeriesPoint {
   year: number;
   observed?: number;
-  trend: number;
-  ciLow?: number;
-  ciHigh?: number;
+  /** Theil–Sen line at this year, drawn only across the fitted (observed) period. */
+  trend?: number;
 }
 
-export interface DecisionAlert {
-  sector: "Water & Rivers" | "Agriculture & Soil" | "Urban Heat & Health" | "Energy & Wildfire Risk";
-  level: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
-  headline: string;
-  recommendation: string;
-  metricSummary: string;
-}
+export type EvidenceOutcome = "supported_increase" | "supported_decrease" | "not_significant" | "not_computed";
 
 export interface LocationEvidence {
   locationLabel: string;
@@ -1263,16 +1204,18 @@ export interface LocationEvidence {
   units: string;
   trendUnits: string;
   currentYear: number;
-  currentValue: number;
-  projected2030: number;
-  Projected2030Range: [number, number];
-  delta2030: number;
-  stats: TrendStats;
+  currentValue: number | null;
+  stats: TrendStats | null;
+  outcome: EvidenceOutcome;
+  /** Which series the stats describe, e.g. "MERRA-2, Peninsula + Balearics, area-weighted". */
+  statsSource: string;
+  /** Why stats are missing, when they are. */
+  notComputedReason?: string;
   series: TimeSeriesPoint[];
   gldasSeries?: {
     title: string;
     units: string;
-    stats: TrendStats;
+    stats: TrendStats | null;
     points: Array<{ year: number; primary: number; secondary?: number }>;
     primaryLabel: string;
     secondaryLabel?: string;
@@ -1282,7 +1225,6 @@ export interface LocationEvidence {
     distanceKm: number;
   } | null;
   basin: RiverBasin | null;
-  decisions: DecisionAlert[];
   adminScope?: ResolvedAdminScope | null;
   stationsInScopeCount?: number;
 }
@@ -1297,23 +1239,30 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function averageStats(list: TrendStats[]): TrendStats | null {
-  if (list.length === 0) return null;
-  const n = list.length;
-  const slope_decade = Number((list.reduce((s, x) => s + x.slope_decade, 0) / n).toFixed(3));
-  const ci_low_decade = Number((list.reduce((s, x) => s + x.ci_low_decade, 0) / n).toFixed(3));
-  const ci_high_decade = Number((list.reduce((s, x) => s + x.ci_high_decade, 0) / n).toFixed(3));
-  const intercept_2000 = Number((list.reduce((s, x) => s + x.intercept_2000, 0) / n).toFixed(2));
-  const p_value = Number((list.reduce((s, x) => s + x.p_value, 0) / n).toFixed(4));
-  return {
-    slope_decade,
-    ci_low_decade,
-    ci_high_decade,
-    intercept_2000,
-    p_value,
-    significant: p_value < 0.05,
-    n: Math.round(list.reduce((s, x) => s + x.n, 0) / n),
-  };
+function scopeKey(scope: ResolvedAdminScope | null | undefined): string {
+  if (!scope || scope.level === "age") return "age";
+  return `${scope.level}:${scope.id}`;
+}
+
+function fromSeries(series: Record<string, number | null> | undefined): Record<number, number> {
+  const out: Record<number, number> = {};
+  if (!series) return out;
+  for (const [k, v] of Object.entries(series)) if (v !== null && v !== undefined) out[Number(k)] = v;
+  return out;
+}
+
+function stationSeries(st: NoaaStation, key: keyof NoaaStationYearRecord): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (const [k, rec] of Object.entries(st.years)) {
+    const v = rec[key];
+    if (v !== null && v !== undefined) out[Number(k)] = Number(v);
+  }
+  return out;
+}
+
+function outcomeOf(stats: TrendStats | null): EvidenceOutcome {
+  if (!stats) return "not_computed";
+  return stats.outcome ?? (stats.significant ? (stats.slope_decade > 0 ? "supported_increase" : "supported_decrease") : "not_significant");
 }
 
 export function queryClimateAtLocation(
@@ -1323,26 +1272,20 @@ export function queryClimateAtLocation(
   resolvedScope?: ResolvedAdminScope | null,
 ): LocationEvidence {
   const dimMeta = DIMENSIONS.find((d) => d.id === cfg.dimension) ?? DIMENSIONS[0];
-  const effMeta = getEffectiveMeta(cfg);
-
+  const effMeta = getEffectiveMeta(cfg, bundle);
   const hasSubNationalScope = Boolean(resolvedScope && resolvedScope.level !== "age");
   const effectiveTarget: GeoCoordinate | null =
     selected ?? (hasSubNationalScope && resolvedScope ? resolvedScope.center : null);
-
-  // Stations inside the active administrative scope
   const stationsInScope: NoaaStation[] =
     hasSubNationalScope && resolvedScope
       ? bundle.noaa.stations.filter((st) => resolvedScope.contains(st.lat, st.lon))
       : bundle.noaa.stations;
 
-  // Find nearest NOAA station and containing river basin for the effective target
   let nearest: { station: NoaaStation; distanceKm: number } | null = null;
   let basin: RiverBasin | null = null;
-
   if (effectiveTarget) {
     let bestDist = Infinity;
     for (const st of bundle.noaa.stations) {
-      if (cfg.dimension === "snow" && !st.has_snow) continue;
       const d = haversineKm(effectiveTarget.latitude, effectiveTarget.longitude, st.lat, st.lon);
       if (d < bestDist) {
         bestDist = d;
@@ -1351,431 +1294,139 @@ export function queryClimateAtLocation(
     }
     for (const b of bundle.rivers) {
       const [w, s, e, n] = b.bbox;
-      if (
-        effectiveTarget.longitude >= w &&
-        effectiveTarget.longitude <= e &&
-        effectiveTarget.latitude >= s &&
-        effectiveTarget.latitude <= n
-      ) {
+      const { latitude: la, longitude: lo } = effectiveTarget;
+      if (lo >= w && lo <= e && la >= s && la <= n) {
         basin = b;
         break;
       }
     }
   }
 
-  // Build time series (2000..2030) and stats for the active dimension
-  let stats: TrendStats = bundle.merra2.spain_stats;
-  const rawObserved: Record<number, number> = {};
+  const sk = scopeKey(resolvedScope);
+  const scope = bundle.scopes?.[sk];
+  const scopeName = scope?.name ?? "Peninsula + Balearics";
+  let stats: TrendStats | null = null;
+  let observed: Record<number, number> = {};
+  let statsSource = "";
+  let notComputedReason: string | undefined;
 
-  if (cfg.dimension === "temperature") {
-    const scopedTempStations = stationsInScope.filter((s) => s.stats.tavg && s.stats.tavg.n >= 8);
-    if (!selected && hasSubNationalScope && scopedTempStations.length > 0) {
-      stats = averageStats(scopedTempStations.map((s) => s.stats.tavg)) ?? bundle.merra2.spain_stats;
-      for (let y = 2001; y <= 2026; y++) {
-        const vals = scopedTempStations
-          .map((s) => s.years[String(y)]?.tavg)
-          .filter((v): v is number => v !== null && v !== undefined);
-        if (vals.length > 0) {
-          rawObserved[y] = Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
-        }
+  const takeStation = (key: keyof NoaaStationYearRecord, maxKm: number): boolean => {
+    if (!selected || !nearest || nearest.distanceKm > maxKm) return false;
+    stats = nearest.station.stats[key] ?? null;
+    observed = stationSeries(nearest.station, key);
+    statsSource = `NOAA GHCN-Daily station ${nearest.station.name} (complete years only; not homogenized)`;
+    if (!stats) notComputedReason = "This station has fewer than 15 complete years for this metric.";
+    return true;
+  };
+  const takeScope = (dim: "temperature" | "precipitation" | "drought" | "water_rivers", source: string) => {
+    const block = scope?.[dim];
+    stats = block?.stats ?? null;
+    observed = fromSeries(block?.series);
+    statsSource = `${source}, ${scopeName}, area-weighted`;
+    if (!block) notComputedReason = "No precomputed series for this area.";
+  };
+
+  switch (cfg.dimension) {
+    case "temperature":
+      if (!takeStation("tavg", 25)) takeScope("temperature", "NASA MERRA-2 T2M (reanalysis)");
+      break;
+    case "precipitation":
+      if (selected && basin) {
+        stats = basin.rain_stats ?? null;
+        observed = fromSeries(basin.rain_mm);
+        statsSource = `NASA GPM IMERG, ${basin.name} bounding box (not the watershed)`;
+      } else {
+        takeScope("precipitation", "NASA GPM IMERG V07");
       }
-    } else if (nearest && nearest.distanceKm < 45 && nearest.station.stats.tavg?.n >= 10) {
-      stats = nearest.station.stats.tavg;
-      for (let y = 2001; y <= 2026; y++) {
-        const v = nearest.station.years[String(y)]?.tavg;
-        if (v !== null && v !== undefined) rawObserved[y] = v;
+      break;
+    case "drought":
+      takeScope("drought", "NASA GPM IMERG standardized annual precipitation anomaly");
+      break;
+    case "water_rivers":
+      takeScope("water_rivers", "NASA GLDAS v2.1 modelled total runoff");
+      break;
+    default: {
+      const key: keyof NoaaStationYearRecord =
+        cfg.dimension === "snow" ? "snow_days" : cfg.dimension === "heat_extremes" ? cfg.heatMetric : cfg.rainMetric;
+      if (!takeStation(key, 25)) {
+        statsSource = "NOAA GHCN-Daily stations";
+        notComputedReason =
+          "Area trends are not computed for station metrics (the network changes over time). Pick a station on the map or in the Station catalog.";
       }
-    } else {
-      stats = bundle.merra2.spain_stats;
-      for (let y = 2000; y <= 2026; y++) {
-        const v = bundle.merra2.spain_annual[String(y)];
-        if (v !== undefined) rawObserved[y] = v;
-      }
-    }
-  } else if (cfg.dimension === "precipitation") {
-    const scopedRainStations = stationsInScope.filter((s) => s.stats.prcp && s.stats.prcp.n >= 8);
-    if (!selected && hasSubNationalScope && scopedRainStations.length > 0) {
-      stats = averageStats(scopedRainStations.map((s) => s.stats.prcp)) ?? bundle.gpm.spain_stats;
-      for (let y = 2001; y <= 2025; y++) {
-        const vals = scopedRainStations
-          .map((s) => s.years[String(y)]?.prcp)
-          .filter((v): v is number => v !== null && v !== undefined);
-        if (vals.length > 0) {
-          rawObserved[y] = Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
-        }
-      }
-    } else if (basin) {
-      stats = basin.rain_stats;
-      for (let y = 2000; y <= 2025; y++) {
-        if (basin.rain_mm[String(y)] !== undefined) rawObserved[y] = basin.rain_mm[String(y)];
-      }
-    } else {
-      stats = bundle.gpm.spain_stats;
-      for (let y = 2000; y <= 2025; y++) {
-        if (bundle.gpm.spain_annual[String(y)] !== undefined) rawObserved[y] = bundle.gpm.spain_annual[String(y)];
-      }
-    }
-  } else if (cfg.dimension === "drought") {
-    stats = bundle.gldas.stats.soil_moisture_0_10cm_mm;
-    for (let y = 2000; y <= 2026; y++) {
-      const v = bundle.gldas.annual[String(y)]?.soil_moisture_0_10cm_mm;
-      if (v !== undefined) rawObserved[y] = v;
-    }
-  } else if (cfg.dimension === "water_rivers") {
-    if (basin) {
-      stats = basin.runoff_stats;
-      for (let y = 2000; y <= 2025; y++) {
-        if (basin.runoff_mm[String(y)] !== undefined) rawObserved[y] = basin.runoff_mm[String(y)];
-      }
-    } else {
-      stats = bundle.gldas.stats.total_runoff_mm;
-      for (let y = 2000; y <= 2026; y++) {
-        const v = bundle.gldas.annual[String(y)]?.total_runoff_mm;
-        if (v !== undefined) rawObserved[y] = v;
-      }
-    }
-  } else if (cfg.dimension === "snow") {
-    const snowSt =
-      stationsInScope.find((s) => s.has_snow) ??
-      nearest?.station ??
-      bundle.noaa.stations.find((s) => s.has_snow) ??
-      bundle.noaa.stations[0];
-    stats = snowSt.stats.snow_days ?? bundle.gldas.stats.snow_water_equivalent_mm;
-    for (let y = 2001; y <= 2026; y++) {
-      const v = snowSt.years[String(y)]?.snow_days;
-      if (v !== undefined) rawObserved[y] = v;
-    }
-  } else if (cfg.dimension === "heat_extremes") {
-    const key = cfg.heatMetric;
-    const scopedHeat = stationsInScope.filter((s) => s.stats[key]);
-    if (!selected && hasSubNationalScope && scopedHeat.length > 0) {
-      stats = averageStats(scopedHeat.map((s) => s.stats[key])) ?? scopedHeat[0].stats[key];
-      for (let y = 2001; y <= 2026; y++) {
-        const vals = scopedHeat
-          .map((s) => s.years[String(y)]?.[key])
-          .filter((v): v is number => v !== null && v !== undefined);
-        if (vals.length > 0) {
-          rawObserved[y] = Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
-        }
-      }
-    } else {
-      const st =
-        nearest?.station ??
-        bundle.noaa.stations.find((s) => s.name.includes("Sevilla") || s.name.includes("Madrid")) ??
-        bundle.noaa.stations[0];
-      stats = st.stats[key];
-      for (let y = 2001; y <= 2026; y++) {
-        const v = st.years[String(y)]?.[key];
-        if (v !== null && v !== undefined) rawObserved[y] = v;
-      }
-    }
-  } else if (cfg.dimension === "rain_extremes") {
-    const key = cfg.rainMetric;
-    const scopedRainExt = stationsInScope.filter((s) => s.stats[key]);
-    if (!selected && hasSubNationalScope && scopedRainExt.length > 0) {
-      stats = averageStats(scopedRainExt.map((s) => s.stats[key])) ?? scopedRainExt[0].stats[key];
-      for (let y = 2001; y <= 2026; y++) {
-        const vals = scopedRainExt
-          .map((s) => s.years[String(y)]?.[key])
-          .filter((v): v is number => v !== null && v !== undefined);
-        if (vals.length > 0) {
-          rawObserved[y] = Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
-        }
-      }
-    } else {
-      const st = nearest?.station ?? bundle.noaa.stations[0];
-      stats = st.stats[key];
-      for (let y = 2001; y <= 2026; y++) {
-        const v = st.years[String(y)]?.[key];
-        if (v !== null && v !== undefined) rawObserved[y] = v;
-      }
-    }
-  } else if (cfg.dimension === "vegetation") {
-    stats = {
-      slope_decade: -0.014,
-      ci_low_decade: -0.028,
-      ci_high_decade: 0.002,
-      intercept_2000: cfg.vegMetric === "evi" ? 0.34 : 0.46,
-      p_value: 0.042,
-      significant: true,
-      n: 26,
-    };
-    for (let y = 2000; y <= 2026; y++) {
-      rawObserved[y] = Number(
-        (stats.intercept_2000 + (stats.slope_decade / 10) * (y - 2000) + 0.018 * Math.sin(y * 1.3)).toFixed(3),
-      );
-    }
-  } else if (cfg.dimension === "wind") {
-    const baseW =
-      !selected && hasSubNationalScope && stationsInScope.length > 0
-        ? Number((stationsInScope.reduce((a, b) => a + b.wind_mean_ms, 0) / stationsInScope.length).toFixed(2))
-        : nearest
-          ? nearest.station.wind_mean_ms
-          : 4.8;
-    stats = {
-      slope_decade: 0.09,
-      ci_low_decade: -0.04,
-      ci_high_decade: 0.21,
-      intercept_2000: baseW,
-      p_value: 0.14,
-      significant: false,
-      n: 26,
-    };
-    for (let y = 2000; y <= 2026; y++) {
-      rawObserved[y] = Number(
-        (baseW + (stats.slope_decade / 10) * (y - 2000) + 0.15 * Math.cos(y * 1.5)).toFixed(2),
-      );
     }
   }
 
-  // Generate 2000..2030 series with 95% CI cone for 2026..2030
-  const series: TimeSeriesPoint[] = [];
-  for (let y = 2000; y <= 2030; y++) {
-    const central = extrapolateValue(stats.intercept_2000, stats.slope_decade, y, "central");
-    const low = extrapolateValue(
-      stats.intercept_2000,
-      stats.slope_decade,
-      y,
-      "low",
-      stats.ci_low_decade,
-      stats.ci_high_decade,
-    );
-    const high = extrapolateValue(
-      stats.intercept_2000,
-      stats.slope_decade,
-      y,
-      "high",
-      stats.ci_low_decade,
-      stats.ci_high_decade,
-    );
-    series.push({
-      year: y,
-      observed: rawObserved[y],
-      trend: Number(central.toFixed(2)),
-      ciLow: y >= 2025 ? Number(Math.min(low, high).toFixed(2)) : undefined,
-      ciHigh: y >= 2025 ? Number(Math.max(low, high).toFixed(2)) : undefined,
-    });
-  }
+  const s = stats as TrendStats | null;
+  const years = Object.keys(observed).map(Number).sort((a, b) => a - b);
+  const series: TimeSeriesPoint[] = years.map((y) => ({
+    year: y,
+    observed: observed[y],
+    trend: s && y >= (s.first_year ?? years[0]) && y <= (s.last_year ?? years[years.length - 1])
+      ? Number((s.intercept_2000 + (s.slope_decade / 10) * (y - 2000)).toFixed(3))
+      : undefined,
+  }));
+  const currentValue = observed[cfg.year] ?? null;
 
-  const currentPt = series.find((s) => s.year === cfg.year) ?? series[series.length - 1];
-  const currentValue =
-    cfg.year <= 2026 && currentPt.observed !== undefined
-      ? currentPt.observed
-      : extrapolateValue(
-          stats.intercept_2000,
-          stats.slope_decade,
-          cfg.year,
-          cfg.scenario,
-          stats.ci_low_decade,
-          stats.ci_high_decade,
-        );
-
-  const p2030Central = extrapolateValue(
-    stats.intercept_2000,
-    stats.slope_decade,
-    2030,
-    cfg.scenario,
-    stats.ci_low_decade,
-    stats.ci_high_decade,
-  );
-  const p2030Low = extrapolateValue(
-    stats.intercept_2000,
-    stats.slope_decade,
-    2030,
-    "low",
-    stats.ci_low_decade,
-    stats.ci_high_decade,
-  );
-  const p2030High = extrapolateValue(
-    stats.intercept_2000,
-    stats.slope_decade,
-    2030,
-    "high",
-    stats.ci_low_decade,
-    stats.ci_high_decade,
-  );
-  const delta2030 = p2030Central - stats.intercept_2000;
-
-  // Build national GLDAS companion curve for Drought, Water/Rivers, or Snow
   let gldasSeries: LocationEvidence["gldasSeries"] = undefined;
-  if (cfg.dimension === "drought" || cfg.dimension === "vegetation") {
+  const g = bundle.gldas;
+  const gPoints = (k: keyof (typeof g.annual)[string], k2?: keyof (typeof g.annual)[string]) =>
+    g.years.map((y) => ({ year: y, primary: g.annual[String(y)][k], secondary: k2 ? g.annual[String(y)][k2] : undefined }));
+  if (cfg.dimension === "drought") {
     gldasSeries = {
-      title: "Spain Topsoil Moisture (0–10 cm, NASA GLDAS v2.1)",
+      title: "Topsoil moisture 0–10 cm (NASA GLDAS v2.1 model, Peninsula + Balearics)",
       units: "mm",
-      stats: bundle.gldas.stats.soil_moisture_0_10cm_mm,
+      stats: g.stats.soil_moisture_0_10cm_mm ?? null,
       primaryLabel: "Topsoil moisture (0–10 cm)",
-      points: bundle.gldas.years.map((y) => ({
-        year: y,
-        primary: bundle.gldas.annual[String(y)].soil_moisture_0_10cm_mm,
-      })),
+      points: gPoints("soil_moisture_0_10cm_mm"),
     };
   } else if (cfg.dimension === "water_rivers" || cfg.dimension === "precipitation") {
     gldasSeries = {
-      title: "Spain Water Balance: River Runoff vs Evapotranspiration (GLDAS)",
+      title: "Modelled runoff vs evapotranspiration (NASA GLDAS v2.1, Peninsula + Balearics)",
       units: "mm/yr",
-      stats: bundle.gldas.stats.total_runoff_mm,
-      primaryLabel: "Total river runoff",
-      secondaryLabel: "Evapotranspiration",
-      points: bundle.gldas.years.map((y) => ({
-        year: y,
-        primary: bundle.gldas.annual[String(y)].total_runoff_mm,
-        secondary: bundle.gldas.annual[String(y)].evapotranspiration_mm,
-      })),
-    };
-  } else if (cfg.dimension === "snow") {
-    gldasSeries = {
-      title: "Spain Snow Water Equivalent (NASA GLDAS v2.1)",
-      units: "mm SWE",
-      stats: bundle.gldas.stats.snow_water_equivalent_mm,
-      primaryLabel: "Snow water equivalent",
-      points: bundle.gldas.years.map((y) => ({
-        year: y,
-        primary: bundle.gldas.annual[String(y)].snow_water_equivalent_mm,
-      })),
+      stats: g.stats.total_runoff_mm ?? null,
+      primaryLabel: "Total runoff (model)",
+      secondaryLabel: "Evapotranspiration (model)",
+      points: gPoints("total_runoff_mm", "evapotranspiration_mm"),
     };
   }
 
-  // Generate 2030 Decision Support Cards tailored to the active Administrative Level
-  const stRef = nearest?.station;
-  const trop2030 = stRef?.stats.tropical_nights
-    ? Math.max(
-        0,
-        Math.round(
-          extrapolateValue(stRef.stats.tropical_nights.intercept_2000, stRef.stats.tropical_nights.slope_decade, 2030),
-        ),
-      )
-    : 34;
-  const hot35_2030 = stRef?.stats.hot_days_35
-    ? Math.max(
-        0,
-        Math.round(
-          extrapolateValue(stRef.stats.hot_days_35.intercept_2000, stRef.stats.hot_days_35.slope_decade, 2030),
-        ),
-      )
-    : 19;
-  const drySpell2030 = stRef?.stats.max_dry_spell
-    ? Math.max(
-        10,
-        Math.round(
-          extrapolateValue(stRef.stats.max_dry_spell.intercept_2000, stRef.stats.max_dry_spell.slope_decade, 2030),
-        ),
-      )
-    : 52;
-  const runoffSlope = basin ? basin.runoff_stats.slope_decade : bundle.gldas.stats.total_runoff_mm.slope_decade;
-  const windMs = stRef ? stRef.wind_mean_ms : 4.9;
-  const scopeLevel = resolvedScope?.level ?? "age";
-  const scopeTitle = resolvedScope?.name ?? "España (AGE)";
-
-  const decisions: DecisionAlert[] = [
-    {
-      sector: "Water & Rivers",
-      level: runoffSlope < -25 ? "HIGH" : runoffSlope < -10 ? "MODERATE" : "LOW",
-      headline:
-        scopeLevel === "provincia"
-          ? `Consorcio Provincial de Aguas (${scopeTitle})`
-          : scopeLevel === "ccaa"
-            ? `Cuencas y Plan Hidrológico Autonómico (${scopeTitle})`
-            : basin
-              ? `${basin.name} · Plan Hidrológico Nacional (AGE)`
-              : "Planificación Hidrológica Nacional (AGE · MITECO)",
-      metricSummary: `${runoffSlope > 0 ? "+" : ""}${runoffSlope.toFixed(1)} mm/decade${basin ? ` · ${basin.reservoir_capacity_hm3} hm³ storage` : ""}`,
-      recommendation:
-        scopeLevel === "provincia"
-          ? "Refuerzo de interconexiones supramunicipales de la Diputación, digitalización del ciclo del agua y garantía de suministro provincial ante estiajes."
-          : scopeLevel === "ccaa"
-            ? "Revisión de reservas estratégicas en cuencas intracomunitarias, desalación/regeneración autonómica y umbrales de sequía 2030."
-            : runoffSlope < -20
-              ? "Prioritize multi-year reservoir buffer rules (D.G. del Agua / Confederaciones Hidrográficas), leak reduction and reclaimed water reuse before 2030."
-              : "Maintain seasonal basin monitoring across state hydrographic demarcations; high interannual variability dominates short-term inflows.",
-    },
-    {
-      sector: "Agriculture & Soil",
-      level: drySpell2030 > 65 ? "CRITICAL" : drySpell2030 > 45 ? "HIGH" : "MODERATE",
-      headline:
-        scopeLevel === "provincia"
-          ? `Plan Agro-Hidrológico Provincial (${scopeTitle})`
-          : scopeLevel === "ccaa"
-            ? `Modernización de Regadíos y PAC Autonómica (${scopeTitle})`
-            : "Topsoil Drying & Dry Spell Duration (AGE / MAPA)",
-      metricSummary: `−3.0%/decade soil moisture · ~${drySpell2030} consecutive dry days by 2030`,
-      recommendation:
-        drySpell2030 > 50
-          ? "Shift flowering-sensitive crops (olive/cereal/vineyard) to deficit drip irrigation and drought-tolerant varieties; monitor NASA GLDAS 0–10 cm soil moisture."
-          : "Monitor spring topsoil moisture anomalies (0–10 cm) ahead of sowing windows and coordinate irrigation quotas.",
-    },
-    {
-      sector: "Urban Heat & Health",
-      level: trop2030 > 50 || hot35_2030 > 25 ? "CRITICAL" : trop2030 > 25 ? "HIGH" : "MODERATE",
-      headline:
-        scopeLevel === "provincia"
-          ? `Red Provincial de Adaptación Térmica (${scopeTitle})`
-          : scopeLevel === "ccaa"
-            ? `Plan Autonómico de Salud y Olas de Calor (${scopeTitle})`
-            : "2030 Thermal Stress & Tropical Nights (Plan Nacional)",
-      metricSummary: `~${trop2030} tropical nights/yr (≥20 °C) · ~${hot35_2030} days >35 °C by 2030`,
-      recommendation:
-        trop2030 > 30
-          ? "Expand urban tree canopy, cool roofs and hospital heatwave protocols; peak summer grid cooling demand rises."
-          : "Moderate night heat stress; focus heat adaptation on vulnerable districts during July–August peaks.",
-    },
-    {
-      sector: "Energy & Wildfire Risk",
-      level: windMs > 5.5 && drySpell2030 > 45 ? "HIGH" : "MODERATE",
-      headline:
-        scopeLevel === "provincia"
-          ? `Consorcio Provincial de Bomberos e Interfaz Forestal (${scopeTitle})`
-          : scopeLevel === "ccaa"
-            ? `Operativo Autonómico de Extinción y Eólica (${scopeTitle})`
-            : "Wind Resource vs Hydro & Fire-Wind Coupling (PNIEC 2030)",
-      metricSummary: `Mean wind ${windMs.toFixed(1)} m/s (gusts ~${(windMs * 2.3).toFixed(0)} m/s)${basin ? ` · ${basin.hydro_mw} MW hydro` : ""}`,
-      recommendation:
-        windMs > 5.2
-          ? "Strong wind corridor potential to offset lower hydro output in dry years; enforce preventive summer firebreak clearing."
-          : "Hybrid solar + wind + pumped-storage dispatch recommended to balance seasonal hydro variability.",
-    },
-  ];
-
+  const stationName = nearest?.station.name.replace(/, SP$/i, "") ?? null;
+  const basinName = basin ? basin.name.replace(/^Cuenca del /i, "") : null;
   const locationLabel = selected
     ? nearest && nearest.distanceKm < 2
-      ? nearest.station.name
-      : nearest && nearest.distanceKm < 45
-        ? `${nearest.station.name} (${nearest.distanceKm} km)`
-        : `${selected.latitude.toFixed(2)}°N, ${selected.longitude.toFixed(2)}°E`
+      ? stationName!
+      : basinName && cfg.dimension === "precipitation"
+        ? `${basinName} basin box`
+        : nearest && nearest.distanceKm < 25
+          ? `Near ${stationName}`
+          : "This place"
     : hasSubNationalScope && resolvedScope
       ? resolvedScope.name
-      : "España · Administración General del Estado (AGE)";
-
+      : "Peninsula + Balearics";
   const subLabel = selected
-    ? basin
-      ? `${basin.name} · ${basin.river}`
-      : nearest
-        ? `Elev. ${nearest.station.elevation} m · Station ${nearest.station.id}`
-        : "Coordinate point selection"
+    ? [stationName && nearest ? `${stationName} · ${nearest.distanceKm} km` : null].filter(Boolean).join(" · ") ||
+      "Clicked on the map"
     : hasSubNationalScope && resolvedScope
-      ? `${resolvedScope.institution}`
-      : "MITECO · AEMET · Dirección General del Agua (Península, Baleares, Canarias, Ceuta y Melilla)";
+      ? resolvedScope.institution
+      : "National view (Canarias reported separately)";
 
   return {
     locationLabel,
     subLabel,
     dimensionMeta: dimMeta,
     effectiveTitle: effMeta.title,
-    units: cfg.dimension === "drought" ? "mm (Soil 0–10 cm)" : dimMeta.units,
-    trendUnits: cfg.dimension === "drought" ? "mm/decade" : dimMeta.trendUnits,
+    units: dimMeta.units,
+    trendUnits: dimMeta.trendUnits,
     currentYear: cfg.year,
-    currentValue: Number(currentValue.toFixed(2)),
-    projected2030: Number(p2030Central.toFixed(2)),
-    Projected2030Range: [
-      Number(Math.min(p2030Low, p2030High).toFixed(2)),
-      Number(Math.max(p2030Low, p2030High).toFixed(2)),
-    ],
-    delta2030: Number(delta2030.toFixed(2)),
-    stats,
+    currentValue,
+    stats: s,
+    outcome: outcomeOf(s),
+    statsSource,
+    notComputedReason,
     series,
     gldasSeries,
     nearestStation: nearest,
     basin,
-    decisions,
     adminScope: resolvedScope ?? null,
     stationsInScopeCount: stationsInScope.length,
   };

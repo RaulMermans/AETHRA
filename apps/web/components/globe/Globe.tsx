@@ -3,19 +3,13 @@
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import type * as CesiumNS from "cesium";
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { HOME_VIEW, MIN_ZOOM_DISTANCE, WORLD_VIEW } from "@/lib/globe/catalog";
+import { HOME_VIEW, MIN_ZOOM_DISTANCE } from "@/lib/globe/catalog";
 import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera";
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
 import { pickCoordinate, pickOverlayFeature } from "@/lib/globe/cesium/picking";
-import {
-  clipGlobeToSpain,
-  constrainCameraToSpain,
-  createSpain2DMask,
-  loadSpainBoundary,
-  type SpainBoundary,
-} from "@/lib/globe/cesium/spain-mask";
+import { constrainCameraToSpain } from "@/lib/globe/cesium/spain-mask";
 import {
   createBaseImagery,
   createFallbackImagery,
@@ -50,7 +44,7 @@ export interface GlobeProps {
   layerStates: LayerStateMap;
   selected: GeoCoordinate | null;
   qualityMode: QualityMode;
-  /** "spain": render only Spain + surrounding sea (D21); "world": whole globe. */
+  /** "spain": camera locked near Spain; "world": free camera. The whole globe is always rendered. */
   viewMode: ViewMode;
   /** Active map tool (distance, offset…). While set, clicks go to `onToolClick`, not `onSelect`. */
   measure?: MeasureState | null;
@@ -208,7 +202,7 @@ export default function Globe(props: GlobeProps) {
       let viewMode: ViewMode = propsRef.current.viewMode;
       let baseSets: Record<ViewMode, CesiumNS.ImageryLayer[]> = { spain: [], world: [] };
       const showBase = () => {
-        for (const m of ["spain", "world"] as const) for (const l of baseSets[m]) l.show = m === viewMode;
+        for (const m of ["spain", "world"] as const) for (const l of baseSets[m]) l.show = m === "world"; // whole Earth always shown
       };
       const installBase = (make: (rectangles?: CesiumNS.Rectangle[]) => ReturnType<typeof createFallbackImagery>) => {
         for (const l of [...baseSets.spain, ...baseSets.world]) v.imageryLayers.remove(l, true);
@@ -330,26 +324,18 @@ export default function Globe(props: GlobeProps) {
         });
       };
 
-      // View mode. Spain: only Spain + sea is rendered (clipped), no atmosphere halo (there is no
-      // full Earth disc behind it), zoom-out limited and the camera kept near Spain. World: the
-      // whole globe. Until the outline loads, the full globe is shown; if it fails to load the full
-      // globe stays (logged) rather than showing nothing.
-      let spain: SpainBoundary | null = null;
-      // Globe clipping only renders in 3D; the flat 2D map uses an opaque mask instead.
-      let mask2D: CesiumNS.Entity[] = [];
-      const WORLD_BASE = Cesium.Color.fromCssColorString("#0b1424");
+      // View mode. The whole Earth is always rendered (Spain's outline is drawn by the outline
+      // layer and the climate heatmaps are clipped to Spain). "spain" = camera locked near Spain
+      // (kept inside CAMERA_BOUNDS, zoom-out limited); "world" = free camera.
       const applyViewMode = () => {
-        const focus = viewMode === "spain";
+        const locked = viewMode === "spain";
         const is3D = scene.mode === Cesium.SceneMode.SCENE3D;
         showBase();
-        if (scene.globe.clippingPolygons) scene.globe.clippingPolygons.enabled = focus && is3D;
-        for (const e of mask2D) e.show = focus && !is3D && scene.mode !== Cesium.SceneMode.MORPHING;
-        // Spain mode: empty space around the clip stays dark; the land itself keeps a horizon glow.
-        scene.globe.baseColor = focus ? Cesium.Color.fromCssColorString("#02040a") : WORLD_BASE;
-        scene.globe.showGroundAtmosphere = is3D && !focus;
-        if (scene.skyAtmosphere) scene.skyAtmosphere.show = is3D && !focus;
+        scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b1424");
+        scene.globe.showGroundAtmosphere = is3D;
+        if (scene.skyAtmosphere) scene.skyAtmosphere.show = is3D;
         scene.fog.enabled = is3D;
-        ctrl.maximumZoomDistance = focus ? 9_000_000 : 40_000_000;
+        ctrl.maximumZoomDistance = locked ? 9_000_000 : 40_000_000;
         scene.requestRender();
       };
       const setViewMode = (mode: ViewMode) => {
@@ -360,20 +346,7 @@ export default function Globe(props: GlobeProps) {
       };
       applyViewMode();
       stopCameraConstraint = constrainCameraToSpain(Cesium, v, () => viewMode === "spain");
-      void loadSpainBoundary()
-        .then((b) => {
-          if (disposed || v.isDestroyed()) return;
-          spain = b;
-          clipGlobeToSpain(Cesium, v, b, viewMode === "spain");
-          mask2D = createSpain2DMask(Cesium, v, b, Cesium.Color.BLACK);
-          applyViewMode();
-        })
-        .catch((err) => console.warn("[globe] Spain boundary failed; showing the full globe", err));
-      // In Spain mode, hover/click outside the rendered area yields no coordinate.
-      const pickSpain = (p: CesiumNS.Cartesian2 | undefined) => {
-        const c = pickCoordinate(Cesium, v, p, terrain);
-        return c && viewMode === "spain" && spain && !spain.contains(c.longitude, c.latitude) ? null : c;
-      };
+      const pickSpain = (p: CesiumNS.Cartesian2 | undefined) => pickCoordinate(Cesium, v, p, terrain);
 
       // Pointer interaction.
       let terrain: TerrainResult | null = null;
@@ -460,7 +433,7 @@ export default function Globe(props: GlobeProps) {
               duration ? 0.6 : 0,
             );
           });
-          applyViewMode(); // hide the 2D mask / clipping while morphing
+          applyViewMode();
           if (dim === "2d") scene.morphTo2D(duration);
           else scene.morphTo3D(duration);
           scene.requestRender();
@@ -501,7 +474,7 @@ export default function Globe(props: GlobeProps) {
 
       emit({ phase: "ready" });
       propsRef.current.onReady?.(controller);
-      controller.flyTo(viewMode === "spain" ? HOME_VIEW : WORLD_VIEW);
+      controller.flyTo(HOME_VIEW);
 
       // Real terrain (see providers.ts). Without it the globe is a smooth ellipsoid and the UI
       // says so; elevation is then never shown.

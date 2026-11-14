@@ -51,6 +51,11 @@ interface EnergyTechControlsDockProps {
  * Left-hand expert control dock with 4 clean dropdowns for selecting Energy Concept,
  * Territorial Scope, Optimization Goal, and Crossed Variable Lens.
  */
+/** EXPLORATORY Energy Lab: missing values (NaN from the pipeline's nulls) render as an em dash. */
+function show(v: number): string | number {
+  return Number.isFinite(v) ? v : "—";
+}
+
 export function EnergyTechControlsDock({
   conceptId,
   scope,
@@ -235,10 +240,11 @@ function CrossedDualTimeSeriesChart({
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
 
-  const pVals = pts.flatMap((p) => (p.primaryObs !== undefined ? [p.primaryObs, p.primaryTrend] : [p.primaryTrend]));
-  const sVals = pts.flatMap((p) =>
-    p.secondaryObs !== undefined ? [p.secondaryObs, p.secondaryTrend] : [p.secondaryTrend],
-  );
+  const fin = (v: number | undefined): v is number => v !== undefined && Number.isFinite(v);
+  const pValsRaw = pts.flatMap((p) => [p.primaryObs, p.primaryTrend]).filter(fin);
+  const sValsRaw = pts.flatMap((p) => [p.secondaryObs, p.secondaryTrend]).filter(fin);
+  const pVals = pValsRaw.length ? pValsRaw : [0];
+  const sVals = sValsRaw.length ? sValsRaw : [0];
 
   const pMinRaw = Math.min(...pVals);
   const pMaxRaw = Math.max(...pVals);
@@ -261,6 +267,7 @@ function CrossedDualTimeSeriesChart({
     .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yPrimary(p.primaryObs!).toFixed(1)}`)
     .join(" ");
   const pTrendPath = pts
+    .filter((p) => Number.isFinite(p.primaryTrend))
     .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yPrimary(p.primaryTrend).toFixed(1)}`)
     .join(" ");
 
@@ -269,6 +276,7 @@ function CrossedDualTimeSeriesChart({
     .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${ySecondary(p.secondaryObs!).toFixed(1)}`)
     .join(" ");
   const sTrendPath = pts
+    .filter((p) => Number.isFinite(p.secondaryTrend))
     .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${ySecondary(p.secondaryTrend).toFixed(1)}`)
     .join(" ");
 
@@ -568,13 +576,13 @@ export function EnergyTechInspectorPanel({
                       )}
                     </div>
                     <p className="truncate text-[10px] text-muted">
-                      {site.primaryMetric.label}: <strong>{site.primaryMetric.value}</strong> {site.primaryMetric.units} ·{" "}
-                      {site.secondaryMetric.label}: <strong>{site.secondaryMetric.value}</strong> {site.secondaryMetric.units}
+                      {site.primaryMetric.label}: <strong>{show(site.primaryMetric.value)}</strong> {site.primaryMetric.units} ·{" "}
+                      {site.secondaryMetric.label}: <strong>{show(site.secondaryMetric.value)}</strong> {site.secondaryMetric.units}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end">
                     <span className="font-mono text-xs font-bold text-ink">
-                      {site.score}
+                      {show(site.score)}
                       <span className="text-[9px] font-normal text-muted">/100</span>
                     </span>
                     <span
@@ -610,7 +618,7 @@ export function EnergyTechInspectorPanel({
                 <p className="truncate text-[10px] text-muted">{activeSite.subLabel}</p>
               </div>
               <span className="shrink-0 font-mono text-xs font-semibold text-ink">
-                Score {activeSite.score}/100
+                Score {show(activeSite.score)}/100
               </span>
             </div>
 
@@ -621,12 +629,12 @@ export function EnergyTechInspectorPanel({
                   {activeSite.primaryMetric.label}
                 </p>
                 <p className="mt-0.5 font-mono text-xs font-semibold text-sky-200">
-                  {activeSite.primaryMetric.value}{" "}
+                  {show(activeSite.primaryMetric.value)}{" "}
                   <span className="text-[9px] font-normal text-muted">{activeSite.primaryMetric.units}</span>
                 </p>
                 <p className="font-mono text-[9px] text-faint">
                   {activeSite.primaryMetric.slopeDecade > 0 ? "+" : ""}
-                  {activeSite.primaryMetric.slopeDecade} {activeSite.primaryMetric.trendUnits}
+                  {show(activeSite.primaryMetric.slopeDecade)} {activeSite.primaryMetric.trendUnits}
                 </p>
               </div>
 
@@ -635,12 +643,12 @@ export function EnergyTechInspectorPanel({
                   {activeSite.secondaryMetric.label}
                 </p>
                 <p className="mt-0.5 font-mono text-xs font-semibold text-amber-200">
-                  {activeSite.secondaryMetric.value}{" "}
+                  {show(activeSite.secondaryMetric.value)}{" "}
                   <span className="text-[9px] font-normal text-muted">{activeSite.secondaryMetric.units}</span>
                 </p>
                 <p className="font-mono text-[9px] text-faint">
                   {activeSite.secondaryMetric.slopeDecade > 0 ? "+" : ""}
-                  {activeSite.secondaryMetric.slopeDecade} {activeSite.secondaryMetric.trendUnits}
+                  {show(activeSite.secondaryMetric.slopeDecade)} {activeSite.secondaryMetric.trendUnits}
                 </p>
               </div>
 
@@ -671,10 +679,12 @@ export function EnergyTechInspectorPanel({
             <div className="rounded-lg border border-amber-400/25 bg-amber-400/8 p-2.5 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] font-semibold text-amber-200">
-                  Scientific Proof &amp; Industrial Recommendation
+                  Exploratory reading (not a validated result)
                 </span>
                 <span className="font-mono text-[9.5px] text-muted">
-                  MK p = {activeSite.pValue < 0.001 ? "<0.001" : activeSite.pValue.toFixed(3)}
+                  {Number.isFinite(activeSite.pValue)
+                    ? `MK p = ${activeSite.pValue < 0.001 ? "<0.001" : activeSite.pValue.toFixed(3)}`
+                    : "No test · exploratory"}
                 </span>
               </div>
               <p className="text-[11px] leading-snug text-ink/95">

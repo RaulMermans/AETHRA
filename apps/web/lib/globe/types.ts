@@ -193,8 +193,9 @@ export interface GlobeStatus {
 /** Map tools that take clicks on the globe. Add new ids here and in components/explore/ToolsBar.tsx. */
 export type ClickToolId = "distance" | "offset" | "area" | "radius" | "profile";
 /** Tools that only open a panel (no clicks on the globe). */
-export type PanelToolId = "goto" | "relief";
-export type ToolId = ClickToolId | PanelToolId;
+export type PanelToolId = "stations" | "evidence";
+/** Tools shown in the /explore Map tools bar (click tools are not exposed in the UI — see D45). */
+export type ToolId = PanelToolId;
 
 /**
  * Active click tool with the points clicked so far. `preview` follows the cursor while a

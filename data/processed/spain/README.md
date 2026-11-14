@@ -33,7 +33,8 @@ The rest of 2001–2026 is not on disk (estimated 185–500 GB).
 
 The clip polygon is `spain_boundary_nuts2021_01m.geojson` (Eurostat GISCO NUTS 2021, see below).
 
-**Facts hidden in here 🔍** (Spain average, full years, Mann-Kendall + Sen's slope):
+**Facts hidden in here 🔍** (Spain average, full years, Mann-Kendall + Sen's slope). *EXPLORATORY,
+not gate-checked; see the caveat in [`data/README.md`](../../README.md).*
 - 🌡️ Spain warms **+0.56 °C per decade** (p = 0.0005, significant). Warmest year 2022 (16.4 °C), coldest 2010 (14.3 °C)
 - 🗺️ **Every pixel warms**, but unevenly: from +0.2 to +0.76 °C per decade → good for a "where is it changing most" map
 - 🌧️ Rain: −34 mm per decade, **not significant** (p = 0.18): average ~700 mm/yr, driest 2005 (516 mm), wettest 2010 (921 mm)

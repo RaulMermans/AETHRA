@@ -138,79 +138,8 @@ export const DETAIL_BASE_IMAGERY = {
     "Sentinel-2 cloudless 2024 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024) · s2maps.eu",
 };
 
-function isoDateUTC(daysAgo: number, now = new Date()): string {
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  d.setUTCDate(d.getUTCDate() - daysAgo);
-  return d.toISOString().slice(0, 10);
-}
-
-/** Closed ring along the bbox, densified so edges follow parallels/meridians on the globe. */
-function bboxRing(b: typeof SPAIN_BBOX, step = 0.5): [number, number][] {
-  const ring: [number, number][] = [];
-  const push = (x0: number, y0: number, x1: number, y1: number) => {
-    const n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / step));
-    for (let i = 0; i < n; i++) ring.push([x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n]);
-  };
-  push(b.west, b.south, b.east, b.south);
-  push(b.east, b.south, b.east, b.north);
-  push(b.east, b.north, b.west, b.north);
-  push(b.west, b.north, b.west, b.south);
-  ring.push([b.west, b.south]);
-  return ring;
-}
-
-export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
+export function buildLayerCatalog(): LayerDescriptor[] {
   return [
-    {
-      id: "viirs-true-color",
-      kind: "imagery",
-      group: "imagery",
-      title: "True color (daily)",
-      description:
-        "VIIRS NOAA-20 corrected reflectance. Near-real-time; recent days can be partial and cloudy.",
-      source: {
-        name: "NASA GIBS",
-        product: "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
-        url: "https://nasa-gibs.github.io/gibs-api-docs/",
-      },
-      resolution: "250 m",
-      urlTemplate: `${GIBS}/VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/{Time}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
-      maximumLevel: 9,
-      credit: "VIIRS NOAA-20 Corrected Reflectance · NASA GIBS",
-      time: { default: isoDateUTC(2, now), max: isoDateUTC(0, now), step: "P1D" },
-    },
-    {
-      id: "black-marble",
-      kind: "imagery",
-      group: "imagery",
-      title: "Night lights (2016)",
-      description: "VIIRS Black Marble annual composite of night-time lights.",
-      source: {
-        name: "NASA GIBS",
-        product: "VIIRS_Black_Marble",
-        url: "https://earthobservatory.nasa.gov/features/NightLights",
-      },
-      resolution: "500 m",
-      urlTemplate: `${GIBS}/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png`,
-      maximumLevel: 8,
-      credit: "VIIRS Black Marble 2016 · NASA GIBS",
-    },
-    {
-      id: "modis-ndvi-gibs",
-      kind: "imagery",
-      group: "imagery",
-      title: "Vegetation NDVI (MODIS 8-day)",
-      description: "NASA Terra MODIS 8-day Normalized Difference Vegetation Index (GIBS WMTS).",
-      source: {
-        name: "NASA GIBS",
-        product: "MODIS_Terra_NDVI_8Day",
-        url: "https://nasa-gibs.github.io/gibs-api-docs/",
-      },
-      resolution: "250 m",
-      urlTemplate: `${GIBS}/MODIS_Terra_NDVI_8Day/default/2000-02-18/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`,
-      maximumLevel: 9,
-      credit: "MODIS Terra NDVI 8-Day · NASA GIBS",
-    },
     {
       id: "spain-boundary",
       kind: "geojson",
@@ -225,25 +154,6 @@ export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
       },
       data: SPAIN_OUTLINE_URL,
       style: { stroke: "#7cc4ff", strokeWidth: 1.5 },
-    },
-    {
-      id: "spain-extent",
-      kind: "geojson",
-      group: "reference",
-      title: "Analysis extent",
-      description: "Default study area: Peninsula + Balearic Islands (DECISIONS D5).",
-      source: { name: "Project decision D5", product: "bbox -9.5, 35.9, 4.4, 43.9" },
-      data: {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { name: "Analysis extent (D5)" },
-            geometry: { type: "LineString", coordinates: bboxRing(SPAIN_BBOX) },
-          },
-        ],
-      },
-      style: { stroke: "#7cc4ff", strokeWidth: 2 },
     },
   ];
 }

@@ -1,20 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { formatDegrees } from "@/lib/format";
 import { SCOPE_LEVEL_META, type ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import {
+  getEffectiveMeta,
   queryClimateAtLocation,
   type ActiveClimateConfig,
   type ClimateBundle,
-  type DecisionAlert,
+  type EvidenceOutcome,
   type LocationEvidence,
-  type NoaaStation,
   type RiverBasin,
 } from "@/lib/globe/climate";
 import type { GeoCoordinate } from "@/lib/globe/types";
 import { Icon } from "./Icon";
+import { ScaleThermometer } from "./ScaleThermometer";
 
+/**
+ * Evidence for the active dimension and place. Render-only (ADR-002): slopes, CIs, p-values and
+ * outcome labels come from climate-bundle.json (scripts/build_climate_bundle.py). Observed years
+ * only; no extrapolation, no projections (D38).
+ */
 interface EvidencePanelProps {
   open: boolean;
   onClose: () => void;
@@ -25,17 +30,38 @@ interface EvidencePanelProps {
   onSelectYear: (year: number) => void;
   onSelectLocation: (coord: GeoCoordinate | null) => void;
   onResetToNational?: () => void;
-  onInspectStation: (coord: GeoCoordinate) => void;
+  onOpenStationCatalog: () => void;
 }
 
-const LEVEL_BADGE: Record<DecisionAlert["level"], string> = {
-  LOW: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  MODERATE: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  HIGH: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  CRITICAL: "bg-rose-500/20 text-rose-300 border-rose-500/40",
-};
+function fmt(n: number, digits?: number): string {
+  const abs = Math.abs(n);
+  const d = digits ?? (abs >= 100 ? 0 : abs >= 10 ? 1 : 2);
+  return n.toFixed(d);
+}
 
-function TrendForecastChart({
+function signed(n: number): string {
+  return `${n > 0 ? "+" : n < 0 ? "−" : "±"}${fmt(Math.abs(n))}`;
+}
+
+function outcomeView(evidence: LocationEvidence): { glyph: string; label: string; tone: string } {
+  const outcome: EvidenceOutcome = evidence.outcome;
+  switch (outcome) {
+    case "supported_increase":
+      return { glyph: "▲", label: "Supported increase", tone: "border-amber-300/40 bg-amber-400/15 text-amber-100" };
+    case "supported_decrease":
+      return { glyph: "▼", label: "Supported decrease", tone: "border-sky-300/40 bg-sky-400/15 text-sky-100" };
+    case "not_significant":
+      return { glyph: "◆", label: "No robust trend detected", tone: "border-white/25 bg-white/8 text-ink" };
+    case "not_computed":
+      return { glyph: "?", label: "Insufficient evidence", tone: "border-white/25 bg-white/8 text-ink" };
+    default: {
+      const exhaustive: never = outcome;
+      return exhaustive;
+    }
+  }
+}
+
+function ObservedChart({
   evidence,
   selectedYear,
   onSelectYear,
@@ -45,303 +71,108 @@ function TrendForecastChart({
   onSelectYear: (year: number) => void;
 }) {
   const pts = evidence.series;
-  const w = 340;
-  const h = 135;
-  const padL = 34;
-  const padR = 10;
-  const padT = 12;
-  const padB = 20;
-  const innerW = w - padL - padR;
-  const innerH = h - padT - padB;
-
-  const allVals: number[] = [];
-  for (const p of pts) {
-    if (p.observed !== undefined) allVals.push(p.observed);
-    allVals.push(p.trend);
-    if (p.ciLow !== undefined) allVals.push(p.ciLow);
-    if (p.ciHigh !== undefined) allVals.push(p.ciHigh);
+  if (pts.length < 2) {
+    return <p className="rounded-xl bg-black/30 p-3 text-[12px] text-muted">No observed series for this place.</p>;
   }
-  const vMin = Math.min(...allVals);
-  const vMax = Math.max(...allVals);
-  const span = vMax - vMin || 1;
-  const yMin = vMin - span * 0.1;
-  const yMax = vMax + span * 0.1;
-
-  const xOf = (yr: number) => padL + ((yr - 2000) / 30) * innerW;
-  const yOf = (val: number) => padT + (1 - (val - yMin) / (yMax - yMin || 1)) * innerH;
-
-  // Trend line path (2000..2030)
-  const trendPath = pts
-    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.trend).toFixed(1)}`)
-    .join(" ");
-
-  // Observed polyline (2000..2026)
-  const obsPts = pts.filter((p) => p.observed !== undefined);
-  const obsPath = obsPts
-    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.observed!).toFixed(1)}`)
-    .join(" ");
-
-  // 2025..2030 95% CI fan polygon
-  const ciPts = pts.filter((p) => p.ciLow !== undefined && p.ciHigh !== undefined);
-  const ciPolygon =
-    ciPts.length > 1
-      ? [
-          ...ciPts.map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.ciHigh!).toFixed(1)}`),
-          ...[...ciPts].reverse().map((p) => `L${xOf(p.year).toFixed(1)},${yOf(p.ciLow!).toFixed(1)}`),
-          "Z",
-        ].join(" ")
-      : "";
-
-  const x2026 = xOf(2026);
-  const xSel = xOf(selectedYear);
-
-  return (
-    <div className="rounded-lg border border-line bg-black/25 p-2.5">
-      <div className="mb-1 flex items-center justify-between text-[10px] text-muted">
-        <span className="font-medium text-ink">
-          2000–2026 Observed + 2030 Projection ({evidence.units})
-        </span>
-        <span className="text-amber-300">95% CI Cone (2026–2030)</span>
-      </div>
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        className="h-32 w-full cursor-pointer select-none overflow-visible"
-        role="img"
-        aria-label={`Time series and 2030 trend extrapolation for ${evidence.effectiveTitle}`}
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const relX = ((e.clientX - rect.left) / rect.width) * w;
-          const yr = Math.round(2000 + ((relX - padL) / innerW) * 30);
-          onSelectYear(Math.max(2000, Math.min(2030, yr)));
-        }}
-      >
-        {/* Forecast shaded background (2026..2030) */}
-        <rect
-          x={x2026}
-          y={padT}
-          width={Math.max(0, w - padR - x2026)}
-          height={innerH}
-          fill="rgba(251, 191, 36, 0.08)"
-        />
-        <line
-          x1={x2026}
-          y1={padT}
-          x2={x2026}
-          y2={padT + innerH}
-          stroke="rgba(251, 191, 36, 0.45)"
-          strokeDasharray="3 3"
-        />
-
-        {/* Y axis labels */}
-        {[0, 0.5, 1].map((t) => {
-          const v = yMin + t * (yMax - yMin);
-          const y = yOf(v);
-          return (
-            <g key={t}>
-              <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="rgba(255,255,255,0.07)" />
-              <text x={padL - 4} y={y + 3} textAnchor="end" className="fill-white/45 font-mono text-[8.5px]">
-                {v.toFixed(vMax - vMin < 2 ? 2 : 0)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* 95% CI Cone */}
-        {ciPolygon && <path d={ciPolygon} fill="rgba(251, 191, 36, 0.24)" />}
-
-        {/* Sen's slope trend line */}
-        <path d={trendPath} fill="none" stroke="#fbbf24" strokeWidth={1.6} strokeDasharray="4 2" />
-
-        {/* Historical observations */}
-        {obsPath && <path d={obsPath} fill="none" stroke="#7cc4ff" strokeWidth={1.8} />}
-        {obsPts.map((p) => (
-          <circle
-            key={p.year}
-            cx={xOf(p.year)}
-            cy={yOf(p.observed!)}
-            r={p.year === selectedYear ? 3.5 : 1.8}
-            fill={p.year === selectedYear ? "#ffffff" : "#7cc4ff"}
-          />
-        ))}
-
-        {/* Selected year cursor */}
-        <line x1={xSel} y1={padT} x2={xSel} y2={padT + innerH} stroke="rgba(255,255,255,0.5)" strokeWidth={1} />
-
-        {/* X axis ticks */}
-        {[2000, 2010, 2020, 2026, 2030].map((yr) => (
-          <text
-            key={yr}
-            x={xOf(yr)}
-            y={h - 4}
-            textAnchor="middle"
-            className={`font-mono text-[8.5px] ${yr > 2026 ? "fill-amber-300" : "fill-white/50"}`}
-          >
-            {yr}
-          </text>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-function GldasNationalCurve({
-  gldas,
-}: {
-  gldas: NonNullable<LocationEvidence["gldasSeries"]>;
-}) {
-  const pts = gldas.points;
-  const w = 340;
-  const h = 96;
+  const w = 360;
+  const h = 168;
   const padL = 34;
-  const padR = 10;
-  const padT = 10;
-  const padB = 18;
+  const padR = 8;
+  const padT = 12;
+  const padB = 22;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
+  const x0 = pts[0].year;
+  const x1 = pts[pts.length - 1].year;
 
-  const vals = pts.flatMap((p) => (p.secondary !== undefined ? [p.primary, p.secondary] : [p.primary]));
+  const vals: number[] = [];
+  for (const p of pts) {
+    if (p.observed !== undefined) vals.push(p.observed);
+    if (p.trend !== undefined) vals.push(p.trend);
+  }
   const vMin = Math.min(...vals);
   const vMax = Math.max(...vals);
   const span = vMax - vMin || 1;
   const yMin = vMin - span * 0.1;
-  const yMax = vMax + span * 0.1;
-
-  const xOf = (yr: number) => padL + ((yr - 2000) / 26) * innerW;
+  const yMax = vMax + span * 0.12;
+  const xOf = (yr: number) => padL + ((yr - x0) / Math.max(1, x1 - x0)) * innerW;
   const yOf = (val: number) => padT + (1 - (val - yMin) / (yMax - yMin || 1)) * innerH;
 
-  const primaryPath = pts
-    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.primary).toFixed(1)}`)
+  // Observed line breaks at missing years (gaps are shown, never interpolated).
+  const segments: string[] = [];
+  let current = "";
+  let prevYear: number | null = null;
+  for (const p of pts) {
+    if (p.observed === undefined) continue;
+    const cmd = prevYear !== null && p.year === prevYear + 1 && current ? "L" : "M";
+    if (cmd === "M" && current) {
+      segments.push(current);
+      current = "";
+    }
+    current += `${cmd}${xOf(p.year).toFixed(1)},${yOf(p.observed).toFixed(1)} `;
+    prevYear = p.year;
+  }
+  if (current) segments.push(current);
+  const trendPts = pts.filter((p) => p.trend !== undefined);
+  const trendPath = trendPts
+    .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.trend ?? 0).toFixed(1)}`)
     .join(" ");
-  const secondaryPath = pts.some((p) => p.secondary !== undefined)
-    ? pts
-        .filter((p) => p.secondary !== undefined)
-        .map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.year).toFixed(1)},${yOf(p.secondary!).toFixed(1)}`)
-        .join(" ")
-    : "";
+  const ticks = [yMin + (yMax - yMin) * 0.1, (yMin + yMax) / 2, yMax - (yMax - yMin) * 0.1];
+  const xTicks = Array.from(new Set([x0, Math.round((x0 + x1) / 2), x1]));
 
   return (
-    <div className="rounded-lg border border-line bg-black/25 p-2.5">
-      <div className="mb-1 flex items-center justify-between gap-2 text-[10px]">
-        <span className="truncate font-medium text-ink">{gldas.title}</span>
-        <span className="shrink-0 font-mono text-muted">
-          {gldas.stats.slope_decade > 0 ? "+" : ""}
-          {gldas.stats.slope_decade} {gldas.units}/dec (p={gldas.stats.p_value.toFixed(2)})
+    <div className="rounded-xl bg-black/30 p-3">
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+        <span className="inline-flex items-center gap-1.5 text-ink">
+          <span className="h-0.5 w-4 rounded bg-[#7cc4ff]" />
+          Observed ({evidence.units})
         </span>
+        {trendPath && (
+          <span className="inline-flex items-center gap-1.5 text-amber-200">
+            <span className="h-0 w-4 border-t-2 border-dashed border-amber-400" />
+            Theil–Sen line, fitted period only
+          </span>
+        )}
       </div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-24 w-full overflow-visible">
-        {[0, 1].map((t) => {
-          const v = yMin + t * (yMax - yMin);
-          const y = yOf(v);
-          return (
-            <g key={t}>
-              <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="rgba(255,255,255,0.07)" />
-              <text x={padL - 4} y={y + 3} textAnchor="end" className="fill-white/45 font-mono text-[8px]">
-                {v.toFixed(vMax < 10 ? 1 : 0)}
-              </text>
-            </g>
-          );
-        })}
-        {secondaryPath && <path d={secondaryPath} fill="none" stroke="#f59e0b" strokeWidth={1.4} strokeDasharray="3 2" />}
-        <path d={primaryPath} fill="none" stroke="#34d399" strokeWidth={1.8} />
-        {[2000, 2010, 2020, 2026].map((yr) => (
-          <text key={yr} x={xOf(yr)} y={h - 3} textAnchor="middle" className="fill-white/45 font-mono text-[8px]">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="h-44 w-full cursor-pointer select-none overflow-visible"
+        role="img"
+        aria-label={`${evidence.effectiveTitle}, observed ${x0}–${x1}, ${evidence.units}`}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const relX = ((e.clientX - rect.left) / rect.width) * w;
+          const yr = Math.round(x0 + ((relX - padL) / innerW) * (x1 - x0));
+          onSelectYear(Math.max(x0, Math.min(x1, yr)));
+        }}
+      >
+        {ticks.map((v) => (
+          <text key={v} x={padL - 4} y={yOf(v) + 3} textAnchor="end" className="fill-white/45 text-[9px]">
+            {fmt(v)}
+          </text>
+        ))}
+        <line x1={padL} y1={padT + innerH} x2={w - padR} y2={padT + innerH} stroke="rgba(255,255,255,0.15)" />
+        {trendPath && <path d={trendPath} fill="none" stroke="#fbbf24" strokeWidth={1.8} strokeDasharray="5 3" />}
+        {segments.map((d) => (
+          <path key={d} d={d} fill="none" stroke="#7cc4ff" strokeWidth={2} />
+        ))}
+        {pts
+          .filter((p) => p.observed !== undefined)
+          .map((p) => (
+            <circle
+              key={p.year}
+              cx={xOf(p.year)}
+              cy={yOf(p.observed ?? 0)}
+              r={p.year === selectedYear ? 4 : 2}
+              fill="#7cc4ff"
+            />
+          ))}
+        {xTicks.map((yr) => (
+          <text key={yr} x={xOf(yr)} y={h - 4} textAnchor="middle" className="fill-white/45 text-[10px]">
             {yr}
           </text>
         ))}
       </svg>
-      <div className="mt-1 flex items-center gap-3 text-[10px] text-muted">
-        <span className="inline-flex items-center gap-1">
-          <span className="size-2 rounded-full bg-emerald-400" /> {gldas.primaryLabel}
-        </span>
-        {gldas.secondaryLabel && (
-          <span className="inline-flex items-center gap-1">
-            <span className="size-2 rounded-full bg-amber-400" /> {gldas.secondaryLabel}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StationIdentity({
-  station,
-  distanceKm,
-}: {
-  station: NoaaStation;
-  distanceKm: number;
-}) {
-  return (
-    <p className="text-[11px] text-muted">
-      <span className="font-medium text-ink">{station.name.replace(/, SP$/i, "")}</span>
-      <span className="mx-1.5 text-faint">·</span>
-      {station.id}
-      <span className="mx-1.5 text-faint">·</span>
-      {distanceKm < 2 ? "this station" : `${distanceKm} km`}
-    </p>
-  );
-}
-
-function StationFinder({
-  stations,
-  activeId,
-  onInspectStation,
-}: {
-  stations: NoaaStation[];
-  activeId?: string;
-  onInspectStation: (coord: GeoCoordinate) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = q
-      ? stations.filter((s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
-      : stations;
-    return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, q ? 24 : 12);
-  }, [query, stations]);
-
-  return (
-    <div className="rounded-lg border border-line bg-white/3 p-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="focus-ring flex w-full items-center justify-between text-left text-[11px] text-muted hover:text-ink"
-      >
-        Find a station ({stations.length})
-        <Icon name="chevron" className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>
-      {open && (
-        <>
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search Madrid, Málaga, SP0000…"
-        className="focus-ring mt-1.5 w-full rounded-md border border-line bg-black/30 px-2 py-1.5 text-xs text-ink placeholder:text-faint"
-      />
-      <ul className="mt-1.5 max-h-40 overflow-y-auto">
-        {matches.map((s) => {
-          const active = s.id === activeId;
-          return (
-            <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => onInspectStation({ latitude: s.lat, longitude: s.lon })}
-                className={`focus-ring flex w-full items-baseline justify-between gap-2 rounded px-1.5 py-1 text-left text-[11px] ${
-                  active ? "bg-accent/20 text-ink" : "text-muted hover:bg-white/8 hover:text-ink"
-                }`}
-              >
-                <span className="truncate">{s.name.replace(/, SP$/i, "")}</span>
-                <span className="shrink-0 font-mono text-[10px] text-faint">{s.id}</span>
-              </button>
-            </li>
-          );
-        })}
-        {matches.length === 0 && <li className="px-1.5 py-2 text-[11px] text-faint">No station matches that search.</li>}
-      </ul>
-        </>
-      )}
     </div>
   );
 }
@@ -356,49 +187,31 @@ export function EvidencePanel({
   onSelectYear,
   onSelectLocation,
   onResetToNational,
-  onInspectStation,
+  onOpenStationCatalog,
 }: EvidencePanelProps) {
-  const [tab, setTab] = useState<"evidence" | "decisions">("evidence");
-
   if (!open) return null;
 
   const evidence = bundle ? queryClimateAtLocation(bundle, config, selected, resolvedScope) : null;
   const scopeLevelMeta = resolvedScope ? SCOPE_LEVEL_META[resolvedScope.level] : SCOPE_LEVEL_META.age;
+  const scale = getEffectiveMeta(config, bundle);
+  const view = evidence ? outcomeView(evidence) : null;
+  const st = evidence?.stats ?? null;
 
   return (
     <aside
       id="evidence-panel"
-      aria-label="Scientific Evidence and 2030 Decision Support"
+      aria-label="Trend evidence"
       className="panel pointer-events-auto flex h-full max-h-full w-full flex-col overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-3 border-b border-line px-3 py-2.5">
+      <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span className="rounded bg-amber-400/20 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-amber-200 uppercase">
-              {scopeLevelMeta.labelEn}
-            </span>
-            {evidence?.stationsInScopeCount !== undefined && (
-              <span className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[9.5px] text-muted">
-                {evidence.stationsInScopeCount} stations
-              </span>
-            )}
-            {(selected || (resolvedScope && resolvedScope.level !== "age")) && (
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectLocation(null);
-                  onResetToNational?.();
-                }}
-                className="focus-ring rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-muted hover:text-ink"
-              >
-                All of Spain
-              </button>
-            )}
-          </div>
-          <h2 className="truncate text-sm font-semibold text-ink">
-            {evidence ? evidence.locationLabel : "Trend to 2030"}
+          <p className="text-[10px] font-medium tracking-[0.14em] text-muted uppercase">
+            {evidence?.dimensionMeta.shortLabel ?? "Trend"} · {scopeLevelMeta.labelEn}
+          </p>
+          <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-ink">
+            {evidence ? evidence.locationLabel : "Spain"}
           </h2>
-          <p className="mt-0.5 truncate text-[11px] text-muted" title={evidence?.subLabel}>
+          <p className="truncate text-[12px] text-muted">
             {evidence
               ? evidence.subLabel
               : selected
@@ -406,48 +219,97 @@ export function EvidencePanel({
                 : "National view"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close evidence panel"
-          className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
-        >
-          <Icon name="close" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {(selected || (resolvedScope && resolvedScope.level !== "age")) && (
+            <button
+              type="button"
+              onClick={() => {
+                onSelectLocation(null);
+                onResetToNational?.();
+              }}
+              className="focus-ring rounded-md px-2 py-1 text-[11px] text-muted hover:bg-white/8 hover:text-ink"
+            >
+              Spain
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close evidence panel"
+            className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
       </div>
 
-      {/* Mode tabs: Scientific Evidence vs 2030 Decisions */}
-      <div className="grid grid-cols-2 border-b border-line bg-white/3 p-1 text-xs">
-        <button
-          type="button"
-          onClick={() => setTab("evidence")}
-          className={`focus-ring rounded py-1.5 font-medium transition ${
-            tab === "evidence" ? "bg-white/12 text-ink" : "text-muted hover:text-ink"
-          }`}
-        >
-          Trend
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("decisions")}
-          className={`focus-ring rounded py-1.5 font-medium transition ${
-            tab === "decisions" ? "bg-amber-400/20 text-amber-200" : "text-muted hover:text-ink"
-          }`}
-        >
-          2030 decisions
-        </button>
-      </div>
-
-      {!evidence ? (
-        <div className="grid place-items-center p-8 text-center">
-          <p className="text-xs text-muted">Loading Spain climate bundle…</p>
+      {!evidence || !view ? (
+        <div className="grid flex-1 place-items-center p-8 text-center">
+          <p className="text-xs text-muted">Loading…</p>
         </div>
       ) : (
-        <div className="space-y-3 overflow-y-auto p-3.5 text-xs">
-          {/* Quick Basin / Region selector when in Water/Rivers or Drought */}
-          {bundle && (config.dimension === "water_rivers" || config.dimension === "drought") && (
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="mr-1 text-[10px] text-faint">Basins:</span>
+        <div className="mt-1 min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
+          <div className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] ${view.tone}`}>
+            <span aria-hidden className="font-mono">{view.glyph}</span>
+            <span className="font-semibold">{view.label}</span>
+          </div>
+
+          {st ? (
+            <div>
+              <p className="font-mono text-xl font-semibold text-ink tabular-nums">
+                {signed(st.slope_decade)} {evidence.trendUnits}
+              </p>
+              <p className="text-[12px] text-muted">
+                95% CI {signed(st.ci_low_decade)} to {signed(st.ci_high_decade)} · {st.first_year ?? "?"}–{st.last_year ?? "?"} ·
+                n = {st.n} years · Mann–Kendall p = {st.p_value}
+                {st.hamed_rao_applied ? " (autocorrelation-corrected)" : ""}
+              </p>
+            </div>
+          ) : (
+            <p className="text-[12px] leading-snug text-muted">{evidence.notComputedReason ?? "No precomputed trend for this place."}</p>
+          )}
+
+          <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2">
+            {evidence.currentValue !== null ? (
+              <ScaleThermometer
+                palette={scale.palette}
+                domain={scale.domain}
+                units={evidence.units}
+                value={evidence.currentValue}
+                label={String(evidence.currentYear)}
+                height={96}
+                thin
+              />
+            ) : null}
+            <p className="text-[12px] text-muted">
+              {evidence.currentValue !== null
+                ? `${evidence.currentYear}: ${fmt(evidence.currentValue)} ${evidence.units} (observed)`
+                : `No data for ${evidence.currentYear} at this place.`}
+            </p>
+          </div>
+
+          <ObservedChart evidence={evidence} selectedYear={config.year} onSelectYear={onSelectYear} />
+
+          <dl className="space-y-1.5 text-[12px] text-muted">
+            <div>
+              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Source & support</dt>
+              <dd>{evidence.statsSource}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">Method</dt>
+              <dd>
+                Theil–Sen slope with 95% CI; Mann–Kendall test (ties-corrected, autocorrelation-checked). Supported = p &lt;
+                0.05 and CI excludes 0. Complete calendar years only.
+              </dd>
+            </div>
+          </dl>
+
+          <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-[12px] text-amber-100">
+            Do not conclude: not a forecast, not a cause, not energy production or site suitability.
+          </p>
+
+          {bundle && config.dimension === "precipitation" && (
+            <div className="flex flex-wrap gap-1" aria-label="Basin bounding boxes">
               {bundle.rivers.map((b: RiverBasin) => {
                 const isCurr = evidence.basin?.id === b.id;
                 return (
@@ -455,134 +317,37 @@ export function EvidencePanel({
                     key={b.id}
                     type="button"
                     onClick={() => onSelectLocation({ latitude: b.lat, longitude: b.lon })}
-                    className={`focus-ring rounded px-1.5 py-0.5 text-[10px] ${
-                      isCurr ? "bg-sky-400/25 font-medium text-sky-200" : "bg-white/6 text-muted hover:text-ink"
+                    className={`focus-ring rounded-full px-2 py-0.5 text-[11px] ${
+                      isCurr ? "bg-sky-400/25 font-medium text-sky-100" : "bg-white/6 text-muted hover:text-ink"
                     }`}
                   >
-                    {b.name.replace("Cuenca del ", "")}
+                    {b.name.replace("Cuenca del ", "")} box
                   </button>
                 );
               })}
             </div>
           )}
 
-          {tab === "evidence" ? (
-            <>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-line bg-white/4 p-2">
-                  <p className="text-[10px] text-faint">
-                    {evidence.currentYear} {evidence.currentYear > 2026 ? "(Proj.)" : "(Obs.)"}
-                  </p>
-                  <p className="mt-0.5 font-mono text-sm font-semibold text-ink">
-                    {evidence.currentValue} <span className="text-[10px] font-normal text-muted">{evidence.units}</span>
-                  </p>
-                </div>
-                <div className="rounded-lg border border-line bg-white/4 p-2">
-                  <p className="text-[10px] text-faint">Sen&apos;s Trend</p>
-                  <p className="mt-0.5 font-mono text-sm font-semibold text-ink">
-                    {evidence.stats.slope_decade > 0 ? "+" : ""}
-                    {evidence.stats.slope_decade}{" "}
-                    <span className="text-[10px] font-normal text-muted">{evidence.trendUnits}</span>
-                  </p>
-                  <p className="font-mono text-[9px] text-faint">
-                    95% CI [{evidence.stats.ci_low_decade}, {evidence.stats.ci_high_decade}]
-                  </p>
-                </div>
-                <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-2">
-                  <p className="text-[10px] text-amber-200">2030 Forecast</p>
-                  <p className="mt-0.5 font-mono text-sm font-semibold text-amber-100">
-                    {evidence.projected2030}{" "}
-                    <span className="text-[10px] font-normal text-amber-200/80">{evidence.units}</span>
-                  </p>
-                  <p className="font-mono text-[9px] text-amber-200/80">
-                    Δ vs 2000: {evidence.delta2030 > 0 ? "+" : ""}
-                    {evidence.delta2030}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-[11px] ${
-                  evidence.stats.significant
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-                    : "border-white/15 bg-white/5 text-muted"
-                }`}
-              >
-                <span>
-                  {evidence.stats.significant
-                    ? "✓ Statistically significant trend (Mann-Kendall)"
-                    : "⏳ Insufficient evidence (high interannual variability)"}
-                </span>
-                <span className="font-mono text-[10px]">
-                  p = {evidence.stats.p_value < 0.0001 ? "<0.0001" : evidence.stats.p_value.toFixed(4)}
-                </span>
-              </div>
-
-              <TrendForecastChart
-                evidence={evidence}
-                selectedYear={config.year}
-                onSelectYear={onSelectYear}
-              />
-
+          <details className="text-[12px] text-muted">
+            <summary className="cursor-pointer text-ink/80">Stations</summary>
+            <div className="mt-2 space-y-2">
               {evidence.nearestStation && (
-                <StationIdentity
-                  station={evidence.nearestStation.station}
-                  distanceKm={evidence.nearestStation.distanceKm}
-                />
-              )}
-              {bundle && (
-                <StationFinder
-                  stations={bundle.noaa.stations}
-                  activeId={evidence.nearestStation?.station.id}
-                  onInspectStation={onInspectStation}
-                />
-              )}
-
-              {evidence.gldasSeries && <GldasNationalCurve gldas={evidence.gldasSeries} />}
-
-              <details className="rounded-lg border border-line bg-white/3 p-2.5 text-[10px] leading-relaxed text-muted">
-                <summary className="cursor-pointer font-medium text-ink">Sources & method</summary>
-                <p className="mt-1.5">
-                  <strong>Datasets:</strong> {evidence.dimensionMeta.datasets}
-                </p>
                 <p>
-                  <strong>Method:</strong> Theil-Sen slope + Mann-Kendall (α = 0.05). 2027–2030 is a trend extrapolation with 95% bounds, not a GCM forecast.
+                  Nearest NOAA station:{" "}
+                  <span className="text-ink">{evidence.nearestStation.station.name.replace(/, SP$/i, "")}</span>
+                  {evidence.nearestStation.distanceKm >= 2 ? ` · ${evidence.nearestStation.distanceKm} km` : ""}
                 </p>
-              </details>
-            </>
-          ) : (
-            /* 2030 Decision Support Matrix */
-            <div className="space-y-2.5">
-              {resolvedScope && (
-                <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-2.5 text-[10.5px]">
-                  <p className="font-semibold text-amber-200">
-                    For: {resolvedScope.institution}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-muted">{resolvedScope.hierarchyLabel}</p>
-                  <p className="mt-1 text-[10px] leading-snug text-ink/85">
-                    <strong>Mandate:</strong> {resolvedScope.competencies}
-                  </p>
-                </div>
               )}
-              <p className="text-[11px] leading-snug text-muted">
-                Operational recommendations for <strong>{evidence.locationLabel}</strong> based on extrapolated{" "}
-                <strong>2030</strong> indicators:
-              </p>
-              {evidence.decisions.map((d) => (
-                <div key={d.sector} className="rounded-lg border border-line bg-white/4 p-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold text-ink">{d.sector}</span>
-                    <span className={`rounded border px-1.5 py-0.5 font-mono text-[9px] font-semibold ${LEVEL_BADGE[d.level]}`}>
-                      {d.level} RISK
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[11px] font-medium text-ink/90">{d.headline}</p>
-                  <p className="mt-0.5 font-mono text-[10px] text-accent">{d.metricSummary}</p>
-                  <p className="mt-1 text-[11px] leading-snug text-muted">{d.recommendation}</p>
-                </div>
-              ))}
+              <button
+                type="button"
+                onClick={onOpenStationCatalog}
+                className="focus-ring flex w-full items-center justify-between text-left text-[11px] text-muted hover:text-ink"
+              >
+                Browse all weather stations
+                <Icon name="chevron" className="size-3.5" />
+              </button>
             </div>
-          )}
+          </details>
         </div>
       )}
     </aside>
