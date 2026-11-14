@@ -1,0 +1,68 @@
+{
+  "dataset": {
+    "name": "Global Historical Climatology Network Daily",
+    "acronym": "GHCND",
+    "provider": "NOAA",
+    "organization": "National Oceanic and Atmospheric Administration",
+    "source": "National Centers for Environmental Information (NCEI)",
+    "format": "CSV",
+    "geographic_scope": {
+      "country": "Spain",
+      "fips_code": "SP",
+      "coverage": "All available Spanish meteorological stations"
+    },
+    "temporal_scope": {
+      "start_date": "2022-01-01",
+      "end_date": "2026-11-07",
+      "frequency": "Daily"
+    },
+    "variables": [
+      {
+        "code": "PRCP",
+        "name": "Precipitation",
+        "description": "Daily precipitation"
+      },
+      {
+        "code": "SNWD",
+        "name": "Snow Depth",
+        "description": "Daily snow depth on the ground"
+      },
+      {
+        "code": "TAVG",
+        "name": "Average Temperature",
+        "description": "Daily average temperature"
+      },
+      {
+        "code": "TMAX",
+        "name": "Maximum Temperature",
+        "description": "Daily maximum temperature"
+      },
+      {
+        "code": "TMIN",
+        "name": "Minimum Temperature",
+        "description": "Daily minimum temperature"
+      }
+    ],
+    "units": "Standard",
+    "metadata": {
+      "station_name": true,
+      "geographic_location": true,
+      "data_flags": true
+    },
+    "processing": {
+      "submission_date": "2026-11-14",
+      "completion_date": "2026-11-14",
+      "status": "Completed",
+      "eligible_for_certification": false
+    },
+    "potential_applications": [
+      "Climate change analysis",
+      "Temperature trend analysis",
+      "Precipitation analysis",
+      "Extreme weather detection",
+      "Time series forecasting",
+      "Climate classification",
+      "Machine learning and statistical modelling"
+    ]
+  }
+}
