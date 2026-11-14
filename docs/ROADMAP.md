@@ -9,10 +9,10 @@
 - [ ] Primary variable and dataset selected
 - [ ] Scientific methodology validated
 - [ ] MVP scope locked
-- [ ] Implementation authorized
+- [x] Implementation authorized (team agreement, 14 Nov 2026)
 - [ ] NASA data ingestion
 - [ ] Scientific analytics
-- [ ] Frontend visualization
+- [ ] Frontend visualization — 3D globe `/explore` in progress (CesiumJS, D17)
 - [ ] End-to-end scientific validation
 - [ ] Demo and presentation
 

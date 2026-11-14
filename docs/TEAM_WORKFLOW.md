@@ -1,6 +1,6 @@
 # Team Workflow
 
-**Mandatory for every developer and every AI agent.**
+Recommended for everyone, so we don't step on each other's work.
 
 ## Rules
 
