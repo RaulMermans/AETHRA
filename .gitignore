@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+!.env.example
+.netrc
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Raw / heavy scientific data (keep provenance in data/metadata/)
+data/raw/
+data/cache/
+*.nc
+*.nc4
+*.hdf
+*.h5
+*.he5
+*.tif
+*.tiff
+*.zarr/

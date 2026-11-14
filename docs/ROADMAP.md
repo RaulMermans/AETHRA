@@ -1,0 +1,24 @@
+# Roadmap
+
+- [x] Repository foundation
+- [ ] Team workflow configured — documented; still needs GitHub branch protection on `main` (require PR + 1 review, block force push)
+- [x] UX/UI rules documented
+- [ ] NASA challenge requirements verified
+- [ ] Spain geographic scope defined
+- [ ] Candidate datasets researched
+- [ ] Primary variable and dataset selected
+- [ ] Scientific methodology validated
+- [ ] MVP scope locked
+- [ ] Implementation authorized
+- [ ] NASA data ingestion
+- [ ] Scientific analytics
+- [ ] Frontend visualization
+- [ ] End-to-end scientific validation
+- [ ] Demo and presentation
+
+**Key dates (Málaga, local time):** development opens Sat 14 Nov 09:00 · pitches Sun 15 Nov
+17:30–19:00 · NASA *Submit for Judging* deadline Sun 15 Nov 23:59.
+
+Notes:
+- *Spain geographic scope*: default bbox is documented; Canary Islands decision is still OPEN.
+- *Candidate datasets*: initial list in `DATASETS.md`; non-LP DAAC rows still need CMR verification.
