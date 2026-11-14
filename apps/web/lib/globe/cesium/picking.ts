@@ -1,5 +1,6 @@
 import type * as CesiumNS from "cesium";
-import type { GeoCoordinate } from "../types";
+import type { GeoCoordinate, OverlayFeature } from "../types";
+import type { OverlayEntity } from "./layer-manager";
 import type { TerrainResult } from "./providers";
 
 type Cesium = typeof CesiumNS;
@@ -46,4 +47,17 @@ export function pickCoordinate(
     longitude,
     elevation: { metres, datum: terrain.datum, source: terrain.label, approximate: true },
   };
+}
+
+/** Picks a station / basin / river overlay entity under the cursor, if any. */
+export function pickOverlayFeature(
+  Cesium: Cesium,
+  viewer: CesiumNS.Viewer,
+  position: CesiumNS.Cartesian2 | undefined,
+): OverlayFeature | null {
+  if (!position || viewer.isDestroyed()) return null;
+  const picked = viewer.scene.pick(position, 16, 16);
+  if (!Cesium.defined(picked) || !picked.id) return null;
+  const entity = picked.id as OverlayEntity;
+  return entity.overlay ?? null;
 }

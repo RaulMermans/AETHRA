@@ -1,7 +1,7 @@
 # data/processed/spain
 
 NASA data clipped to Spain (mainland, Illes Balears, Canarias, Ceuta, Melilla). GPM and MERRA-2 are
-one NetCDF file per year; MODIS is a single-composite **pilot**. Produced by
+one NetCDF file per year; MODIS is one NetCDF per 16-day composite. Produced by
 [`scripts/download_nasa_data.py`](../../../scripts/download_nasa_data.py). Every
 file's source granules, SHA-256 and validation result are listed in
 [`data/metadata/download_manifest.json`](../../metadata/download_manifest.json). Dataset details:
@@ -11,7 +11,7 @@ file's source granules, SHA-256 and validation result are listed in
 |---|---|---|---|---|
 | `gpm/` | GPM_3IMERGM V07 (IMERG Final, monthly), DOI 10.5067/GPM/IMERG/3B-MONTH/07 | 2000-01 → 2025-09 (latest published) | 0.1°, 162 × 226 cells | ~0.7 MB/year |
 | `merra2/` | M2TMNXSLV 5.12.4 (MERRA-2 monthly), DOI 10.5067/AP1B0BA5PD2K | 2000-01 → 2026-09 (latest published) | 0.5° × 0.625°, 34 × 37 cells | ~65 KB/year |
-| `modis/` | MOD13Q1 061 (Terra NDVI/EVI, 16-day), DOI 10.5067/MODIS/MOD13Q1.061 | **Pilot only:** 2000-02-18 composite | ~250 m, two regions | ~29 MB + 0.6 MB |
+| `modis/` | MOD13Q1 061 (Terra NDVI, 16-day), DOI 10.5067/MODIS/MOD13Q1.061 | Pilot 2000-02-18 + years 2000, 2012, 2024 | ~250 m, two regions | ~1.1 GB processed |
 | `gldas/` | GLDAS_NOAH025_M 2.1 (Noah LSM monthly), DOI 10.5067/SXAVCZFAQLNO | 2000-01 → latest | 0.25°, ~67 × 91 cells | Harmony subset / year |
 | `swot/` | SWOT SWORD reaches + PLD lakes + Hydrocron L2 WSE | 2023-03 → | river lines / lake polygons | GeoJSON + CSV |
 
@@ -24,12 +24,12 @@ file's source granules, SHA-256 and validation result are listed in
 | Detail | ~10 km cells | ~50 km cells |
 | Use | rain trends, droughts, water balance | warming trends, maps per pixel |
 
-**🌱 `modis/` (vegetation, pilot).** Two NetCDFs from one 16-day composite (18 Feb 2000):
-`MOD13Q1_061_spain_peninsula_baleares_ceuta_melilla_pilot.nc` (~29 MB) and
-`MOD13Q1_061_spain_canarias_pilot.nc` (~641 KB). Display variables: `_250m_16_days_NDVI`,
-`_250m_16_days_EVI` (unitless, scale 0.0001). Also kept: VI quality, pixel reliability, composite
-day of year, plus a derived `qa_usable` flag (reliability 0 or 1). AppEEARS already masked to the
-Spain polygon. The full 2000 → 2026 record is not on disk (estimated 185–500 GB).
+**🌱 `modis/` (vegetation).** AppEEARS already masked to the Spain polygon in the native 250 m
+sinusoidal grid. Historical years are one compact NetCDF per 16-day composite (`NDVI`,
+`pixel_reliability`, `composite_day_of_the_year`) under `modis/peninsula_baleares_ceuta_melilla/`
+and `modis/canarias/`: 2000 (20 composites, from 18 Feb), 2012 and 2024 (24 each). The original
+pilot files for 18 Feb 2000 remain at the `modis/` root. EVI and VI_Quality stay in `data/raw/modis/`.
+The rest of 2001–2026 is not on disk (estimated 185–500 GB).
 
 The clip polygon is `spain_boundary_nuts2021_01m.geojson` (Eurostat GISCO NUTS 2021, see below).
 

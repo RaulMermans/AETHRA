@@ -8,7 +8,7 @@ import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera"
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
-import { pickCoordinate } from "@/lib/globe/cesium/picking";
+import { pickCoordinate, pickOverlayFeature } from "@/lib/globe/cesium/picking";
 import {
   clipGlobeToSpain,
   constrainCameraToSpain,
@@ -39,6 +39,7 @@ import type {
   LayerDescriptor,
   LayerStateMap,
   MeasureState,
+  OverlayFeature,
   QualityMode,
   QualityProfile,
   ViewMode,
@@ -55,6 +56,7 @@ export interface GlobeProps {
   measure?: MeasureState | null;
   onToolClick?: (coordinate: GeoCoordinate) => void;
   onHover?: (coordinate: GeoCoordinate | null) => void;
+  onOverlayHover?: (feature: OverlayFeature | null) => void;
   onSelect?: (coordinate: GeoCoordinate | null) => void;
   onStatus?: (status: GlobeStatus) => void;
   onReady?: (controller: GlobeController | null) => void;
@@ -250,12 +252,17 @@ export default function Globe(props: GlobeProps) {
         emit({ quality: { mode: "auto", profile: lower, reason: `measured ${Math.round(median)} ms/frame` } });
       });
 
-      scene.backgroundColor = Cesium.Color.BLACK;
+      scene.backgroundColor = Cesium.Color.fromCssColorString("#02040a");
       scene.globe.enableLighting = true;
       scene.globe.dynamicAtmosphereLighting = true;
       scene.globe.dynamicAtmosphereLightingFromSun = true;
+      scene.globe.atmosphereLightIntensity = 12;
       scene.globe.depthTestAgainstTerrain = true; // markers/lines are hidden behind mountains
       scene.fog.enabled = true;
+      scene.fog.density = 0.00022;
+      scene.fog.minimumBrightness = 0.04;
+      if (scene.sun) scene.sun.show = true;
+      scene.canvas.style.cursor = "grab";
       // Sun fixed at 12:00 UTC today: real solar geometry for that instant, so Europe is lit
       // regardless of the viewer's clock. Cosmetic lighting only; not tied to any data timestamp.
       const noon = new Date();
@@ -278,7 +285,7 @@ export default function Globe(props: GlobeProps) {
         emit({ phase: "error", error: CONTEXT_LOST });
       });
 
-      setOrbitView(Cesium, v, { ...HOME_VIEW, range: HOME_VIEW.range * 1.6 });
+      setOrbitView(Cesium, v, HOME_VIEW);
 
       // Selected-location marker: ground halo + point. The point is placed at an explicit height
       // (sampled terrain × vertical exaggeration) because Cesium's ground clamping of points
@@ -288,17 +295,20 @@ export default function Globe(props: GlobeProps) {
         show: false,
         position: Cesium.Cartesian3.fromDegrees(0, 0),
         point: {
-          pixelSize: 11,
+          pixelSize: 14,
           color: Cesium.Color.fromCssColorString(ACCENT),
           outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
+          outlineWidth: 3,
+          scaleByDistance: new Cesium.NearFarScalar(2.0e4, 1.35, 1.6e6, 0.7),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
         ellipse: {
-          semiMajorAxis: 1_500,
-          semiMinorAxis: 1_500,
-          material: Cesium.Color.fromCssColorString(ACCENT).withAlpha(0.2),
-          outline: false, // no height => drawn on the ground (terrain-clamped)
+          semiMajorAxis: 4_200,
+          semiMinorAxis: 4_200,
+          material: Cesium.Color.fromCssColorString(ACCENT).withAlpha(0.28),
+          outline: true,
+          outlineColor: Cesium.Color.fromCssColorString(ACCENT).withAlpha(0.55),
+          outlineWidth: 2,
         },
       });
       let markerRequest = 0;
@@ -334,10 +344,11 @@ export default function Globe(props: GlobeProps) {
         showBase();
         if (scene.globe.clippingPolygons) scene.globe.clippingPolygons.enabled = focus && is3D;
         for (const e of mask2D) e.show = focus && !is3D && scene.mode !== Cesium.SceneMode.MORPHING;
-        // Spain mode: everything outside Spain reads as empty space (black), in 2D and 3D.
-        scene.globe.baseColor = focus ? Cesium.Color.BLACK : WORLD_BASE;
-        scene.globe.showGroundAtmosphere = !focus;
-        if (scene.skyAtmosphere) scene.skyAtmosphere.show = !focus;
+        // Spain mode: empty space around the clip stays dark; the land itself keeps a horizon glow.
+        scene.globe.baseColor = focus ? Cesium.Color.fromCssColorString("#02040a") : WORLD_BASE;
+        scene.globe.showGroundAtmosphere = is3D && !focus;
+        if (scene.skyAtmosphere) scene.skyAtmosphere.show = is3D && !focus;
+        scene.fog.enabled = is3D;
         ctrl.maximumZoomDistance = focus ? 9_000_000 : 40_000_000;
         scene.requestRender();
       };
@@ -374,12 +385,24 @@ export default function Globe(props: GlobeProps) {
         frame = requestAnimationFrame(() => {
           frame = 0;
           if (v.isDestroyed()) return;
+          const overlay = pickOverlayFeature(Cesium, v, pending);
+          propsRef.current.onOverlayHover?.(overlay);
           propsRef.current.onHover?.(pickSpain(pending));
+          scene.canvas.style.cursor = overlay && !propsRef.current.measure ? "pointer" : "grab";
         });
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+      handler.setInputAction(() => {
+        if (!propsRef.current.measure) scene.canvas.style.cursor = "grabbing";
+      }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+      handler.setInputAction(() => {
+        if (!propsRef.current.measure) scene.canvas.style.cursor = "grab";
+      }, Cesium.ScreenSpaceEventType.LEFT_UP);
       let selectionId = 0;
       handler.setInputAction((c: CesiumNS.ScreenSpaceEventHandler.PositionedEvent) => {
-        const coord = pickSpain(c.position);
+        const overlay = pickOverlayFeature(Cesium, v, c.position);
+        const coord = overlay
+          ? { latitude: overlay.latitude, longitude: overlay.longitude }
+          : pickSpain(c.position);
         if (!coord) return; // sky / outside Spain: keep the current selection
         if (propsRef.current.measure) {
           propsRef.current.onToolClick?.(coord);
@@ -398,7 +421,11 @@ export default function Globe(props: GlobeProps) {
           });
         });
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-      scene.canvas.addEventListener("pointerleave", () => propsRef.current.onHover?.(null));
+      scene.canvas.addEventListener("pointerleave", () => {
+        propsRef.current.onHover?.(null);
+        propsRef.current.onOverlayHover?.(null);
+        scene.canvas.style.cursor = "";
+      });
 
       scene.renderError.addEventListener((_s: CesiumNS.Scene, err: unknown) => {
         console.error("[globe] render error", err);

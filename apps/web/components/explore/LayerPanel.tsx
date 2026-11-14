@@ -146,13 +146,13 @@ export function LayerPanel({
     .filter(([, ls]) => ls.length > 0);
 
   return (
-    <section aria-label="Layers" className="panel pointer-events-auto w-[min(20rem,calc(100vw-2rem))] overflow-hidden">
+    <section aria-label="Layers" className="panel pointer-events-auto w-[min(18rem,calc(100vw-2rem))] overflow-hidden">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         aria-controls="layer-panel-body"
-        className="focus-ring flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-xs font-medium text-ink"
+        className="focus-ring flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] font-medium text-ink"
       >
         <span className="flex items-center gap-2">
           <Icon name="layers" className="size-4 text-muted" />

@@ -41,6 +41,15 @@ uv venv .venv && uv pip install -p .venv -r scripts/requirements.txt
 .venv/bin/python scripts/download_nasa_data.py --execute --historical --datasets gldas
 ```
 
+## `build_spain_hydrography.py`: rivers, reservoirs and lakes for the globe
+
+Writes `apps/web/public/data/spain-hydrography.geojson` (Natural Earth river centre-lines +
+Wikidata Spanish reservoirs/lakes/lagoons as area-scaled buffers). No Earthdata login.
+
+```bash
+.venv/bin/python scripts/build_spain_hydrography.py
+```
+
 ## `download_swot_spain.py`: SWOT rivers and lakes in Spain
 
 SWORD river reaches + prior lakes (Theia WFS), clipped to Spain, then Hydrocron L2 water-surface

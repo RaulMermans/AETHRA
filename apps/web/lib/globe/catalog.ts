@@ -11,13 +11,13 @@ export const WORLD_VIEW: OrbitView = {
   durationSeconds: 2.4,
 };
 
-/** Top-down view framing all of Spain: Peninsula, Balearics, Canarias, Ceuta and Melilla. */
+/** Oblique view framing Peninsula, Balearics and Canarias with visible relief. */
 export const HOME_VIEW: OrbitView = {
-  target: { latitude: 35.7, longitude: -11.5 },
-  heading: 0,
-  pitch: -90,
-  range: 3_900_000,
-  durationSeconds: 2.4,
+  target: { latitude: 36.4, longitude: -8.4 },
+  heading: 14,
+  pitch: -42,
+  range: 2_850_000,
+  durationSeconds: 2.6,
 };
 
 /**
@@ -225,19 +225,6 @@ export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
       },
       data: SPAIN_OUTLINE_URL,
       style: { stroke: "#7cc4ff", strokeWidth: 1.5 },
-    },
-    {
-      id: "spain-rivers",
-      kind: "geojson",
-      group: "reference",
-      title: "Major rivers (8 basins)",
-      description: "Ebro, Duero, Tajo, Guadiana, Guadalquivir, Miño-Sil, Júcar and Segura main courses.",
-      source: {
-        name: "Hydrographic Demarcations",
-        product: "Spain 8 primary river courses",
-      },
-      data: "/data/spain-rivers.geojson",
-      style: { stroke: "#38bdf8", strokeWidth: 2.5 },
     },
     {
       id: "spain-extent",

@@ -19,6 +19,19 @@ export interface GeoCoordinate {
   elevation?: Elevation;
 }
 
+/** Identified overlay under the cursor (NOAA station, basin hub, river, lake or reservoir). */
+export interface OverlayFeature {
+  kind: "station" | "basin-hub" | "river-line" | "lake" | "reservoir" | "lagoon";
+  id: string;
+  name: string;
+  value?: number;
+  units?: string;
+  elevationM?: number;
+  basin?: string;
+  latitude: number;
+  longitude: number;
+}
+
 /** A camera view that orbits a target point (heading/pitch in degrees, range in metres). */
 export interface OrbitView {
   target: { latitude: number; longitude: number };

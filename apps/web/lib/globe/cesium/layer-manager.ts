@@ -6,6 +6,7 @@ import type {
   LayerDescriptor,
   LayerState,
   LayerStateMap,
+  OverlayFeature,
   PointValuesLayerDescriptor,
   RasterFieldLayerDescriptor,
   ViewMode,
@@ -101,7 +102,7 @@ const rasterFieldAdapter: Adapter<RasterFieldLayerDescriptor> = async ({ Cesium,
   };
 };
 
-interface OverlayFeature {
+interface OverlayGeoFeature {
   type: "Feature";
   properties?: Record<string, unknown>;
   geometry:
@@ -109,10 +110,48 @@ interface OverlayFeature {
     | { type: "LineString"; coordinates: [number, number][] };
 }
 
+export type OverlayEntity = CesiumNS.Entity & { overlay?: OverlayFeature };
+
+function shortLabel(name: string): string {
+  const trimmed = name.replace(/, SP$/i, "").trim();
+  return trimmed.length > 28 ? `${trimmed.slice(0, 26)}…` : trimmed;
+}
+
+function overlayFromProps(
+  props: Record<string, unknown>,
+  fallbackLon: number,
+  fallbackLat: number,
+): OverlayFeature | undefined {
+  const kind = props.kind;
+  if (
+    kind !== "station" &&
+    kind !== "basin-hub" &&
+    kind !== "river-line" &&
+    kind !== "lake" &&
+    kind !== "reservoir" &&
+    kind !== "lagoon"
+  ) {
+    return undefined;
+  }
+  const lat = typeof props.latitude === "number" ? props.latitude : fallbackLat;
+  const lon = typeof props.longitude === "number" ? props.longitude : fallbackLon;
+  return {
+    kind,
+    id: String(props.id ?? ""),
+    name: String(props.name ?? "Unknown"),
+    value: typeof props.value === "number" ? props.value : undefined,
+    units: typeof props.units === "string" ? props.units : undefined,
+    elevationM: typeof props.elevation === "number" ? props.elevation : undefined,
+    basin: typeof props.basin === "string" ? props.basin : undefined,
+    latitude: lat,
+    longitude: lon,
+  };
+}
+
 const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium, viewer }, d, state) => {
   const ds = new Cesium.CustomDataSource(`points-${d.id}`);
   const fc = (typeof d.data === "object" && d.data !== null ? d.data : { features: [] }) as {
-    features?: OverlayFeature[];
+    features?: OverlayGeoFeature[];
   };
 
   for (const f of fc.features ?? []) {
@@ -124,17 +163,36 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
       const [lon, lat] = f.geometry.coordinates;
       const isBasinHub = props.kind === "basin-hub";
       const px = typeof props.pixelSize === "number" ? props.pixelSize : 7.5;
-      ds.entities.add({
+      const overlay = overlayFromProps(props, lon, lat);
+      const entity = ds.entities.add({
+        name: overlay?.name,
         position: Cesium.Cartesian3.fromDegrees(lon, lat, 120),
         point: {
-          pixelSize: px,
-          color: color.withAlpha(state.opacity),
-          outlineColor: isBasinHub ? Cesium.Color.fromCssColorString("#38bdf8") : Cesium.Color.fromCssColorString("#0b1424"),
-          outlineWidth: isBasinHub ? 2.5 : 1.5,
+          pixelSize: isBasinHub ? px + 1.5 : px + 0.8,
+          color: color.withAlpha(Math.min(1, state.opacity + 0.08)),
+          outlineColor: isBasinHub ? Cesium.Color.fromCssColorString("#e0f2fe") : Cesium.Color.fromCssColorString("#f8fafc"),
+          outlineWidth: isBasinHub ? 2.2 : 1.6,
+          scaleByDistance: new Cesium.NearFarScalar(4.0e4, 1.4, 1.8e6, 0.55),
           heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
-      });
+        label: overlay
+          ? {
+              text: shortLabel(overlay.name),
+              font: isBasinHub ? "bold 12px sans-serif" : "600 11px sans-serif",
+              fillColor: Cesium.Color.WHITE,
+              outlineColor: Cesium.Color.fromCssColorString("#0b1424"),
+              outlineWidth: 4,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              pixelOffset: new Cesium.Cartesian2(0, isBasinHub ? -18 : -15),
+              scaleByDistance: new Cesium.NearFarScalar(2.0e4, 1.08, 7.0e5, 0.38),
+              translucencyByDistance: new Cesium.NearFarScalar(1.6e5, 1.0, 7.5e5, 0.0),
+              heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            }
+          : undefined,
+      }) as OverlayEntity;
+      entity.overlay = overlay;
     } else if (f.geometry.type === "LineString") {
       const flatCoords: number[] = [];
       for (const [lon, lat] of f.geometry.coordinates) {
@@ -142,7 +200,10 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
       }
       const isAdminActive = props.kind === "admin-active-outline";
       const isAdminParent = props.kind === "admin-parent-outline" || props.kind === "admin-province-outline";
-      ds.entities.add({
+      const [lon0, lat0] = f.geometry.coordinates[0] ?? [0, 0];
+      const overlay = overlayFromProps(props, lon0, lat0);
+      const entity = ds.entities.add({
+        name: overlay?.name,
         polyline: {
           positions: Cesium.Cartesian3.fromDegreesArray(flatCoords),
           width: isAdminActive ? 4.5 : isAdminParent ? 2.0 : 3.5,
@@ -152,7 +213,8 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
           }),
           clampToGround: true,
         },
-      });
+      }) as OverlayEntity;
+      entity.overlay = overlay;
     }
   }
 
@@ -185,7 +247,7 @@ const geoJsonAdapter: Adapter<GeoJsonLayerDescriptor> = async ({ Cesium, viewer 
   });
   await viewer.dataSources.add(ds);
   return {
-    key: "",
+    key: typeof d.data === "string" ? d.data : d.id,
     apply(s) {
       ds.show = s.visible;
       for (const e of ds.entities.values) {
@@ -208,6 +270,7 @@ const adapters: { [K in LayerDescriptor["kind"]]?: Adapter<Extract<LayerDescript
 
 function computeLayerKey(d: LayerDescriptor, state: LayerState, mode: ViewMode): string {
   if (d.kind === "imagery") return `${state.time ?? d.time?.default ?? ""}|${mode}`;
+  if (d.kind === "geojson") return typeof d.data === "string" ? d.data : d.id;
   if (d.kind === "raster-field") return d.url;
   if (d.kind === "point-values") {
     const fc = d.data as { features?: Array<{ properties?: Record<string, unknown> }> };

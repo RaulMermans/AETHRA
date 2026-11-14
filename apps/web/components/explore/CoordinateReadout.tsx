@@ -2,8 +2,37 @@
 
 import { useState } from "react";
 import { formatDegrees, formatElevation } from "@/lib/format";
-import type { GeoCoordinate } from "@/lib/globe/types";
+import type { GeoCoordinate, OverlayFeature } from "@/lib/globe/types";
 import { Icon } from "./Icon";
+
+function overlayKindLabel(kind: OverlayFeature["kind"]): string {
+  if (kind === "station") return "NOAA GHCN-Daily station";
+  if (kind === "basin-hub") return "River basin hub";
+  if (kind === "reservoir") return "Reservoir";
+  if (kind === "lake") return "Lake";
+  if (kind === "lagoon") return "Coastal lagoon";
+  return "River";
+}
+
+function OverlayCard({ feature }: { feature: OverlayFeature }) {
+  const title = feature.name.replace(/, SP$/i, "");
+  return (
+    <div className="rounded-md border border-accent/25 bg-accent/8 px-2 py-1.5">
+      <p className="text-[10px] uppercase tracking-[0.12em] text-accent">{overlayKindLabel(feature.kind)}</p>
+      <p className="mt-0.5 text-xs font-medium text-ink">{title}</p>
+      <p className="mt-0.5 font-mono text-[11px] text-muted">
+        {feature.kind === "station" ? feature.id : feature.basin ?? feature.id}
+        {feature.elevationM !== undefined ? ` · ${Math.round(feature.elevationM)} m` : ""}
+      </p>
+      {feature.value !== undefined && (
+        <p className="mt-0.5 font-mono text-xs text-ink">
+          {feature.value}
+          {feature.units ? ` ${feature.units}` : ""}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function Row({ label, value }: { label: string; value: GeoCoordinate | null }) {
   return (
@@ -35,12 +64,13 @@ function Row({ label, value }: { label: string; value: GeoCoordinate | null }) {
 }
 
 export function CoordinateReadout({
-  hover,
   selected,
+  overlay,
   onClear,
 }: {
   hover: GeoCoordinate | null;
   selected: GeoCoordinate | null;
+  overlay: OverlayFeature | null;
   onClear: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -57,42 +87,39 @@ export function CoordinateReadout({
     }
   };
 
+  if (!selected && !overlay) return null;
+
   return (
-    <section aria-label="Coordinates" className="panel pointer-events-auto px-3 py-2.5">
-      <div className="mb-1.5 flex items-center justify-between gap-3">
-        <h2 className="text-[10px] uppercase tracking-[0.12em] text-muted">
-          Lat · Lon <span className="text-faint">(decimal °, WGS84)</span>
-        </h2>
-        {selected && (
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={copy}
-              className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
-              aria-label="Copy selected coordinates"
-              title={copied ? "Copied" : "Copy"}
-            >
-              <Icon name="copy" className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onClear}
-              className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
-              aria-label="Clear selected location"
-              title="Clear"
-            >
-              <Icon name="close" className="size-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-      <dl className="space-y-1" aria-live="polite">
-        <div className="hidden [@media(hover:hover)]:block">
-          <Row label="Cursor" value={hover} />
+    <section aria-label="Selection" className="panel pointer-events-auto px-2.5 py-2">
+      {overlay ? (
+        <OverlayCard feature={overlay} />
+      ) : (
+        <dl className="space-y-1" aria-live="polite">
+          <Row label="Point" value={selected} />
+        </dl>
+      )}
+      {selected && (
+        <div className="mt-1 flex items-center justify-end gap-0.5">
+          <button
+            type="button"
+            onClick={copy}
+            className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
+            aria-label="Copy selected coordinates"
+            title={copied ? "Copied" : "Copy"}
+          >
+            <Icon name="copy" className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onClear}
+            className="focus-ring rounded p-1 text-muted transition-colors hover:text-ink"
+            aria-label="Clear selected location"
+            title="Clear"
+          >
+            <Icon name="close" className="size-3.5" />
+          </button>
         </div>
-        <Row label="Selected" value={selected} />
-      </dl>
-      {!selected && <p className="mt-1.5 text-[11px] text-faint">Click or tap the globe to select a location.</p>}
+      )}
       <span className="sr-only" aria-live="polite">{copied ? "Coordinates copied" : ""}</span>
     </section>
   );

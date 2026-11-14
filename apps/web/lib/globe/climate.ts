@@ -898,7 +898,7 @@ export async function renderDimensionHeatmapDataUrl(
         data[offset] = r;
         data[offset + 1] = g;
         data[offset + 2] = b;
-        data[offset + 3] = 225;
+        data[offset + 3] = 168;
       }
     }
   }
@@ -1012,29 +1012,17 @@ export function buildDimensionOverlayGeoJson(
       features.push({
         type: "Feature",
         properties: {
-          kind: "river-line",
-          id: b.id,
-          name: b.river,
-          basin: b.name,
-          value: Math.round(val),
-          units: meta.units,
-          color: "#38bdf8",
-        },
-        geometry: {
-          type: "LineString",
-          coordinates: b.coords,
-        },
-      });
-
-      features.push({
-        type: "Feature",
-        properties: {
           kind: "basin-hub",
           id: b.id,
-          name: `${b.name} (${Math.round(val)} ${meta.units})`,
+          name: b.name,
+          river: b.river,
+          basin: b.name,
           value: val,
+          units: meta.units,
           color: samplePaletteCss(meta.palette, val, meta.domain),
           pixelSize: 11,
+          latitude: b.lat,
+          longitude: b.lon,
         },
         geometry: {
           type: "Point",
@@ -1121,8 +1109,11 @@ export function buildDimensionOverlayGeoJson(
           name: st.name,
           value: Number(val.toFixed(1)),
           units: meta.units,
+          elevation: st.elevation,
           color,
           pixelSize: cfg.dimension === "snow" ? Math.min(13, 6 + val * 0.25) : 7.5,
+          latitude: st.lat,
+          longitude: st.lon,
         },
         geometry: {
           type: "Point",
@@ -1640,9 +1631,11 @@ export function queryClimateAtLocation(
   ];
 
   const locationLabel = selected
-    ? nearest && nearest.distanceKm < 45
-      ? `${nearest.station.name} (${nearest.distanceKm} km)`
-      : `${selected.latitude.toFixed(2)}°N, ${selected.longitude.toFixed(2)}°E`
+    ? nearest && nearest.distanceKm < 2
+      ? nearest.station.name
+      : nearest && nearest.distanceKm < 45
+        ? `${nearest.station.name} (${nearest.distanceKm} km)`
+        : `${selected.latitude.toFixed(2)}°N, ${selected.longitude.toFixed(2)}°E`
     : hasSubNationalScope && resolvedScope
       ? resolvedScope.name
       : "España · Administración General del Estado (AGE)";

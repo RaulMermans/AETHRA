@@ -18,12 +18,13 @@ interface DimensionDockProps {
   config: ActiveClimateConfig;
   heatmapVisible: boolean;
   stationsVisible: boolean;
+  hydroVisible: boolean;
   playing: boolean;
   onChange: (patch: Partial<ActiveClimateConfig>) => void;
   onToggleHeatmap: () => void;
   onToggleStations: () => void;
+  onToggleHydro: () => void;
   onTogglePlay: () => void;
-  onOpenEvidence: () => void;
 }
 
 const MODE_LABELS: { id: ClimateDisplayMode; label: string; title: string }[] = [
@@ -42,12 +43,13 @@ export function DimensionDock({
   config,
   heatmapVisible,
   stationsVisible,
+  hydroVisible,
   playing,
   onChange,
   onToggleHeatmap,
   onToggleStations,
+  onToggleHydro,
   onTogglePlay,
-  onOpenEvidence,
 }: DimensionDockProps) {
   const activeDim = DIMENSIONS.find((d) => d.id === config.dimension) ?? DIMENSIONS[0];
   const eff = getEffectiveMeta(config);
@@ -64,7 +66,7 @@ export function DimensionDock({
   return (
     <section
       aria-label="Climate dimensions and 2030 extrapolation"
-      className="panel pointer-events-auto w-[min(20rem,calc(100vw-2rem))] overflow-hidden px-2.5 py-2 shadow-2xl"
+      className="panel pointer-events-auto w-[min(18rem,calc(100vw-2rem))] overflow-hidden px-2 py-1.5 shadow-2xl"
     >
       <div className="grid grid-cols-3 gap-1" role="tablist" aria-label="Environmental dimensions">
         {DIMENSIONS.map((d) => {
@@ -100,19 +102,33 @@ export function DimensionDock({
               : "border-line bg-white/5 text-faint hover:text-muted"
           }`}
         >
-          Heatmap {heatmapVisible ? "on" : "off"}
+          Map
         </button>
         <button
           type="button"
           onClick={onToggleStations}
           aria-pressed={stationsVisible}
+          title="NOAA weather stations (and river hubs). Hover a point for its name."
           className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
             stationsVisible
               ? "border-accent/50 bg-accent/15 text-ink"
               : "border-line bg-white/5 text-faint hover:text-muted"
           }`}
         >
-          Points {stationsVisible ? "on" : "off"}
+          Stations
+        </button>
+        <button
+          type="button"
+          onClick={onToggleHydro}
+          aria-pressed={hydroVisible}
+          title="Rivers, reservoirs and lakes"
+          className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+            hydroVisible
+              ? "border-sky-400/50 bg-sky-400/15 text-ink"
+              : "border-line bg-white/5 text-faint hover:text-muted"
+          }`}
+        >
+          Rivers
         </button>
       </div>
 
@@ -278,7 +294,6 @@ export function DimensionDock({
             </span>
           )}
         </p>
-        <p className="truncate text-[9px] text-faint">{activeDim.spatialNote}</p>
         <div className="mt-1 flex items-center gap-1.5">
           <span className="font-mono text-[9px] tabular-nums text-muted">{eff.domain[0]}</span>
           <div
@@ -290,13 +305,6 @@ export function DimensionDock({
             {eff.domain[1]} {eff.units}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onOpenEvidence}
-          className="focus-ring mt-1.5 w-full rounded-md border border-accent/40 bg-accent/15 px-2 py-1 text-[10px] font-medium text-ink transition hover:bg-accent/25"
-        >
-          2030 Trends & Decisions
-        </button>
       </div>
     </section>
   );

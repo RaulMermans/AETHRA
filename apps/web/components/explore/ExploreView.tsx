@@ -21,6 +21,7 @@ import {
   type ActiveClimateConfig,
   type ClimateBundle,
 } from "@/lib/globe/climate";
+import { renderHydrographyDataUrl } from "@/lib/globe/hydrography";
 import type {
   CameraState,
   ClickToolId,
@@ -31,6 +32,7 @@ import type {
   LayerState,
   LayerStateMap,
   MeasureState,
+  OverlayFeature,
   QualityMode,
   SceneDim,
   ToolId,
@@ -41,7 +43,6 @@ import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
 import { EvidencePanel } from "./EvidencePanel";
-import { ExploreSpain } from "./ExploreSpain";
 import { GoToPanel } from "./GoToPanel";
 import { Icon } from "./Icon";
 import { LayerPanel } from "./LayerPanel";
@@ -79,16 +80,18 @@ export function ExploreView() {
   const [baseLayers] = useState(() => buildLayerCatalog());
   const [layerStates, setLayerStates] = useState<LayerStateMap>(() => ({
     ...initialLayerStates(baseLayers),
-    "climate-heatmap": { visible: true, opacity: 0.78 },
+    "climate-heatmap": { visible: true, opacity: 0.62 },
     "climate-overlay": { visible: true, opacity: 0.95 },
+    "spain-hydrography": { visible: true, opacity: 0.88 },
   }));
   const [hover, setHover] = useState<GeoCoordinate | null>(null);
+  const [overlayHover, setOverlayHover] = useState<OverlayFeature | null>(null);
   const [selected, setSelected] = useState<GeoCoordinate | null>(null);
   const [status, setStatus] = useState<GlobeStatus | null>(null);
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
-  const [evidenceOpen, setEvidenceOpen] = useState(true);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const [viewMode, setViewMode] = useState<ViewMode>("spain");
   const [dim, setDim] = useState<SceneDim>("3d");
@@ -108,6 +111,7 @@ export function ExploreView() {
     vegMetric: "ndvi",
   });
   const [heatmapUrl, setHeatmapUrl] = useState<string>("");
+  const [hydroUrl, setHydroUrl] = useState<string>("");
   const [playing, setPlaying] = useState(false);
 
   const resolvedScope = useMemo(
@@ -163,8 +167,28 @@ export function ExploreView() {
     };
   }, [bundle, climateConfig, resolvedScope]);
 
+  useEffect(() => {
+    let active = true;
+    renderHydrographyDataUrl()
+      .then((url) => {
+        if (active) setHydroUrl(url);
+      })
+      .catch((err) => console.error("[hydrography] failed to render water overlay", err));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const updateClimateConfig = useCallback((patch: Partial<ActiveClimateConfig>) => {
     setClimateConfig((prev) => ({ ...prev, ...patch }));
+    if (patch.dimension === "water_rivers") {
+      setLayerStates((prev) => ({
+        ...prev,
+        "climate-heatmap": { ...prev["climate-heatmap"], visible: false },
+        "climate-overlay": { ...prev["climate-overlay"], visible: false },
+        "spain-hydrography": { ...prev["spain-hydrography"], visible: true, opacity: 0.88 },
+      }));
+    }
   }, []);
 
   const handleChangeAdminScope = useCallback(
@@ -241,8 +265,28 @@ export function ExploreView() {
         },
       },
     ];
-    return [...analysisLayers, ...baseLayers];
-  }, [baseLayers, bundle, climateConfig, heatmapUrl, resolvedScope, adminBundle]);
+    const hydroLayer: LayerDescriptor = {
+      id: "spain-hydrography",
+      kind: "raster-field",
+      group: "reference",
+      title: "Rivers, reservoirs & lakes",
+      description: "Cyan overlay of named Spanish rivers, reservoirs, lakes and lagoons.",
+      source: { name: "Natural Earth + Wikidata", product: "Hydrography of Spain" },
+      resolution: "41 rivers · ~540 reservoirs · ~340 lakes",
+      url: hydroUrl,
+      science: {
+        variable: "hydrography",
+        units: "1",
+        bounds: HEATMAP_BOUNDS,
+        spatialResolution: "Schematic overlay (not cadastral shorelines)",
+        timeCoverage: { start: "2026-01-01", end: "2026-12-31", step: "P1Y" },
+        encoding: "color",
+        missingData: { policy: "hide" },
+      },
+    };
+    // Last = topmost imagery, so the water overlay sits above satellite and the heatmap.
+    return hydroUrl ? [...analysisLayers, ...baseLayers, hydroLayer] : [...analysisLayers, ...baseLayers];
+  }, [baseLayers, bundle, climateConfig, heatmapUrl, hydroUrl, resolvedScope, adminBundle]);
 
   // --- Map tools -------------------------------------------------------------------------
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
@@ -309,6 +353,21 @@ export function ExploreView() {
     setSelected(coord);
     if (coord) setEvidenceOpen(true);
   }, []);
+
+  const inspectStation = useCallback(
+    (coord: GeoCoordinate) => {
+      handleSelectLocation(coord);
+      controller?.flyTo({
+        target: { latitude: coord.latitude, longitude: coord.longitude },
+        heading: 0,
+        pitch: -55,
+        range: 90_000,
+        durationSeconds: 1.8,
+        terrainAware: true,
+      });
+    },
+    [controller, handleSelectLocation],
+  );
 
   const goTo = useCallback(
     (t: GeoCoordinate & { kind?: "city" | "peak" }) => {
@@ -432,6 +491,7 @@ export function ExploreView() {
           measure={measureWithPreview}
           onToolClick={addToolPoint}
           onHover={setHover}
+          onOverlayHover={setOverlayHover}
           onSelect={handleSelectLocation}
           onStatus={setStatus}
           onReady={setController}
@@ -439,17 +499,23 @@ export function ExploreView() {
         />
       )}
 
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_42%,rgb(2_4_10/0.38)_100%)]"
+      />
+
       {/* Loading and error states */}
       {status?.phase !== "error" && (
         <div
-          className={`pointer-events-none absolute inset-0 grid place-items-center transition-opacity duration-700 ${
+          className={`pointer-events-none absolute inset-0 z-[2] grid place-items-center bg-space/55 transition-opacity duration-700 ${
             ready ? "opacity-0" : "opacity-100"
           }`}
           aria-hidden={ready}
         >
-          <p className="animate-pulse text-xs tracking-[0.2em] text-muted uppercase" role="status">
-            Loading globe…
-          </p>
+          <div className="flex flex-col items-center gap-3" role="status">
+            <span className="size-10 animate-pulse rounded-full border border-accent/40 bg-accent/10 shadow-[0_0_28px_rgb(124_196_255/0.35)]" />
+            <p className="text-xs tracking-[0.22em] text-muted uppercase">Preparing Spain…</p>
+          </div>
         </div>
       )}
       {status?.phase === "error" && (
@@ -469,19 +535,20 @@ export function ExploreView() {
       )}
 
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/60 to-transparent" />
-      <TopNav />
+      <TopNav
+        center={
+          <div>
+            <ViewModeToggle mode={viewMode} onChange={changeViewMode} dim={dim} onDimChange={changeDim} disabled={!controller} />
+            {exaggeration !== 1 && dim === "3d" && (
+              <p className="mt-2 text-center text-[11px] text-warn" role="note">
+                Relief exaggerated ×{exaggeration} — not to scale
+              </p>
+            )}
+          </div>
+        }
+      />
 
-      <div className="pointer-events-none absolute top-14 right-3 z-20 sm:top-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2">
-        <ViewModeToggle mode={viewMode} onChange={changeViewMode} dim={dim} onDimChange={changeDim} disabled={!controller} />
-        {exaggeration !== 1 && dim === "3d" && (
-          <p className="mt-2 text-center text-[11px] text-warn" role="note">
-            Relief exaggerated ×{exaggeration} — not to scale
-          </p>
-        )}
-      </div>
-
-      {/* Left column: Administrative Scope Filter + Layers panel + Dimension Dock */}
-      <div className="pointer-events-none absolute top-14 left-4 z-10 flex max-h-[calc(100dvh-7.5rem)] w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+      <div className="pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-8.5rem)] w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
         <AdminScopeBar
           admin={adminBundle}
           scope={adminScope}
@@ -503,6 +570,7 @@ export function ExploreView() {
           config={climateConfig}
           heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
           stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
+          hydroVisible={layerStates["spain-hydrography"]?.visible ?? true}
           playing={playing}
           onChange={updateClimateConfig}
           onToggleHeatmap={() =>
@@ -511,13 +579,39 @@ export function ExploreView() {
           onToggleStations={() =>
             updateLayer("climate-overlay", { visible: !(layerStates["climate-overlay"]?.visible ?? true) })
           }
+          onToggleHydro={() =>
+            updateLayer("spain-hydrography", { visible: !(layerStates["spain-hydrography"]?.visible ?? true) })
+          }
           onTogglePlay={() => setPlaying((p) => !p)}
-          onOpenEvidence={() => setEvidenceOpen(true)}
         />
       </div>
 
-      <div className="pointer-events-none absolute top-1/2 right-3 z-10 -translate-y-1/2 sm:right-6">
-        <div className="flex flex-col gap-2">
+      <div className="pointer-events-none absolute top-28 right-3 bottom-28 z-20 flex items-stretch justify-end gap-2 sm:top-16 sm:right-6 sm:bottom-32">
+        {activeTool && (
+          <div className="pointer-events-none flex items-end pb-1">
+            {measure ? (
+              <MeasurePanel
+                measure={measure}
+                hover={hover}
+                controller={controller}
+                terrainLabel={
+                  status?.terrain.available
+                    ? `${status.terrain.label} · ${status.terrain.datum === "orthometric" ? "above sea level" : "ellipsoidal heights"}`
+                    : null
+                }
+                onClear={() => setMeasure((m) => (m ? { ...m, points: [], closed: false } : m))}
+                onUndo={undoPoint}
+                onFinish={finishPolygon}
+                onClose={closeTool}
+              />
+            ) : activeTool === "goto" ? (
+              <GoToPanel onGo={goTo} onClose={closeTool} />
+            ) : (
+              <ReliefPanel value={exaggeration} onChange={changeExaggeration} onClose={closeTool} />
+            )}
+          </div>
+        )}
+        <div className="flex shrink-0 flex-col justify-center gap-2">
           <ToolsBar
             active={activeTool}
             onToggle={toggleTool}
@@ -527,32 +621,23 @@ export function ExploreView() {
           />
           <CameraControls controller={controller} flat={dim === "2d"} onReset={() => controller?.flyTo(homeView)} />
         </div>
-      </div>
-
-      {activeTool && (
-        <div className="pointer-events-none absolute right-4 bottom-36 z-20 sm:right-20 sm:bottom-24">
-          {measure ? (
-            <MeasurePanel
-              measure={measure}
-              hover={hover}
-              controller={controller}
-              terrainLabel={
-                status?.terrain.available
-                  ? `${status.terrain.label} · ${status.terrain.datum === "orthometric" ? "above sea level" : "ellipsoidal heights"}`
-                  : null
-              }
-              onClear={() => setMeasure((m) => (m ? { ...m, points: [], closed: false } : m))}
-              onUndo={undoPoint}
-              onFinish={finishPolygon}
-              onClose={closeTool}
+        {evidenceOpen && (
+          <div className="flex h-full min-h-0 w-[min(26rem,calc(100vw-4.75rem))] shrink-0">
+            <EvidencePanel
+              open={evidenceOpen}
+              onClose={() => setEvidenceOpen(false)}
+              selected={selected}
+              bundle={bundle}
+              config={climateConfig}
+              resolvedScope={resolvedScope}
+              onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
+              onSelectLocation={handleSelectLocation}
+              onInspectStation={inspectStation}
+              onResetToNational={() => handleChangeAdminScope({ ...adminScope, level: "age" }, true)}
             />
-          ) : activeTool === "goto" ? (
-            <GoToPanel onGo={goTo} onClose={closeTool} />
-          ) : (
-            <ReliefPanel value={exaggeration} onChange={changeExaggeration} onClose={closeTool} />
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {notice && (
         <div role="status" className="panel pointer-events-none absolute bottom-28 left-1/2 z-30 -translate-x-1/2 !rounded-full px-4 py-2 text-xs text-ink">
@@ -560,39 +645,34 @@ export function ExploreView() {
         </div>
       )}
 
-      {/* Bottom bar: coordinates · primary action · evidence */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 px-4 pb-8 sm:px-6">
-        <div className="flex justify-end sm:pr-14">
-          <EvidencePanel
-            open={evidenceOpen}
-            onClose={() => setEvidenceOpen(false)}
-            selected={selected}
-            bundle={bundle}
-            config={climateConfig}
-            resolvedScope={resolvedScope}
-            onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
-            onSelectLocation={handleSelectLocation}
-            onResetToNational={() =>
-              handleChangeAdminScope({ ...adminScope, level: "age" }, true)
-            }
-          />
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="sm:w-[22rem]">
-            <CoordinateReadout hover={hover} selected={selected} onClear={() => setSelected(null)} />
+      {ready && !selected && !measure && (
+        <p className="pointer-events-none absolute bottom-28 left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] text-muted backdrop-blur-md sm:block">
+          Drag to orbit · Scroll to zoom · Click a station or the map
+        </p>
+      )}
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 px-4 pb-8 sm:px-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="sm:max-w-[20rem]">
+            {(selected || overlayHover) && (
+              <CoordinateReadout
+                hover={hover}
+                selected={selected}
+                overlay={overlayHover}
+                onClear={() => setSelected(null)}
+              />
+            )}
           </div>
-          <div className="flex items-center justify-between gap-2 sm:contents">
-            <ExploreSpain controller={controller} />
+          <div className="flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={() => setEvidenceOpen((o) => !o)}
               aria-expanded={evidenceOpen}
               aria-controls="evidence-panel"
-              className="focus-ring panel pointer-events-auto relative inline-flex items-center gap-2 !rounded-full px-4 py-2.5 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
+              className="focus-ring panel pointer-events-auto inline-flex items-center gap-2 !rounded-full px-3.5 py-2 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
             >
               <Icon name="chart" className="size-4 text-muted" />
-              2030 Evidence & Decisions
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden />
+              {evidenceOpen ? "Hide trend" : "Trend to 2030"}
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatDegrees } from "@/lib/format";
 import { SCOPE_LEVEL_META, type ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import {
@@ -9,6 +9,7 @@ import {
   type ClimateBundle,
   type DecisionAlert,
   type LocationEvidence,
+  type NoaaStation,
   type RiverBasin,
 } from "@/lib/globe/climate";
 import type { GeoCoordinate } from "@/lib/globe/types";
@@ -24,6 +25,7 @@ interface EvidencePanelProps {
   onSelectYear: (year: number) => void;
   onSelectLocation: (coord: GeoCoordinate | null) => void;
   onResetToNational?: () => void;
+  onInspectStation: (coord: GeoCoordinate) => void;
 }
 
 const LEVEL_BADGE: Record<DecisionAlert["level"], string> = {
@@ -261,6 +263,89 @@ function GldasNationalCurve({
   );
 }
 
+function StationIdentity({
+  station,
+  distanceKm,
+}: {
+  station: NoaaStation;
+  distanceKm: number;
+}) {
+  return (
+    <p className="text-[11px] text-muted">
+      <span className="font-medium text-ink">{station.name.replace(/, SP$/i, "")}</span>
+      <span className="mx-1.5 text-faint">·</span>
+      {station.id}
+      <span className="mx-1.5 text-faint">·</span>
+      {distanceKm < 2 ? "this station" : `${distanceKm} km`}
+    </p>
+  );
+}
+
+function StationFinder({
+  stations,
+  activeId,
+  onInspectStation,
+}: {
+  stations: NoaaStation[];
+  activeId?: string;
+  onInspectStation: (coord: GeoCoordinate) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? stations.filter((s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+      : stations;
+    return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, q ? 24 : 12);
+  }, [query, stations]);
+
+  return (
+    <div className="rounded-lg border border-line bg-white/3 p-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="focus-ring flex w-full items-center justify-between text-left text-[11px] text-muted hover:text-ink"
+      >
+        Find a station ({stations.length})
+        <Icon name="chevron" className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <>
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search Madrid, Málaga, SP0000…"
+        className="focus-ring mt-1.5 w-full rounded-md border border-line bg-black/30 px-2 py-1.5 text-xs text-ink placeholder:text-faint"
+      />
+      <ul className="mt-1.5 max-h-40 overflow-y-auto">
+        {matches.map((s) => {
+          const active = s.id === activeId;
+          return (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => onInspectStation({ latitude: s.lat, longitude: s.lon })}
+                className={`focus-ring flex w-full items-baseline justify-between gap-2 rounded px-1.5 py-1 text-left text-[11px] ${
+                  active ? "bg-accent/20 text-ink" : "text-muted hover:bg-white/8 hover:text-ink"
+                }`}
+              >
+                <span className="truncate">{s.name.replace(/, SP$/i, "")}</span>
+                <span className="shrink-0 font-mono text-[10px] text-faint">{s.id}</span>
+              </button>
+            </li>
+          );
+        })}
+        {matches.length === 0 && <li className="px-1.5 py-2 text-[11px] text-faint">No station matches that search.</li>}
+      </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function EvidencePanel({
   open,
   onClose,
@@ -271,6 +356,7 @@ export function EvidencePanel({
   onSelectYear,
   onSelectLocation,
   onResetToNational,
+  onInspectStation,
 }: EvidencePanelProps) {
   const [tab, setTab] = useState<"evidence" | "decisions">("evidence");
 
@@ -283,18 +369,17 @@ export function EvidencePanel({
     <aside
       id="evidence-panel"
       aria-label="Scientific Evidence and 2030 Decision Support"
-      className="panel pointer-events-auto flex max-h-[calc(100dvh-10rem)] w-full flex-col overflow-hidden sm:w-[26rem]"
+      className="panel pointer-events-auto flex h-full max-h-full w-full flex-col overflow-hidden"
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
+      <div className="flex items-start justify-between gap-3 border-b border-line px-3 py-2.5">
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded bg-amber-400/20 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-amber-200 uppercase">
-              {scopeLevelMeta.shortLabel}
+              {scopeLevelMeta.labelEn}
             </span>
             {evidence?.stationsInScopeCount !== undefined && (
               <span className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[9.5px] text-muted">
-                {evidence.stationsInScopeCount} estaciones NOAA
+                {evidence.stationsInScopeCount} stations
               </span>
             )}
             {(selected || (resolvedScope && resolvedScope.level !== "age")) && (
@@ -306,21 +391,19 @@ export function EvidencePanel({
                 }}
                 className="focus-ring rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-muted hover:text-ink"
               >
-                Restablecer a AGE (España)
+                All of Spain
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <h2 className="truncate text-sm font-semibold text-ink">
-              {evidence ? evidence.locationLabel : "Evidence & 2030 Forecast"}
-            </h2>
-          </div>
-          <p className="mt-0.5 truncate font-mono text-[11px] text-muted" title={evidence?.subLabel}>
+          <h2 className="truncate text-sm font-semibold text-ink">
+            {evidence ? evidence.locationLabel : "Trend to 2030"}
+          </h2>
+          <p className="mt-0.5 truncate text-[11px] text-muted" title={evidence?.subLabel}>
             {evidence
               ? evidence.subLabel
               : selected
                 ? `${formatDegrees(selected.latitude, 3)}, ${formatDegrees(selected.longitude, 3)}`
-                : "Spain national analysis"}
+                : "National view"}
           </p>
         </div>
         <button
@@ -342,7 +425,7 @@ export function EvidencePanel({
             tab === "evidence" ? "bg-white/12 text-ink" : "text-muted hover:text-ink"
           }`}
         >
-          Trend & 2030 Curve
+          Trend
         </button>
         <button
           type="button"
@@ -351,7 +434,7 @@ export function EvidencePanel({
             tab === "decisions" ? "bg-amber-400/20 text-amber-200" : "text-muted hover:text-ink"
           }`}
         >
-          2030 Decision Matrix
+          2030 decisions
         </button>
       </div>
 
@@ -385,7 +468,6 @@ export function EvidencePanel({
 
           {tab === "evidence" ? (
             <>
-              {/* KPI Grid answering What / How Much / 2030 Forecast / Significance */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-line bg-white/4 p-2">
                   <p className="text-[10px] text-faint">
@@ -419,7 +501,6 @@ export function EvidencePanel({
                 </div>
               </div>
 
-              {/* Statistical Significance Badge (NASA Validity Criterion) */}
               <div
                 className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-[11px] ${
                   evidence.stats.significant
@@ -437,26 +518,37 @@ export function EvidencePanel({
                 </span>
               </div>
 
-              {/* Primary Interactive Chart: 2000-2026 + 2027-2030 Forecast Cone */}
               <TrendForecastChart
                 evidence={evidence}
                 selectedYear={config.year}
                 onSelectYear={onSelectYear}
               />
 
-              {/* Companion National GLDAS Curve (Soil Moisture, Runoff/ET, or SWE) */}
+              {evidence.nearestStation && (
+                <StationIdentity
+                  station={evidence.nearestStation.station}
+                  distanceKm={evidence.nearestStation.distanceKm}
+                />
+              )}
+              {bundle && (
+                <StationFinder
+                  stations={bundle.noaa.stations}
+                  activeId={evidence.nearestStation?.station.id}
+                  onInspectStation={onInspectStation}
+                />
+              )}
+
               {evidence.gldasSeries && <GldasNationalCurve gldas={evidence.gldasSeries} />}
 
-              {/* Provenance Card */}
-              <div className="rounded-lg border border-line bg-white/3 p-2.5 text-[10px] leading-relaxed text-muted">
-                <p className="font-medium text-ink">Provenance & Methodology</p>
-                <p className="mt-0.5">
+              <details className="rounded-lg border border-line bg-white/3 p-2.5 text-[10px] leading-relaxed text-muted">
+                <summary className="cursor-pointer font-medium text-ink">Sources & method</summary>
+                <p className="mt-1.5">
                   <strong>Datasets:</strong> {evidence.dimensionMeta.datasets}
                 </p>
                 <p>
-                  <strong>Method:</strong> Theil-Sen non-parametric slope + two-sided Mann-Kendall test (α = 0.05). 2027–2030 values are trend extrapolations with 95% confidence bounds, associated with historical trajectory (not a dynamical GCM forecast).
+                  <strong>Method:</strong> Theil-Sen slope + Mann-Kendall (α = 0.05). 2027–2030 is a trend extrapolation with 95% bounds, not a GCM forecast.
                 </p>
-              </div>
+              </details>
             </>
           ) : (
             /* 2030 Decision Support Matrix */
@@ -464,11 +556,11 @@ export function EvidencePanel({
               {resolvedScope && (
                 <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-2.5 text-[10.5px]">
                   <p className="font-semibold text-amber-200">
-                    🏛️ Administración Destinataria: {resolvedScope.institution}
+                    For: {resolvedScope.institution}
                   </p>
                   <p className="mt-0.5 text-[10px] text-muted">{resolvedScope.hierarchyLabel}</p>
                   <p className="mt-1 text-[10px] leading-snug text-ink/85">
-                    <strong>Competencias clave:</strong> {resolvedScope.competencies}
+                    <strong>Mandate:</strong> {resolvedScope.competencies}
                   </p>
                 </div>
               )}
