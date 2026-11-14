@@ -7,6 +7,7 @@ All data covers **Spain, 2000 → 2026**. Each folder has its own README with de
 | [`noaa_ghcnd_spain_daily/`](noaa_ghcnd_spain_daily/README.md) | NOAA (CDO) | 🌡️🌧️ Daily max/min temperature + rain from **~180 weather stations** | points, daily | 2001 → 2026 |
 | [`processed/spain/gpm/`](processed/spain/README.md) | NASA GPM | 🌧️ Monthly rain, ~10 km grid | map, monthly | 2000 → 2025-09 |
 | [`processed/spain/merra2/`](processed/spain/README.md) | NASA MERRA-2 | 🌡️ Monthly air temperature, ~50 km grid | map, monthly | 2000 → 2026-09 |
+| [`processed/spain/modis/`](processed/spain/README.md) | NASA MODIS | 🌱 NDVI/EVI, 250 m — **pilot only** (one 16-day composite, peninsula + Canarias) | map, 16-day | 2000-02-18 |
 | [`nasa_gldas_spain_monthly/`](nasa_gldas_spain_monthly/README.md) | NASA GLDAS (via Giovanni) | 💧 Evaporation, runoff to rivers, soil moisture, snow (**Spain average**) | 1 series, monthly | 2000 → 2026-07 |
 | [`raw/`](raw/README.md) | NASA | Original downloads behind `processed/` | — | — |
 | [`metadata/`](metadata/) | — | Provenance: DOIs, versions, checksums | — | — |
@@ -36,4 +37,4 @@ All data covers **Spain, 2000 → 2026**. Each folder has its own README with de
 | Soil drying | GLDAS | Drought and agriculture |
 | Station vs satellite agreement | NOAA vs MERRA-2 / GPM | Validity: "3 sources agree" |
 
-**Still missing:** NOAA 1992-2000 (longer station series), GLDAS per basin (e.g. Duero), sector data (REE hydro, reservoirs, olive harvests).
+**Still missing:** NOAA 1992-2000 (longer station series), full MODIS NDVI/EVI history (only one composite on disk; ~185–500 GB if downloaded), GLDAS per basin (e.g. Duero), sector data (REE hydro, reservoirs, olive harvests).

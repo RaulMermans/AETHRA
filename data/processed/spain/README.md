@@ -1,7 +1,8 @@
 # data/processed/spain
 
-NASA data clipped to Spain (mainland, Illes Balears, Canarias, Ceuta, Melilla), one NetCDF file per
-year. Produced by [`scripts/download_nasa_data.py`](../../../scripts/download_nasa_data.py). Every
+NASA data clipped to Spain (mainland, Illes Balears, Canarias, Ceuta, Melilla). GPM and MERRA-2 are
+one NetCDF file per year; MODIS is a single-composite **pilot**. Produced by
+[`scripts/download_nasa_data.py`](../../../scripts/download_nasa_data.py). Every
 file's source granules, SHA-256 and validation result are listed in
 [`data/metadata/download_manifest.json`](../../metadata/download_manifest.json). Dataset details:
 [`docs/DATASETS.md`](../../../docs/DATASETS.md).
@@ -10,6 +11,7 @@ file's source granules, SHA-256 and validation result are listed in
 |---|---|---|---|---|
 | `gpm/` | GPM_3IMERGM V07 (IMERG Final, monthly), DOI 10.5067/GPM/IMERG/3B-MONTH/07 | 2000-01 → 2025-09 (latest published) | 0.1°, 162 × 226 cells | ~0.7 MB/year |
 | `merra2/` | M2TMNXSLV 5.12.4 (MERRA-2 monthly), DOI 10.5067/AP1B0BA5PD2K | 2000-01 → 2026-09 (latest published) | 0.5° × 0.625°, 34 × 37 cells | ~65 KB/year |
+| `modis/` | MOD13Q1 061 (Terra NDVI/EVI, 16-day), DOI 10.5067/MODIS/MOD13Q1.061 | **Pilot only:** 2000-02-18 composite | ~250 m, two regions | ~29 MB + 0.6 MB |
 
 ## 👀 At a glance
 
@@ -19,6 +21,15 @@ file's source granules, SHA-256 and validation result are listed in
 | Period | 2000-01 → 2025-09 | 2000-01 → 2026-09 |
 | Detail | ~10 km cells | ~50 km cells |
 | Use | rain trends, droughts, water balance | warming trends, maps per pixel |
+
+**🌱 `modis/` (vegetation, pilot).** Two NetCDFs from one 16-day composite (18 Feb 2000):
+`MOD13Q1_061_spain_peninsula_baleares_ceuta_melilla_pilot.nc` (~29 MB) and
+`MOD13Q1_061_spain_canarias_pilot.nc` (~641 KB). Display variables: `_250m_16_days_NDVI`,
+`_250m_16_days_EVI` (unitless, scale 0.0001). Also kept: VI quality, pixel reliability, composite
+day of year, plus a derived `qa_usable` flag (reliability 0 or 1). AppEEARS already masked to the
+Spain polygon. The full 2000 → 2026 record is not on disk (estimated 185–500 GB).
+
+The clip polygon is `spain_boundary_nuts2021_01m.geojson` (Eurostat GISCO NUTS 2021, see below).
 
 **Facts hidden in here 🔍** (Spain average, full years, Mann-Kendall + Sen's slope):
 - 🌡️ Spain warms **+0.56 °C per decade** (p = 0.0005, significant). Warmest year 2022 (16.4 °C), coldest 2010 (14.3 °C)
@@ -39,6 +50,7 @@ file lists it in the global attribute `display_variables`.
 |---|---|---|---|
 | `gpm/` | `precipitation_monthly_accumulation` | mm (monthly accumulated) | `precipitation` (mm/hr, monthly mean **rate**), `randomError` (mm/hr), `gaugeRelativeWeighting` (%), `probabilityLiquidPrecipitation` (%), `precipitationQualityIndex` (equivalent gauges per 2.5° box; no units attribute in the file) |
 | `merra2/` | `T2M_celsius` | °C | `T2M` (K) |
+| `modis/` | `_250m_16_days_NDVI`, `_250m_16_days_EVI` | `1` (dimensionless) | `_250m_16_days_VI_Quality`, `_250m_16_days_pixel_reliability`, `_250m_16_days_composite_day_of_the_year`; derived `qa_usable` |
 
 - `precipitation_monthly_accumulation` = `precipitation` × 24 × days in the month.
 - `T2M_celsius` = `T2M` − 273.15.

@@ -34,6 +34,11 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
   evapotranspiration, surface + groundwater runoff, snow water equivalent, soil moisture 0-10 cm.
   Tidy mm/month table: `gldas_spain_monthly_water_balance_mm_2000-2026.csv`.
 
+- [`data/processed/spain/modis/`](../data/processed/spain/README.md) — NASA MOD13Q1 v061 NDVI/EVI
+  **pilot only** (one 16-day composite, 2000-02-18): peninsula + Balears + Ceuta/Melilla (~29 MB) and
+  Canarias (~641 KB). Raw AppEEARS bundles: `data/raw/modis/pilot/`. Full history is not downloaded
+  (~185–500 GB). Inventory: [`data/README.md`](../data/README.md).
+
 ## Candidate NASA datasets for Spain
 
 Coverage for LP DAAC rows comes from the local catalog metadata; other rows come from provider
@@ -42,7 +47,7 @@ documentation (worth a quick check in CMR).
 | Variable | Dataset (version) | Spatial / temporal res. | Coverage | Units | Notes | Status |
 |---|---|---|---|---|---|---|
 | Land surface temperature | MOD11A1 v061 (`C1748058432-LPCLOUD`) | 1 km / daily | 2000-02-24 → present | K (scale 0.02) | Clear-sky only; LST ≠ air temperature | CANDIDATE |
-| Vegetation (NDVI/EVI) | MOD13Q1 v061 (`C1748066515-LPCLOUD`) | 250 m / 16-day | 2000-02-18 → present | unitless (scale 0.0001) | 16-day composite; pixel reliability QA available | CANDIDATE |
+| Vegetation (NDVI/EVI) | MOD13Q1 v061 (`C1748066515-LPCLOUD`) | 250 m / 16-day | 2000-02-18 → present | unitless (scale 0.0001) | Local **pilot** only (one composite); pixel reliability QA available | CANDIDATE (pilot on disk) |
 | Evapotranspiration | MOD16A2GF v061 (`C2565791021-LPCLOUD`) | 500 m / 8-day | 2000-01-01 → present | kg/m²/8-day (scale 0.1) | Model product, gap-filled | CANDIDATE |
 | Burned area | MCD64A1 v061 (`C2565786756-LPCLOUD`) | 500 m / monthly | 2000-11-01 → present | burn date (day of year) | Event data; aggregate for trends | CANDIDATE |
 | Land cover | MCD12Q1 v061 (`C2484079608-LPCLOUD`) | 500 m / yearly | 2001 → present | class | Good context layer | CANDIDATE |
