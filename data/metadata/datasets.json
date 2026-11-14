@@ -146,6 +146,44 @@
       },
       "license": "NASA Earth science data: open, no use restrictions; cite the DOI",
       "verified_at": "2026-11-14T12:10:30+00:00"
+    },
+    "gldas": {
+      "short_name": "GLDAS_NOAH025_M",
+      "version": "2.1",
+      "doi": "10.5067/SXAVCZFAQLNO",
+      "source_url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary",
+      "data_type": "Land surface model (Noah 3.6 in GLDAS-2.1), forced with satellite + analysis fields; NOT a river gauge",
+      "frequency": "monthly",
+      "resolution": "0.25 deg x 0.25 deg",
+      "variables": [
+        "Qs_acc",
+        "Qsb_acc",
+        "Evap_tavg",
+        "SoilMoi0_10cm_inst",
+        "SWE_inst"
+      ],
+      "service": "harmony",
+      "concept_id": "C1342986036-GES_DISC",
+      "collection_temporal_extent": [
+        {
+          "RangeDateTimes": [
+            {
+              "BeginningDateTime": "2000-01-01T00:00:00.000Z"
+            }
+          ],
+          "EndsAtPresentFlag": true
+        }
+      ],
+      "latest_granule": "2026-07-01",
+      "variable_units": {
+        "Evap_tavg": "kg m-2 s-1",
+        "Qs_acc": "kg m-2",
+        "Qsb_acc": "kg m-2",
+        "SoilMoi0_10cm_inst": "kg m-2",
+        "SWE_inst": "kg m-2"
+      },
+      "license": "NASA Earth science data: open, no use restrictions; cite the DOI",
+      "verified_at": "2026-11-14T15:38:19+00:00"
     }
   },
   "boundary": {

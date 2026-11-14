@@ -2,9 +2,9 @@
 
 ## `download_nasa_data.py`: NASA data for Spain
 
-Downloads GPM IMERG monthly precipitation, MERRA-2 monthly 2 m air temperature and MODIS MOD13Q1
-NDVI/EVI for Spain, from 2000 to the latest data available. Dataset details are in
-[docs/DATASETS.md](../docs/DATASETS.md).
+Downloads GPM IMERG monthly precipitation, MERRA-2 monthly 2 m air temperature, GLDAS Noah monthly
+runoff/ET/soil moisture, and MODIS MOD13Q1 NDVI/EVI for Spain, from 2000 to the latest data
+available. Dataset details are in [docs/DATASETS.md](../docs/DATASETS.md).
 
 ### Setup (once)
 
@@ -36,6 +36,19 @@ uv venv .venv && uv pip install -p .venv -r scripts/requirements.txt
 
 # MODIS for selected years only (check free disk first; see DATASETS.md > Storage)
 .venv/bin/python scripts/download_nasa_data.py --execute --historical --datasets modis --years 2000-2001
+
+# GLDAS runoff / ET / soil moisture / snow, monthly grid over Spain
+.venv/bin/python scripts/download_nasa_data.py --execute --historical --datasets gldas
+```
+
+## `download_swot_spain.py`: SWOT rivers and lakes in Spain
+
+SWORD river reaches + prior lakes (Theia WFS), clipped to Spain, then Hydrocron L2 water-surface
+elevation time series for wide rivers and larger lakes. Does **not** download the 7 GB Europe L4
+discharge file.
+
+```bash
+.venv/bin/python scripts/download_swot_spain.py
 ```
 
 Output locations:

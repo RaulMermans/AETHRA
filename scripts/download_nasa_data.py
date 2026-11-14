@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download NASA GPM IMERG, MODIS MOD13Q1 and MERRA-2 data for Spain (2000 -> latest).
+"""Download NASA GPM IMERG, MODIS MOD13Q1, MERRA-2 and GLDAS data for Spain (2000 -> latest).
 
 Modes
   (default)                 Dry run: verify NASA endpoints, list granules, report coverage gaps,
@@ -75,6 +75,20 @@ DATASETS = {
         "data_type": "Reanalysis (model with data assimilation), NOT a direct satellite observation",
         "frequency": "monthly", "resolution": "0.5 deg lat x 0.625 deg lon", "service": "harmony",
         "variables": ["T2M"], "expected_units": {"T2M": "K", "T2M_celsius": "degC"}, "grid_deg": (0.5, 0.625),
+    },
+    "gldas": {
+        "short_name": "GLDAS_NOAH025_M", "version": "2.1", "concept_id": "C1342986036-GES_DISC",
+        "doi": "10.5067/SXAVCZFAQLNO",
+        "source_url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary",
+        "data_type": "Land surface model (Noah 3.6 in GLDAS-2.1), forced with satellite + analysis fields; NOT a river gauge",
+        "frequency": "monthly", "resolution": "0.25 deg x 0.25 deg", "service": "harmony",
+        "variables": ["Qs_acc", "Qsb_acc", "Evap_tavg", "SoilMoi0_10cm_inst", "SWE_inst"],
+        "expected_units": {
+            "surface_runoff_mm": "mm", "groundwater_runoff_mm": "mm", "total_runoff_mm": "mm",
+            "evapotranspiration_mm": "mm", "soil_moisture_0_10cm_mm": "mm",
+            "snow_water_equivalent_mm": "mm",
+        },
+        "grid_deg": (0.25, 0.25),
     },
     "modis": {
         "short_name": "MOD13Q1", "version": "061", "concept_id": "C1748066515-LPCLOUD",
@@ -455,6 +469,44 @@ def process_gridded(k: str, cfg: dict, raw_files: list[Path], boundary, out: Pat
         ds["T2M_celsius"] = t
         ds.attrs["display_variables"] = "T2M_celsius (degC)"
         steps.append("added T2M_celsius = T2M - 273.15 (degC); native T2M in K kept unchanged")
+    if k == "gldas":
+        days = ds["time"].dt.days_in_month.astype("float32")
+        # Monthly GLDAS still stores 3-hourly accumulation units (kg m-2 / 3 h) as a monthly mean.
+        qs = (ds["Qs_acc"] * 8.0 * days).astype("float32")
+        qsb = (ds["Qsb_acc"] * 8.0 * days).astype("float32")
+        qs.attrs = {"units": "mm", "long_name": "Surface runoff, monthly accumulation (DERIVED, display variable)",
+                    "derivation": "Qs_acc [kg m-2 per 3 h, monthly mean] x 8 x days in calendar month",
+                    "source_variable": "Qs_acc", "source_units": ds["Qs_acc"].attrs.get("units", "kg m-2")}
+        qsb.attrs = {"units": "mm", "long_name": "Subsurface (groundwater) runoff, monthly accumulation (DERIVED)",
+                     "derivation": "Qsb_acc [kg m-2 per 3 h, monthly mean] x 8 x days in calendar month",
+                     "source_variable": "Qsb_acc", "source_units": ds["Qsb_acc"].attrs.get("units", "kg m-2")}
+        tot = (qs + qsb).astype("float32")
+        tot.attrs = {"units": "mm", "long_name": "Total runoff to rivers, monthly (DERIVED, display variable)",
+                     "derivation": "surface_runoff_mm + groundwater_runoff_mm"}
+        evap = (ds["Evap_tavg"] * 86400.0 * days).astype("float32")
+        evap.attrs = {"units": "mm", "long_name": "Evapotranspiration, monthly accumulation (DERIVED, display variable)",
+                      "derivation": "Evap_tavg [kg m-2 s-1, monthly mean] x 86400 x days in calendar month",
+                      "source_variable": "Evap_tavg", "source_units": ds["Evap_tavg"].attrs.get("units", "kg m-2 s-1")}
+        soil = ds["SoilMoi0_10cm_inst"].astype("float32")
+        soil.attrs = {**ds["SoilMoi0_10cm_inst"].attrs, "units": "mm",
+                      "long_name": "Soil moisture 0-10 cm (1 kg m-2 = 1 mm of water)",
+                      "source_variable": "SoilMoi0_10cm_inst"}
+        swe = ds["SWE_inst"].astype("float32")
+        swe.attrs = {**ds["SWE_inst"].attrs, "units": "mm",
+                     "long_name": "Snow water equivalent (1 kg m-2 = 1 mm of water)",
+                     "source_variable": "SWE_inst"}
+        ds["surface_runoff_mm"] = qs
+        ds["groundwater_runoff_mm"] = qsb
+        ds["total_runoff_mm"] = tot
+        ds["evapotranspiration_mm"] = evap
+        ds["soil_moisture_0_10cm_mm"] = soil
+        ds["snow_water_equivalent_mm"] = swe
+        ds.attrs["display_variables"] = (
+            "total_runoff_mm, surface_runoff_mm, groundwater_runoff_mm, "
+            "evapotranspiration_mm, soil_moisture_0_10cm_mm, snow_water_equivalent_mm (mm)"
+        )
+        steps.append("added mm display variables (Giovanni conversion: Qs/Qsb x 8 x days, Evap x 86400 x days; "
+                     "SoilMoi and SWE kg m-2 = mm); native fields kept")
     ds.attrs.update(provenance_attrs(cfg, prov, steps))
     write_nc(ds, out)
     return out
@@ -835,7 +887,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--execute", action="store_true", help="download (pilot only unless --historical)")
     ap.add_argument("--historical", action="store_true", help="with --execute: all yearly batches")
-    ap.add_argument("--datasets", default="gpm,merra2,modis", help="comma list of gpm,merra2,modis")
+    ap.add_argument("--datasets", default="gpm,merra2,modis",
+                    help="comma list of gpm,merra2,modis,gldas")
     ap.add_argument("--years", default=f"{FIRST_YEAR}-{dt.date.today().year}",
                     help="range and/or list, e.g. 2000-2026 or 2000,2012,2024")
     ap.add_argument("--min-free-gb", type=float, default=5.0, help="disk space to always leave free")

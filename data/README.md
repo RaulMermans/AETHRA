@@ -10,6 +10,8 @@ All data covers **Spain, 2000 → 2026**. This page is the quick overview; each 
 | [`processed/spain/gpm/`](processed/spain/README.md) | 🌧️ **Rain measured from space** (NASA GPM satellites, corrected with rain gauges) | A **map** of Spain cut into ~10 km squares, one map per **month** | 2000 → 2025-09 |
 | [`processed/spain/merra2/`](processed/spain/README.md) | 🌡️ **Air temperature** from NASA MERRA-2, a *reanalysis*: a weather model that blends all available observations to fill gaps | A **map** in ~50 km squares, one per **month** | 2000 → 2026-09 |
 | [`processed/spain/modis/`](processed/spain/README.md) | 🌱 **How green the vegetation is**, seen by NASA's MODIS satellite (250 m detail) | Only a **test**: a single image from Feb 2000, kept on one laptop, **not uploaded** (the full history is hundreds of GB) | 2000-02-18 only |
+| [`processed/spain/gldas/`](processed/spain/README.md) | 💧 Runoff, ET, soil moisture, snow — **map grid** ~25 km (NASA GLDAS) | A **map** of Spain, one per **month** | 2000 → 2026-07 |
+| [`processed/spain/swot/`](processed/spain/README.md) | 🏞️ River reaches + lakes: water-surface height from SWOT (not gauges) | lines/polygons, ~days | 2023 → |
 | [`nasa_gldas_spain_monthly/`](nasa_gldas_spain_monthly/README.md) | 💧 **Where the water goes** (evaporation, rivers, soil, snow), from NASA GLDAS, a land model fed with satellite data | **One number per month for all of Spain** (an average, no map) | 2000 → 2026-07 |
 | [`raw/`](raw/README.md) | Original NASA files, before cutting them to Spain | Don't use directly | — |
 | [`metadata/`](metadata/) | Where each file came from (dataset IDs, versions, checksums) | — | — |

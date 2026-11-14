@@ -43,6 +43,8 @@ export interface TimeDimension {
   min?: string;
   max?: string;
   step: "P1D" | "P1M" | "P1Y";
+  /** When true the UI shows the date but does not let the user change it. */
+  locked?: boolean;
 }
 
 export interface LayerSource {

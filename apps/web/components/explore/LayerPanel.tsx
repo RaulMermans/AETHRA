@@ -33,7 +33,7 @@ function LayerRow({
   onChange: (patch: Partial<LayerState>) => void;
 }) {
   const id = useId();
-  const time = layer.kind === "imagery" ? layer.time : undefined;
+  const time = "time" in layer ? layer.time : undefined;
   return (
     <li className="py-2.5">
       <div className="flex items-start gap-3">
@@ -79,14 +79,27 @@ function LayerRow({
           {time && (
             <label className="flex items-center justify-between gap-2 text-[11px] text-muted">
               Date (UTC)
-              <input
-                type="date"
-                value={state.time ?? time.default}
-                min={time.min}
-                max={time.max}
-                onChange={(e) => e.target.value && onChange({ time: e.target.value })}
-                className="focus-ring rounded border border-line bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-ink [color-scheme:dark]"
-              />
+              {time.locked ? (
+                <span className="font-mono text-[11px] text-ink">{state.time ?? time.default}</span>
+              ) : time.step === "P1M" ? (
+                <input
+                  type="month"
+                  value={(state.time ?? time.default).slice(0, 7)}
+                  min={time.min?.slice(0, 7)}
+                  max={time.max?.slice(0, 7)}
+                  onChange={(e) => e.target.value && onChange({ time: `${e.target.value}-01` })}
+                  className="focus-ring rounded border border-line bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-ink [color-scheme:dark]"
+                />
+              ) : (
+                <input
+                  type="date"
+                  value={state.time ?? time.default}
+                  min={time.min}
+                  max={time.max}
+                  onChange={(e) => e.target.value && onChange({ time: e.target.value })}
+                  className="focus-ring rounded border border-line bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-ink [color-scheme:dark]"
+                />
+              )}
             </label>
           )}
           <label className="flex items-center gap-2 text-[11px] text-muted">

@@ -43,11 +43,13 @@ data/cache/
 data/raw/*
 !data/raw/gpm/
 !data/raw/merra2/
+!data/raw/gldas/
 !data/raw/boundary/
 data/raw/boundary/*
 !data/raw/boundary/NUTS_RG_01M_2021_4326_LEVL_2.geojson
 !data/raw/gpm/**/*.nc4
 !data/raw/merra2/**/*.nc4
+!data/raw/gldas/**/*.nc4
 data/raw/*/pilot/
 data/raw/*/*.partial/
 
@@ -60,6 +62,10 @@ data/processed/spain/*
 !data/processed/spain/spain_boundary_nuts2021_01m.geojson
 !data/processed/spain/gpm/
 !data/processed/spain/merra2/
+!data/processed/spain/gldas/
 !data/processed/spain/gpm/*.nc
 !data/processed/spain/merra2/*.nc
+!data/processed/spain/gldas/*.nc
+!data/processed/spain/swot/
+!data/processed/spain/swot/**
 data/processed/spain/**/*_pilot.nc

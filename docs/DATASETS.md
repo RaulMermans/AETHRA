@@ -28,7 +28,6 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
   TMIN), ~170-177 stations, metric (°C, mm). `harmonize_ghcnd_spain.py` (same folder) converts and
   merges exports into one schema. **Not NASA**: ground truth/validation. ~26 years is borderline for a
   climate trend (older years being added); check quality flags in `*_ATTRIBUTES`.
-
 - [`data/nasa_gldas_spain_monthly/`](../data/nasa_gldas_spain_monthly/README.md) — NASA GLDAS Noah
   0.25° monthly v2.1 via Giovanni (area-averaged over the Spain bbox), 2000-01 → 2026-07:
   evapotranspiration, surface + groundwater runoff, snow water equivalent, soil moisture 0-10 cm.
@@ -38,6 +37,16 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
   **pilot only** (one 16-day composite, 2000-02-18): peninsula + Balears + Ceuta/Melilla (~29 MB) and
   Canarias (~641 KB). Raw AppEEARS bundles: `data/raw/modis/pilot/`. Full history is not downloaded
   (~185–500 GB). Inventory: [`data/README.md`](../data/README.md).
+
+- [`data/processed/spain/gldas/`](../data/processed/spain/README.md) — NASA GLDAS Noah 0.25° monthly
+  **grid** for Spain (not the Giovanni Spain-average CSV): surface + groundwater runoff, ET, soil
+  moisture 0–10 cm, SWE. Display variables in mm. 2000-01 → latest published. Harmony subset via
+  `scripts/download_nasa_data.py --datasets gldas`.
+
+- [`data/processed/spain/swot/`](../data/processed/spain/README.md) — SWOT SWORD river reaches and
+  prior lakes clipped to Spain, plus Hydrocron L2 water-surface elevation series for wide rivers
+  and larger lakes (2023→). Not in-situ discharge; the Europe L4 SOS file is ~7 GB and was not
+  downloaded. `scripts/download_swot_spain.py`.
 
 ## Candidate NASA datasets for Spain
 
@@ -56,6 +65,8 @@ documentation (worth a quick check in CMR).
 | Precipitation | GPM IMERG Final (GES DISC) | 0.1° / daily, monthly | ~2000 → present | mm | Satellite-gauge merged | CANDIDATE |
 | Air temperature, reanalysis | MERRA-2 (GES DISC) | 0.5° × 0.625° / hourly–monthly | 1980 → present | K | Reanalysis (model) | CANDIDATE |
 | Soil moisture | SMAP L3 (NSIDC) / GLDAS (GES DISC) | 9–36 km / 0.25° | SMAP 2015 →; GLDAS-2.1 2000 → | m³/m³, kg/m² | SMAP record is short | CANDIDATE |
+| Runoff (to rivers) | GLDAS_NOAH025_M v2.1 (`C1342986036-GES_DISC`) | 0.25° / monthly | 2000-01 → present | mm/month (derived) | Model, not gauges; Spain **grid** via Harmony | IN USE |
+| River / lake water surface | SWOT L2 HR via Hydrocron + SWORD/PLD | reaches / lakes | 2023-03 → present | m (WSE), m (width) | Short record; not in-situ discharge. Spain subset in `processed/spain/swot/` | IN USE |
 
 ## Tips for picking a dataset
 
@@ -77,6 +88,7 @@ Verified in CMR on 14 Nov 2026 (dry run, from 2000-01-01):
 | `gpm` | GPM_3IMERGM V07 (IMERG Final, monthly) | `C2723754851-GES_DISC` / 10.5067/GPM/IMERG/3B-MONTH/07 | Satellite-gauge estimate | 0.1° | 309 | 2000-01 → **2025-09** (collection metadata ends 2025-09-30; nothing newer published) | Harmony HOSS |
 | `merra2` | M2TMNXSLV 5.12.4 (monthly) | `C1276812859-GES_DISC` / 10.5067/AP1B0BA5PD2K | **Reanalysis (model), not observation** | 0.5° × 0.625° | 321 | 2000-01 → 2026-09 | Harmony HOSS |
 | `modis` | MOD13Q1 061 (Terra, 16-day) | `C1748066515-LPCLOUD` / 10.5067/MODIS/MOD13Q1.061 | Satellite observation | 250 m, sinusoidal | 3,070 tiles (614 composites × tiles h17v04, h17v05, h18v04, h18v05 + h16v06 Canarias) | 2000-02-18 → 2026-10-16 | AppEEARS area request (no Harmony service in CMR) |
+| `gldas` | GLDAS_NOAH025_M 2.1 (monthly) | `C1342986036-GES_DISC` / 10.5067/SXAVCZFAQLNO | Land surface **model** (Noah), not river gauges | 0.25° | 319 | 2000-01 → **2026-07** | Harmony HOSS |
 
 No missing months or composites were found in these ranges (every expected period has a granule).
 CMR publishes **no checksums** for these granules. The script records SHA-256 for every saved file
@@ -96,13 +108,17 @@ that AppEEARS publishes.
   dimensionless NDVI/EVI with units set to `1`). Each processed file lists them in its global
   `display_variables` attribute. Source units and formulas stay in each variable's attributes
   (`source_units`, `derivation`).
+- `gldas`: native `Qs_acc` / `Qsb_acc` (kg m⁻² per 3 h, monthly mean), `Evap_tavg` (kg m⁻² s⁻¹),
+  `SoilMoi0_10cm_inst` and `SWE_inst` (kg m⁻²). Display: `surface_runoff_mm` = Qs × 8 × days,
+  `groundwater_runoff_mm` = Qsb × 8 × days, `total_runoff_mm` = both, `evapotranspiration_mm` =
+  Evap × 86400 × days, soil and SWE as mm (1 kg m⁻² = 1 mm). Native fields kept.
 - `modis` (AppEEARS layer names): `_250m_16_days_NDVI`, `_250m_16_days_EVI` (scale 0.0001, fill
   −3000, valid −0.2…1), `_250m_16_days_VI_Quality` (bit field), `_250m_16_days_pixel_reliability`
   (0 good, 1 marginal, 2 snow/ice, 3 cloudy, −1 fill), `_250m_16_days_composite_day_of_the_year`.
   The processed file adds a `qa_usable` flag (reliability 0 or 1). No values are masked.
 
 **Processing rules.** Native units, grid and time step are kept. MODIS is not resampled to monthly,
-and nothing is interpolated or gap-filled. GPM and MERRA-2 are clipped to the Spain polygon with
+and nothing is interpolated or gap-filled. GPM, MERRA-2 and GLDAS are clipped to the Spain polygon with
 `all_touched=True`, so any grid cell that touches Spain is kept. Without that rule, Ceuta, Melilla
 and the smaller islands, which are each smaller than one cell, would be lost. Cells outside Spain
 become NaN. MODIS is masked to the polygon on the server by AppEEARS, as two areas:
