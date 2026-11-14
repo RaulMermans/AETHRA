@@ -24,9 +24,9 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
 ## Local catalogs in this repo
 
 - [`data/noaa_ghcnd_spain_daily/`](../data/noaa_ghcnd_spain_daily/README.md) — NOAA GHCN-Daily station
-  data for Spain, 2011-01-01 → 2026-11-07, one raw NOAA CSV per 3 years (PRCP, SNWD, TAVG, TMAX,
+  data for Spain, 2001-01-01 → 2026-11-07, one raw NOAA CSV per period (PRCP, SNWD, TAVG, TMAX,
   TMIN), ~170-177 stations, metric (°C, mm). `harmonize_ghcnd_spain.py` (same folder) converts and
-  merges exports into one schema. **Not NASA**: ground truth/validation. ~16 years is short for a
+  merges exports into one schema. **Not NASA**: ground truth/validation. ~26 years is borderline for a
   climate trend (older years being added); check quality flags in `*_ATTRIBUTES`.
 
 ## Candidate NASA datasets for Spain
