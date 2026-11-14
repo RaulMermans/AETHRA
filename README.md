@@ -16,8 +16,8 @@ wind). That work is a **proposed research track**, not a result yet. See [docs/E
 | Identify relevant Earth-science variables from NASA data | ✅ MERRA-2 T2M, GPM IMERG, GLDAS on disk, with versions and DOIs |
 | Obtain the data for a region | ✅ Spain clip; regional scopes (CCAA / province) in the UI |
 | Generate and visualize a time series | ✅ Annual series in `/explore` (Cesium globe + chart) |
-| Determine direction and magnitude | ✅ Theil–Sen + 95 % CI in tested Python (`packages/science`); 🟡 the older panel still recomputes for map scopes |
-| Evaluate statistical significance | ✅ Mann–Kendall (ties, autocorrelation-checked), BH across regions, window/threshold sensitivity in the new bundles; 🟡 per-cell maps lack FDR |
+| Determine direction and magnitude | ✅ Theil–Sen + 95 % CI in tested Python (`packages/science`); the browser only renders (D47) |
+| Evaluate statistical significance | ✅ Mann–Kendall (ties, autocorrelation-checked), BH across regions, window/threshold sensitivity; maps show slope only (BH q stored); NOAA station check (P0-S5); 🟡 regional rain/runoff labels not multiplicity-adjusted (D53) |
 
 **Scientific readiness (14 Nov, ~22:00):** two reproducible AnalysisBundles exist, both pending a
 second-person review. Gate A: MERRA-2 air temperature, Peninsula + Balearics, **+0.60 °C/decade (95 % CI
@@ -34,7 +34,8 @@ second-person review. Gate A: MERRA-2 air temperature, Peninsula + Balearics, **
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decision register (statuses, pending approvals) |
 | [docs/DATASETS.md](docs/DATASETS.md) | Dataset inventory and readiness classes, NASA POWER candidate |
 | [docs/ENERGY_RESEARCH.md](docs/ENERGY_RESEARCH.md) | Pre-registered solar–wind research brief (Gate B) |
-| [docs/DEMO_AND_SUBMISSION.md](docs/DEMO_AND_SUBMISSION.md) | Event rules, submission checklist, 7-slide outline |
+| [docs/DEMO_AND_SUBMISSION.md](docs/DEMO_AND_SUBMISSION.md) | Event rules, submission checklist, approved claims, pitch, 7-slide outline |
+| [docs/SCIENTIFIC_REVIEW.md](docs/SCIENTIFIC_REVIEW.md) | Technical review of Gate A/B + NOAA check; human sign-off list (PENDING) |
 | [docs/UX_UI_RULES.md](docs/UX_UI_RULES.md) | Scientific presentation rules for the UI |
 | [docs/TEAM_WORKFLOW.md](docs/TEAM_WORKFLOW.md) | Git workflow |
 | [docs/adr/](docs/adr/) | ADR-001 Cesium globe (accepted) · ADR-002 evidence-chain alignment (proposed) |
@@ -46,17 +47,19 @@ second-person review. Gate A: MERRA-2 air temperature, Peninsula + Balearics, **
 apps/web/          Next.js + TypeScript + Tailwind, CesiumJS globe (ADR-001)
 scripts/           Python download + processing; build_climate_bundle.py computes current trends
 services/api/      FastAPI (planned; empty) — serves immutable analysis results
-packages/science/  NumPy / xarray / SciPy (planned; empty) — tested scientific functions
+packages/science/  NumPy-only trend statistics (Theil–Sen, Mann–Kendall, Hamed–Rao, BH) + tests
 data/              Catalogs, processed Spain subsets, provenance metadata
 docs/              Project documentation + event reference PDFs
-tests/             Scientific validation tests (none yet)
+tests/             Evidence-chain, scope/demo-safety and data-file tests (run with .venv/bin/python)
 ```
 
 ## Run
 
 ```bash
 cp .env.example .env                       # fill in locally; never commit .env
-cd apps/web && npm install && npm run dev  # http://localhost:3000 → /explore
+cd apps/web && npm install && npm run dev  # http://localhost:3000 → /explore (judge mode)
+# Exploratory Energy Lab / infrastructure layer (research only, never for judging):
+# NEXT_PUBLIC_ENABLE_EXPLORATORY=1 npm run dev
 ```
 
 Rebuilding the climate bundle and downloading data: [scripts/README.md](scripts/README.md).

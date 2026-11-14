@@ -1,0 +1,114 @@
+{
+ "status": "Review check of a DESCRIPTIVE statement (not confirmatory, not a new hypothesis). Pending second-person review.",
+ "indicator": "joint-low day = daily ALLSKY_SFC_SW_DWN and daily WS50M both below their monthly 20th percentile (reference 2001–2020)",
+ "null_models": {
+  "annual_pooled": "independence given each year's own low-day counts",
+  "month_stratified": "independence within each calendar month of each year",
+  "year_shift": "solar year y vs wind year y+k (k=1..24): keeps seasonality and persistence, breaks same-day coupling"
+ },
+ "interpretation_limit": "Describes NASA POWER resource data (satellite-derived irradiance, reanalysis wind). Not generation, not grid reliability, not a trend, not evidence that conditions are improving.",
+ "input_sha256": "995ce0cbc897983827a4c2e82a521587508d35c9c7189e0d25dab8da5b55911e",
+ "code_sha256": "e9a63a5f495a24fd884a4dc8642cfa3eb31aecebb1f4ade164a7cc78c779920f",
+ "regions": {
+  "ES11": {
+   "observed_joint_low_days_2001_2025": 177,
+   "expected_annual_pooled": 351.0,
+   "expected_month_stratified": 339.8,
+   "year_shift": {
+    "observed_without_feb29": 177,
+    "surrogate_mean": 348.0,
+    "surrogate_range_2_5_97_5": [
+     322.5,
+     372.7
+    ],
+    "n_surrogates": 24,
+    "observed_below_all_surrogates": true
+   },
+   "ratio_observed_to_expected": {
+    "annual_pooled": 0.5,
+    "month_stratified": 0.52,
+    "year_shift": 0.51
+   }
+  },
+  "ES24": {
+   "observed_joint_low_days_2001_2025": 295,
+   "expected_annual_pooled": 373.9,
+   "expected_month_stratified": 368.8,
+   "year_shift": {
+    "observed_without_feb29": 295,
+    "surrogate_mean": 371.8,
+    "surrogate_range_2_5_97_5": [
+     335.1,
+     403.4
+    ],
+    "n_surrogates": 24,
+    "observed_below_all_surrogates": true
+   },
+   "ratio_observed_to_expected": {
+    "annual_pooled": 0.79,
+    "month_stratified": 0.8,
+    "year_shift": 0.79
+   }
+  },
+  "ES41": {
+   "observed_joint_low_days_2001_2025": 160,
+   "expected_annual_pooled": 366.5,
+   "expected_month_stratified": 356.9,
+   "year_shift": {
+    "observed_without_feb29": 160,
+    "surrogate_mean": 367.9,
+    "surrogate_range_2_5_97_5": [
+     340.6,
+     403.3
+    ],
+    "n_surrogates": 24,
+    "observed_below_all_surrogates": true
+   },
+   "ratio_observed_to_expected": {
+    "annual_pooled": 0.44,
+    "month_stratified": 0.45,
+    "year_shift": 0.43
+   }
+  },
+  "ES61": {
+   "observed_joint_low_days_2001_2025": 191,
+   "expected_annual_pooled": 363.4,
+   "expected_month_stratified": 357.5,
+   "year_shift": {
+    "observed_without_feb29": 191,
+    "surrogate_mean": 369.3,
+    "surrogate_range_2_5_97_5": [
+     345.3,
+     384.1
+    ],
+    "n_surrogates": 24,
+    "observed_below_all_surrogates": true
+   },
+   "ratio_observed_to_expected": {
+    "annual_pooled": 0.53,
+    "month_stratified": 0.53,
+    "year_shift": 0.52
+   }
+  },
+  "R0": {
+   "observed_joint_low_days_2001_2025": 183,
+   "expected_annual_pooled": 369.6,
+   "expected_month_stratified": 356.9,
+   "year_shift": {
+    "observed_without_feb29": 183,
+    "surrogate_mean": 369.6,
+    "surrogate_range_2_5_97_5": [
+     343.3,
+     404.6
+    ],
+    "n_surrogates": 24,
+    "observed_below_all_surrogates": true
+   },
+   "ratio_observed_to_expected": {
+    "annual_pooled": 0.5,
+    "month_stratified": 0.51,
+    "year_shift": 0.5
+   }
+  }
+ }
+}

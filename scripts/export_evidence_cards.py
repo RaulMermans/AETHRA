@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 EG = ROOT / "data/results/energy_gap"
 GA = ROOT / "data/results/gate_a_temperature"
 OUT = ROOT / "apps/web/public/data/evidence-cards.json"
+INDEP = EG / "independence_check.json"  # scripts/check_energy_gap_independence.py
+WEIGHTS = ROOT / "data/processed/spain/power/region_weights.json"
+# Pre-registered Gate B regions (ENERGY_RESEARCH.md §0) → /explore scope keys. R0 = the "age" scope.
+ENERGY_REGIONS = ["R0", "ES11", "ES41", "ES24", "ES61"]
+
+
+def scope_key(rid: str) -> str:
+    return "age" if rid == "R0" else f"ccaa:{rid}"
 
 OUTCOME_LABEL = {
     "supported_increase": "Supported increase",
@@ -43,10 +51,15 @@ def energy_card(bundle_path: Path, rid: str) -> dict:
     a = pd.read_csv(EG / "annual_series.csv")
     a = a[a.region == rid]
     sens = res["E1_sensitivity"]
+    ind = json.loads(INDEP.read_text())["regions"][rid]
+    eff = json.loads(WEIGHTS.read_text())[rid]
     return {
         "id": f"energy-gap-{rid}",
+        "topic": "joint_low",
+        "headline": rid == "R0",
+        "region": {"scope": scope_key(rid), "name": res["region"]},
         "status": b["status"],
-        "question": "Have days with jointly low solar and wind resources become more or less frequent since 2001?",
+        "question": f"Have days with jointly low solar and wind resources become more or less frequent in {res['region']} since 2001?",
         "outcome": res["E1_outcome"],
         "outcome_label": OUTCOME_LABEL[res["E1_outcome"]],
         "what": "Days per year when BOTH daily solar insolation and daily mean 50 m wind speed fall below their own monthly 20th percentile (reference 2001–2020)",
@@ -57,7 +70,6 @@ def energy_card(bundle_path: Path, rid: str) -> dict:
             "ci95_per_decade": [r(e1["ci_low_per_decade"]), r(e1["ci_high_per_decade"])],
             "units": "days per decade",
             "median_per_year": r(res["median_joint_low_days"], 1),
-            "expected_if_independent": res["expected_joint_low_days_if_independent"],
         },
         "evidence": {
             "method": e1["method"],
@@ -73,12 +85,22 @@ def energy_card(bundle_path: Path, rid: str) -> dict:
             "wind_mean_trend": f"{e1_fmt(res['E0_annual_mean_wind'])} m s⁻¹ per decade",
             "solar_wind_rank_correlation_median": res["E3_median_annual_tau"],
         },
+        "complementarity": {
+            "observed_2001_2025": ind["year_shift"]["observed_without_feb29"],
+            "expected_if_independent_mean": ind["year_shift"]["surrogate_mean"],
+            "expected_range_95": ind["year_shift"]["surrogate_range_2_5_97_5"],
+            "ratio": ind["ratio_observed_to_expected"]["year_shift"],
+            "null_model": "year-shift surrogates (solar of one year vs wind of another; keeps seasonality and persistence)",
+            "source": str(INDEP.relative_to(ROOT)),
+        },
         "do_not_conclude": "Not electricity generation, not grid reliability or outage risk, not site suitability, not a forecast.",
         "limitations": [
             "Solar is a 1° satellite-derived product (CERES SYN1deg); wind is MERRA-2 reanalysis with known biases (underestimates Mediterranean wind power).",
             "Daily totals and means; sub-daily lulls are not resolved.",
             "25 annual values: limited power to detect small trends.",
             "Pre-registered single definition (P20); sensitivity to P10/P30 shown above.",
+            f"Regional support: ≈{eff['solar']['effective_cells']} effective 1° solar cells and ≈{eff['wind']['effective_cells']} effective wind cells.",
+            "Confirmatory family: 5 pre-registered regions, Benjamini–Hochberg adjusted.",
         ],
         "series": {
             "label": "Joint-low days",
@@ -107,6 +129,9 @@ def temperature_card(bundle_path: Path) -> dict:
     lo, hi = b["slope_range_per_decade"]
     return {
         "id": "gate-a-temperature-R0",
+        "topic": "temperature",
+        "headline": True,
+        "region": {"scope": "age", "name": "Peninsula + Balearics"},
         "status": b["status"],
         "question": "Has near-surface air temperature changed over Peninsular Spain and the Balearics since 2000?",
         "outcome": b["outcome"],
@@ -140,10 +165,10 @@ def temperature_card(bundle_path: Path) -> dict:
 
 
 def main() -> None:
-    cards = [energy_card(EG / "analysis_bundle.json", "R0"), temperature_card(GA / "analysis_bundle.json")]
+    cards = [temperature_card(GA / "analysis_bundle.json")] + [energy_card(EG / "analysis_bundle.json", r) for r in ENERGY_REGIONS]
     OUT.write_text(json.dumps({"generated_by": "scripts/export_evidence_cards.py", "cards": cards}, indent=1, ensure_ascii=False))
     for c in cards:
-        print(c["id"], c["outcome_label"], c["how_much"]["slope_per_decade"], c["how_much"]["ci95_per_decade"])
+        print(c["id"], c["region"]["scope"], c["outcome_label"], c["how_much"]["slope_per_decade"], c["how_much"]["ci95_per_decade"])
 
 
 if __name__ == "__main__":

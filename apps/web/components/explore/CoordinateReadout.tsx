@@ -11,6 +11,7 @@ function overlayKindLabel(kind: OverlayFeature["kind"]): string {
   if (kind === "reservoir") return "Reservoir";
   if (kind === "lake") return "Lake";
   if (kind === "lagoon") return "Coastal lagoon";
+  if (kind === "installation") return "Registered installation · JCyL";
   return "River";
 }
 
@@ -21,7 +22,7 @@ function OverlayCard({ feature }: { feature: OverlayFeature }) {
       <p className="text-[10px] uppercase tracking-[0.12em] text-accent">{overlayKindLabel(feature.kind)}</p>
       <p className="mt-0.5 text-xs font-medium text-ink">{title}</p>
       <p className="mt-0.5 font-mono text-[11px] text-muted">
-        {feature.kind === "station" ? feature.id : feature.basin ?? feature.id}
+        {feature.kind === "station" ? feature.id : feature.detail ?? feature.basin ?? feature.id}
         {feature.elevationM !== undefined ? ` · ${Math.round(feature.elevationM)} m` : ""}
       </p>
       {feature.value !== undefined && (

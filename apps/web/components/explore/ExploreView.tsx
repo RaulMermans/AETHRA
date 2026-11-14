@@ -10,6 +10,7 @@ import {
   type AdminScopeLevel,
   type AdminScopeSelection,
 } from "@/lib/globe/admin-scope";
+import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
 import {
   buildDimensionOverlayGeoJson,
@@ -37,6 +38,13 @@ import {
   type EnergyVariableLens,
   type EvaluatedEnergySite,
 } from "@/lib/globe/energy-tech";
+// D49: Energy infrastructure context layer (P1, opt-in, off the demo path). Registered metadata only.
+import {
+  buildInfrastructureOverlay,
+  loadInfrastructureFile,
+  type InfrastructureFile,
+  type Installation,
+} from "@/lib/globe/energy-infrastructure";
 import type {
   CameraState,
   GeoCoordinate,
@@ -55,6 +63,7 @@ import { AdminScopeBar } from "./AdminScopeBar";
 import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
+import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
 import { EnergyTechControlsDock, EnergyTechInspectorPanel } from "./EnergyTechAdvisor";
 import { EvidencePanel } from "./EvidencePanel";
 import { Icon } from "./Icon";
@@ -106,7 +115,9 @@ export function ExploreView() {
   const homeView = HOME_VIEW;
 
   // --- Workspace Mode: "climate" (validated demo path, default) vs "energy" (EXPLORATORY Energy Tech Lab, opt-in) ---
-  const [workspaceMode, setWorkspaceMode] = useState<"energy" | "climate">("climate");
+  const [rawWorkspaceMode, setWorkspaceMode] = useState<"energy" | "climate">("climate");
+  // Judge mode (default build): the exploratory Energy Lab can never become active, whatever the URL or state.
+  const workspaceMode: "energy" | "climate" = EXPLORATORY_FEATURES_ENABLED ? rawWorkspaceMode : "climate";
   const [energyConcept, setEnergyConcept] = useState<EnergyConceptId>("hydropower_stability");
   const [energyScope, setEnergyScope] = useState<EnergyTargetScope>("basin");
   const [energyGoal, setEnergyGoal] = useState<EnergyOptimizationGoal>("ideal");
@@ -163,8 +174,9 @@ export function ExploreView() {
         if (!active) return;
         setAdminBundle(ab);
         const params = new URLSearchParams(window.location.search);
-        const labParam = params.get("lab");
-        const conceptParam = params.get("concept") as EnergyConceptId | null;
+        // ?lab=energy / ?concept=… only work in exploratory builds (judge mode ignores them).
+        const labParam = EXPLORATORY_FEATURES_ENABLED ? params.get("lab") : null;
+        const conceptParam = EXPLORATORY_FEATURES_ENABLED ? (params.get("concept") as EnergyConceptId | null) : null;
         if (conceptParam && ENERGY_CONCEPTS.some((c) => c.id === conceptParam)) {
           const meta = ENERGY_CONCEPTS.find((c) => c.id === conceptParam)!;
           setWorkspaceMode("energy");
@@ -393,6 +405,61 @@ export function ExploreView() {
   }, []);
 
   const closeTool = useCallback(() => setActiveTool(null), []);
+
+  // --- Energy infrastructure (D49): loaded only when the tool is first opened ----------------
+  const [infraFile, setInfraFile] = useState<InfrastructureFile | null>(null);
+  const [infraError, setInfraError] = useState<string | null>(null);
+  const [selectedInstallationId, setSelectedInstallationId] = useState<string | null>(null);
+  const infraOpen = activeTool === "infrastructure";
+  useEffect(() => {
+    if (!infraOpen || infraFile || infraError) return;
+    let active = true;
+    loadInfrastructureFile()
+      .then((f) => {
+        if (active) setInfraFile(f);
+      })
+      .catch((err: unknown) => {
+        if (active) setInfraError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      active = false;
+    };
+  }, [infraOpen, infraFile, infraError]);
+  const selectedInstallation = useMemo(
+    () => infraFile?.installations.find((i) => i.id === selectedInstallationId) ?? null,
+    [infraFile, selectedInstallationId],
+  );
+  const globeLayers = useMemo<LayerDescriptor[]>(() => {
+    if (!infraFile || !infraOpen) return allLayers;
+    const infraLayer: LayerDescriptor = {
+      id: "energy-infrastructure",
+      kind: "point-values",
+      group: "reference",
+      title: "Registered energy installations (Castilla y León)",
+      description: "Wind and PV installations in operation from the regional production-installation register. Not generation.",
+      source: { name: "Junta de Castilla y León (PRETOR register)", url: infraFile.source.metadataUrl },
+      resolution: "Point inside each official perimeter",
+      data: buildInfrastructureOverlay(infraFile.installations, selectedInstallation),
+      science: {
+        variable: "registered_capacity",
+        units: "MW",
+        bounds: { west: -7.1, south: 40.0, east: -1.7, north: 43.3 },
+        spatialResolution: "Facility point; outline = containing MERRA-2 0.5° × 0.625° cell",
+        timeCoverage: {
+          start: infraFile.source.infoDateRange?.[0] ?? "2024-01-01",
+          end: infraFile.source.infoDateRange?.[1] ?? "2025-12-31",
+          step: "P1D",
+        },
+        encoding: "color",
+        missingData: { policy: "hide" },
+      },
+    };
+    return [...allLayers, infraLayer];
+  }, [allLayers, infraFile, infraOpen, selectedInstallation]);
+  const globeLayerStates = useMemo<LayerStateMap>(
+    () => ({ ...layerStates, "energy-infrastructure": { visible: infraOpen, opacity: 1 } }),
+    [layerStates, infraOpen],
+  );
   const toggleTool = useCallback((tool: ToolId) => setActiveTool((t) => (t === tool ? null : tool)), []);
   useEffect(() => {
     if (!activeTool) return;
@@ -403,8 +470,49 @@ export function ExploreView() {
     return () => window.removeEventListener("keydown", onKey);
   }, [activeTool, closeTool]);
 
+  const selectInstallation = useCallback(
+    (inst: Installation | null) => {
+      setSelectedInstallationId(inst?.id ?? null);
+      if (!inst) return;
+      controller?.flyTo({
+        target: { latitude: inst.lat, longitude: inst.lon },
+        heading: 0,
+        pitch: -60,
+        range: 170_000, // frames the ~55 km MERRA-2 cell outline around the facility
+        durationSeconds: 1.6,
+        terrainAware: true,
+      });
+    },
+    [controller],
+  );
+
+  // "Open in Trend panel": the province scope whose precomputed MERRA-2 result the panel shows.
+  const openInstallationRegion = useCallback(
+    (inst: Installation) => {
+      setWorkspaceMode("climate");
+      updateClimateConfig({ dimension: "temperature", mode: "value" });
+      const prov = adminBundle?.provinces.find((p) => p.id === inst.provinceId);
+      handleChangeAdminScope(
+        { ...adminScope, level: "provincia", provinceId: inst.provinceId, ccaaId: prov?.ccaaId ?? adminScope.ccaaId },
+        true,
+      );
+    },
+    [adminBundle, adminScope, handleChangeAdminScope, updateClimateConfig],
+  );
+
   const handleSelectLocation = useCallback(
     (coord: GeoCoordinate | null) => {
+      // A click on an installation marker selects the installation (exact marker coordinates).
+      if (coord && infraOpen && infraFile) {
+        const hit = infraFile.installations.find(
+          (i) => Math.abs(i.lat - coord.latitude) < 1e-7 && Math.abs(i.lon - coord.longitude) < 1e-7,
+        );
+        if (hit) {
+          // Globe re-sends the same click with a refined terrain height: don't restart the flight.
+          if (hit.id !== selectedInstallationId) selectInstallation(hit);
+          return;
+        }
+      }
       setSelected(coord);
       if (coord) {
         setEvidenceOpen(true);
@@ -426,7 +534,7 @@ export function ExploreView() {
         }
       }
     },
-    [workspaceMode, evaluatedEnergySites],
+    [workspaceMode, evaluatedEnergySites, infraOpen, infraFile, selectedInstallationId, selectInstallation],
   );
 
   const inspectStation = useCallback(
@@ -523,8 +631,8 @@ export function ExploreView() {
       {creditEl && (
         <GlobeClient
           className="absolute inset-0 focus-ring"
-          layers={allLayers}
-          layerStates={layerStates}
+          layers={globeLayers}
+          layerStates={globeLayerStates}
           selected={selected}
           qualityMode={qualityMode}
           viewMode={viewMode}
@@ -580,6 +688,7 @@ export function ExploreView() {
       />
 
       <div className="pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-8.5rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+        {EXPLORATORY_FEATURES_ENABLED && (
         <div
           role="tablist"
           aria-label="Analysis workspace mode"
@@ -616,6 +725,7 @@ export function ExploreView() {
             Energy Lab <span className="text-[9px] tracking-wider uppercase opacity-80">exploratory</span>
           </button>
         </div>
+        )}
 
         <AdminScopeBar
           admin={adminBundle}
@@ -689,7 +799,20 @@ export function ExploreView() {
                 onClose={closeTool}
               />
             )}
-            {activeTool === "evidence" && <EvidenceCardPanel onClose={closeTool} />}
+            {activeTool === "evidence" && (
+              <EvidenceCardPanel scope={resolvedScope} onOpenTrend={() => setEvidenceOpen(true)} onClose={closeTool} />
+            )}
+            {EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure" && (
+              <EnergyInfrastructurePanel
+                file={infraFile}
+                error={infraError}
+                bundle={bundle}
+                selectedId={selectedInstallationId}
+                onSelect={selectInstallation}
+                onOpenRegion={openInstallationRegion}
+                onClose={closeTool}
+              />
+            )}
           </div>
         )}
         <div className="flex shrink-0 flex-col justify-center gap-2">
@@ -745,7 +868,7 @@ export function ExploreView() {
 
       {ready && !selected && (
         <p className="pointer-events-none absolute bottom-28 left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] text-muted backdrop-blur-md sm:block">
-          Drag to orbit · Scroll to zoom · Click a ranked site or station
+          Drag to orbit · Scroll to zoom · Click {EXPLORATORY_FEATURES_ENABLED ? "a ranked site or station" : "a station"}
         </p>
       )}
 

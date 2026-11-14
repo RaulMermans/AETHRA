@@ -73,9 +73,9 @@ climate forecasting platform · an AI that invents findings.
 
 Spain. Data are clipped to all of Spain (D19). The **analysis extent** for headline results must be
 stated explicitly. Default: Peninsula + Balearics (D5). The Canary Islands are a separate climate
-regime (D6, OPEN) and should be reported separately, not averaged in silently. Note: current
-MERRA-2 "Spain mean" values average every ~50 km cell touching any part of Spain, Canarias
-included. Gate 2 must fix this (see ROADMAP P0-S2).
+regime (D6, OPEN) and should be reported separately, not averaged in silently. Since D46 the
+headline extent is area-weighted (cos φ × cell fraction) over Peninsula + Balearics, with Canarias
+reported separately.
 
 ## 5. Success criteria
 

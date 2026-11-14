@@ -1,5 +1,6 @@
 "use client";
 
+import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import type { PanelToolId, ToolId } from "@/lib/globe/types";
 import { Icon, type IconName } from "./Icon";
 
@@ -10,16 +11,28 @@ interface ToolDef<T> {
   label: string;
   icon: IconName;
   hint: string;
+  /** Hidden in judge mode (default build). */
+  exploratory?: boolean;
 }
 
 /**
  * Map tools. Only tools that help answer the trend questions stay here (see D45 in
  * docs/DECISIONS.md). To add one: extend `PanelToolId` in lib/globe/types.ts and add it here.
  */
-export const PANEL_TOOLS: ToolDef<PanelToolId>[] = [
+const ALL_PANEL_TOOLS: ToolDef<PanelToolId>[] = [
   { id: "stations", label: "Station catalog", icon: "station", hint: "Weather station catalog (NOAA ground truth)" },
   { id: "evidence", label: "Evidence cards", icon: "chart", hint: "Verified trend results with sources (EvidenceCards)" },
+  // D49: P1 context layer, opt-in, off the demo path.
+  {
+    id: "infrastructure",
+    label: "Energy infrastructure",
+    icon: "pylon",
+    hint: "Registered wind and solar installations (Castilla y León register) and their NASA analysis region",
+    exploratory: true,
+  },
 ];
+
+export const PANEL_TOOLS: ToolDef<PanelToolId>[] = ALL_PANEL_TOOLS.filter((t) => EXPLORATORY_FEATURES_ENABLED || !t.exploratory);
 
 const ACTIONS: ToolDef<ToolAction>[] = [
   { id: "screenshot", label: "Screenshot", icon: "camera", hint: "Download a PNG of the current view" },

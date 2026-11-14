@@ -129,7 +129,8 @@ function overlayFromProps(
     kind !== "river-line" &&
     kind !== "lake" &&
     kind !== "reservoir" &&
-    kind !== "lagoon"
+    kind !== "lagoon" &&
+    kind !== "installation"
   ) {
     return undefined;
   }
@@ -143,6 +144,7 @@ function overlayFromProps(
     units: typeof props.units === "string" ? props.units : undefined,
     elevationM: typeof props.elevation === "number" ? props.elevation : undefined,
     basin: typeof props.basin === "string" ? props.basin : undefined,
+    detail: typeof props.detail === "string" ? props.detail : undefined,
     latitude: lat,
     longitude: lon,
   };
@@ -176,7 +178,7 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
           heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
-        label: overlay
+        label: overlay && props.hideLabel !== 1
           ? {
               text: shortLabel(overlay.name),
               font: isBasinHub ? "bold 12px sans-serif" : "600 11px sans-serif",

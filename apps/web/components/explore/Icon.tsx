@@ -37,6 +37,7 @@ const PATHS = {
   droplet: "M12 3c4 6 7 9 7 12a7 7 0 1 1-14 0c0-3 3-6 7-12z",
   flame: "M12 21c4 0 6-3 6-6 0-4-3-6-3-9 0 2-2 3-3 5-1-1-2-3-2-5 0 4-4 6-4 10 0 3 2 5 6 5z",
   storm: "M13 3L6 13h5l-2 8 9-12h-5l5-6z",
+  pylon: "M12 3L7 21M12 3l5 18M8.5 9h7M7.3 14h9.4M9 21h6M10 9l4 5M14 9l-4 5",
 } as const;
 
 export type IconName = keyof typeof PATHS;

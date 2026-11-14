@@ -20,6 +20,7 @@ Only a recorded gate check moves an asset up a class (see `AGENTS.md`).
 | Bundle `wind` grid and `modis` block in `climate-bundle.json` | Hand-built formula | **SYNTHETIC / PLACEHOLDER** | No (D29/D31; verify before demo) | Never present as NASA data. Remove from the bundle when convenient |
 | 2027–2030 values, cones, `anomaly2030`, Decision Matrix | Linear extrapolation + rules | **EXPLORATORY EXTRAPOLATION** (not data) | **Yes, today** | Hide from demo path (D38) |
 | NASA POWER `ALLSKY_SFC_SW_DWN`, `WS50M` daily, 2001–2025 (`data/raw/power`, manifest `data/metadata/power_manifest.json`) | Satellite-derived flux / reanalysis | **Gate 1 PASSED** (14 Nov); results EXPLORATORY pending 2nd review | Yes (Evidence cards tool) | Second-person review (Gate 3). 2026 data excluded (FLASHFlux/GEOS-IT) |
+| Castilla y León renewable installations (`energia_cyl_renov_instal_polig`, Junta de Castilla y León / IDECyL; data date per record, 2024-06-19 → 2025-11-18; raw `data/raw/energy_infrastructure/jcyl/`, manifest in `energy-infrastructure.json`) | Official administrative register + digitised perimeters (non-NASA context, not a measurement) | **INGESTED, NOT VALIDATED** (D49) | Opt-in only (Energy infrastructure tool) | Castilla y León only. PV < 500 kW perimeters digitised from orthophoto; many PV polygons lack register code/capacity and are excluded. Registered capacity can differ from the sum of digitised turbines. No generation data. Licence IGCYL (attribution «©Junta de Castilla y León», free at www.jcyl.es) |
 
 ## NASA POWER (candidate for Gate B)
 
