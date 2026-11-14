@@ -6,6 +6,7 @@ import type {
   LayerDescriptor,
   LayerState,
   LayerStateMap,
+  ViewMode,
 } from "../types";
 
 type Cesium = typeof CesiumNS;
@@ -23,6 +24,8 @@ interface LayerHandle {
 interface AdapterContext {
   Cesium: Cesium;
   viewer: CesiumNS.Viewer;
+  /** Spain mode: imagery requested only inside these. Undefined: whole globe. */
+  rectangles?: CesiumNS.Rectangle[];
 }
 
 type Adapter<D extends LayerDescriptor> = (
@@ -31,10 +34,10 @@ type Adapter<D extends LayerDescriptor> = (
   state: LayerState,
 ) => Promise<LayerHandle>;
 
-const imageryAdapter: Adapter<ImageryLayerDescriptor> = async ({ Cesium, viewer }, d, state) => {
+const imageryAdapter: Adapter<ImageryLayerDescriptor> = async ({ Cesium, viewer, rectangles }, d, state) => {
   const time = state.time ?? d.time?.default ?? "";
-  // Only Spain is rendered (D21): request tiles only inside the Spain extents.
-  const layers = spainRectangles(Cesium).map((rectangle) => {
+  // Spain mode (D21): request tiles only inside the Spain extents.
+  const layers = (rectangles ?? [undefined]).map((rectangle) => {
     const provider = new Cesium.UrlTemplateImageryProvider({
       url: d.urlTemplate.replace("{Time}", time),
       maximumLevel: d.maximumLevel,
@@ -49,7 +52,7 @@ const imageryAdapter: Adapter<ImageryLayerDescriptor> = async ({ Cesium, viewer 
     return layer;
   });
   return {
-    key: time,
+    key: `${time}|${rectangles ? "spain" : "world"}`,
     imagery: layers,
     apply(s) {
       for (const layer of layers) {
@@ -111,18 +114,19 @@ export class CesiumLayerManager {
     private readonly onError: (layerId: string, error: unknown) => void,
   ) {}
 
-  sync(layers: LayerDescriptor[], states: LayerStateMap): Promise<void> {
-    this.queue = this.queue.then(() => this.reconcile(layers, states));
+  sync(layers: LayerDescriptor[], states: LayerStateMap, mode: ViewMode): Promise<void> {
+    this.queue = this.queue.then(() => this.reconcile(layers, states, mode));
     return this.queue;
   }
 
-  private async reconcile(layers: LayerDescriptor[], states: LayerStateMap) {
+  private async reconcile(layers: LayerDescriptor[], states: LayerStateMap, mode: ViewMode) {
+    const rectangles = mode === "spain" ? spainRectangles(this.Cesium) : undefined;
     for (const d of layers) {
       if (this.destroyed) return;
       const state = states[d.id];
       if (!state) continue;
       let handle = this.handles.get(d.id);
-      const key = d.kind === "imagery" ? (state.time ?? d.time?.default ?? "") : "";
+      const key = d.kind === "imagery" ? `${state.time ?? d.time?.default ?? ""}|${mode}` : "";
       if (handle && handle.key !== key) {
         handle.destroy();
         this.handles.delete(d.id);
@@ -132,7 +136,7 @@ export class CesiumLayerManager {
         try {
           const adapter = adapters[d.kind] as Adapter<LayerDescriptor> | undefined;
           if (!adapter) throw new Error(`No Cesium adapter for layer kind "${d.kind}" yet`);
-          handle = await adapter({ Cesium: this.Cesium, viewer: this.viewer }, d, state);
+          handle = await adapter({ Cesium: this.Cesium, viewer: this.viewer, rectangles }, d, state);
         } catch (err) {
           this.onError(d.id, err);
           continue;

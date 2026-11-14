@@ -1,21 +1,22 @@
 import type * as CesiumNS from "cesium";
-import { CAMERA_BOUNDS, SPAIN_BOUNDARY_URL } from "../catalog";
+import { CAMERA_BOUNDS, SPAIN_IMAGERY_EXTENTS, SPAIN_RENDER_AREA_URL } from "../catalog";
 
 type Cesium = typeof CesiumNS;
 type Ring = [number, number][];
 
 /**
- * Spain outline (mainland, Balearic and Canary Islands, Ceuta, Melilla), one outer ring per
- * polygon, lon/lat WGS84. Built by scripts/build_web_boundary.py from Eurostat GISCO NUTS 2021.
+ * Area rendered on the globe: Spain (mainland, Balearic and Canary Islands, Ceuta, Melilla) plus an
+ * 200 nm sea band (visual context); one outer ring per polygon, lon/lat WGS84. Built by
+ * scripts/build_web_boundary.py from Eurostat GISCO NUTS 2021 and GISCO Countries 2020.
  */
 export interface SpainBoundary {
   rings: Ring[];
-  /** Point-in-Spain test (ray casting over the simplified outline, ~300 m tolerance). */
+  /** Point-in-area test (ray casting over the simplified outline, ~300 m tolerance). */
   contains(longitude: number, latitude: number): boolean;
 }
 
 export async function loadSpainBoundary(): Promise<SpainBoundary> {
-  const res = await fetch(SPAIN_BOUNDARY_URL);
+  const res = await fetch(SPAIN_RENDER_AREA_URL);
   if (!res.ok) throw new Error(`Spain boundary: HTTP ${res.status}`);
   const fc = (await res.json()) as {
     features: { geometry: { type: string; coordinates: number[][][] | number[][][][] } }[];
@@ -49,43 +50,89 @@ export async function loadSpainBoundary(): Promise<SpainBoundary> {
 }
 
 /**
- * Keeps the camera position inside CAMERA_BOUNDS (lon/lat), preserving height and orientation,
- * so the view cannot drift away from Spain. Returns a function that removes the constraint.
+ * While `active()`, keeps the camera position inside CAMERA_BOUNDS (lon/lat): when a move ends
+ * outside, the camera glides back to the nearest point inside, keeping height and orientation.
+ * Checked on move end (not per frame) so it never fights camera flights. Returns a remover.
  */
-export function constrainCameraToSpain(Cesium: Cesium, viewer: CesiumNS.Viewer): () => void {
+export function constrainCameraToSpain(
+  Cesium: Cesium,
+  viewer: CesiumNS.Viewer,
+  active: () => boolean,
+): () => void {
   const { camera } = viewer.scene;
   const { west, south, east, north } = CAMERA_BOUNDS;
-  return viewer.scene.preUpdate.addEventListener(() => {
+  return camera.moveEnd.addEventListener(() => {
+    if (!active() || viewer.isDestroyed()) return;
     const c = camera.positionCartographic;
     const lon = Cesium.Math.toDegrees(c.longitude);
     const lat = Cesium.Math.toDegrees(c.latitude);
     const clampedLon = Math.min(east, Math.max(west, lon));
     const clampedLat = Math.min(north, Math.max(south, lat));
     if (clampedLon === lon && clampedLat === lat) return;
-    camera.setView({
+    camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(clampedLon, clampedLat, c.height),
       orientation: { heading: camera.heading, pitch: camera.pitch, roll: camera.roll },
+      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.8,
     });
   });
 }
 
 /**
- * Renders only Spain: the globe surface (imagery + terrain) outside the outline is clipped
- * away. The sky atmosphere halo is hidden because there is no full Earth disc behind it.
+ * Clips the globe surface (imagery + terrain) outside the area. `enabled` toggles it (view mode).
  */
-export function clipGlobeToSpain(Cesium: Cesium, viewer: CesiumNS.Viewer, boundary: SpainBoundary) {
+export function clipGlobeToSpain(
+  Cesium: Cesium,
+  viewer: CesiumNS.Viewer,
+  boundary: SpainBoundary,
+  enabled: boolean,
+) {
   const { scene } = viewer;
   const polygons = boundary.rings.map(
     (ring) => new Cesium.ClippingPolygon({ positions: Cesium.Cartesian3.fromDegreesArray(ring.slice(0, -1).flat()) }),
   );
   scene.globe.clippingPolygons = new Cesium.ClippingPolygonCollection({
     polygons,
+    enabled,
     inverse: true,
-    // The clip texture spans Canarias → Balearics (~2,300 km); 2× default keeps coasts crisp
+    // The clip texture spans ~3,000 km; 2× default keeps coasts crisp
     // at a quarter of the texture cost of 4×.
     quality: 2,
   });
-  scene.globe.showGroundAtmosphere = false;
-  if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
   scene.requestRender();
+}
+
+/**
+ * Mask for the flat 2D map, where globe clipping polygons don't render: an opaque ground polygon
+ * per imagery extent with the rendered area cut out as holes, so only Spain (+ sea) shows.
+ * (Outside the extents no imagery is requested, so only the globe base colour is visible.)
+ */
+export function createSpain2DMask(
+  Cesium: Cesium,
+  viewer: CesiumNS.Viewer,
+  boundary: SpainBoundary,
+  color: CesiumNS.Color,
+): CesiumNS.Entity[] {
+  const fromRing = (ring: Ring) => Cesium.Cartesian3.fromDegreesArray(ring.slice(0, -1).flat());
+  return SPAIN_IMAGERY_EXTENTS.map(({ west, south, east, north }) => {
+    const holes = boundary.rings
+      .filter(([[x, y]]) => x > west && x < east && y > south && y < north)
+      .map((r) => new Cesium.PolygonHierarchy(fromRing(r)));
+    // Outer ring slightly larger than the extent and densified along parallels/meridians.
+    const pad = 0.2;
+    const outer: [number, number][] = [];
+    const steps = 40;
+    for (let i = 0; i <= steps; i++) outer.push([west - pad + ((east - west + 2 * pad) * i) / steps, south - pad]);
+    for (let i = 0; i <= steps; i++) outer.push([east + pad, south - pad + ((north - south + 2 * pad) * i) / steps]);
+    for (let i = 0; i <= steps; i++) outer.push([east + pad - ((east - west + 2 * pad) * i) / steps, north + pad]);
+    for (let i = 0; i <= steps; i++) outer.push([west - pad, north + pad - ((north - south + 2 * pad) * i) / steps]);
+    return viewer.entities.add({
+      show: false,
+      polygon: {
+        hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(outer.flat()), holes),
+        material: color,
+        arcType: Cesium.ArcType.RHUMB,
+        classificationType: Cesium.ClassificationType.TERRAIN,
+      },
+    });
+  });
 }

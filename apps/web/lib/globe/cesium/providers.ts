@@ -1,6 +1,6 @@
 import type * as CesiumNS from "cesium";
 import { DETAIL_BASE_IMAGERY, FALLBACK_BASE_IMAGERY, SPAIN_IMAGERY_EXTENTS, TERRAIN_FALLBACK } from "../catalog";
-import type { GlobeStatus } from "../types";
+import type { GeoCoordinate, GlobeStatus, ProfileSample } from "../types";
 
 type Cesium = typeof CesiumNS;
 
@@ -34,7 +34,8 @@ export function spainRectangles(Cesium: Cesium): CesiumNS.Rectangle[] {
 }
 
 /**
- * Base imagery, requested only inside the Spain extents (one layer per extent). With an ion token: Cesium World Imagery (Bing Maps Aerial, sub-metre in many
+ * Base imagery. With `rectangles` (Spain mode) tiles are only requested inside them, one layer per
+ * rectangle; without, one layer covers the whole globe. With an ion token: Cesium World Imagery (Bing Maps Aerial, sub-metre in many
  * areas) only — no low-resolution layers underneath. Without: NASA Blue Marble for the global
  * view plus Sentinel-2 cloudless (10 m) from regional zoom.
  */
@@ -42,9 +43,10 @@ export function createBaseImagery(
   Cesium: Cesium,
   token: string | undefined,
   onFailedTiles: (n: number) => void,
+  rectangles?: CesiumNS.Rectangle[],
 ): { layers: CesiumNS.ImageryLayer[]; label: string; finestDetail: string; tier: "ion" | "fallback" } {
   if (token) {
-    const layers = spainRectangles(Cesium).map((rectangle) => {
+    const layers = (rectangles ?? [undefined]).map((rectangle) => {
       const layer = Cesium.ImageryLayer.fromWorldImagery({ rectangle }); // default style: AERIAL
       layer.readyEvent.addEventListener((provider: CesiumNS.ImageryProvider) =>
         countFailures(provider.errorEvent, onFailedTiles),
@@ -58,12 +60,16 @@ export function createBaseImagery(
       tier: "ion",
     };
   }
-  return { ...createFallbackImagery(Cesium, onFailedTiles), tier: "fallback" };
+  return { ...createFallbackImagery(Cesium, onFailedTiles, rectangles), tier: "fallback" };
 }
 
-export function createFallbackImagery(Cesium: Cesium, onFailedTiles: (n: number) => void) {
+export function createFallbackImagery(
+  Cesium: Cesium,
+  onFailedTiles: (n: number) => void,
+  rectangles?: CesiumNS.Rectangle[],
+) {
   const make = (cfg: typeof FALLBACK_BASE_IMAGERY | typeof DETAIL_BASE_IMAGERY, minimumTerrainLevel?: number) =>
-    spainRectangles(Cesium).map((rectangle) => {
+    (rectangles ?? [undefined]).map((rectangle) => {
       const provider = new Cesium.UrlTemplateImageryProvider({
         url: cfg.urlTemplate,
         maximumLevel: cfg.maximumLevel,
@@ -154,5 +160,44 @@ export async function sampleTerrainHeight(
     return Number.isFinite(p.height) ? p.height : undefined;
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * Terrain heights at `samples`+1 evenly spaced points along the A→B geodesic. Uses the most
+ * detailed data for short lines; for long ones a terrain level matched to the sample spacing
+ * (≈65 heights per tile), so the request count stays bounded. Null without real terrain.
+ */
+export async function sampleProfile(
+  Cesium: Cesium,
+  viewer: CesiumNS.Viewer,
+  a: GeoCoordinate,
+  b: GeoCoordinate,
+  samples = 160,
+): Promise<ProfileSample[] | null> {
+  const provider = viewer.terrainProvider;
+  if (provider instanceof Cesium.EllipsoidTerrainProvider) return null;
+  const geodesic = new Cesium.EllipsoidGeodesic(
+    Cesium.Cartographic.fromDegrees(a.longitude, a.latitude),
+    Cesium.Cartographic.fromDegrees(b.longitude, b.latitude),
+  );
+  const length = geodesic.surfaceDistance;
+  if (!(length > 0)) return null;
+  const points = Array.from({ length: samples + 1 }, (_, i) => geodesic.interpolateUsingFraction(i / samples));
+  const spacing = length / samples;
+  try {
+    const result =
+      spacing < 150
+        ? await Cesium.sampleTerrainMostDetailed(provider, points)
+        : await Cesium.sampleTerrain(provider, Math.max(0, Math.min(14, Math.round(Math.log2(20_037_508 / (65 * spacing))))), points);
+    return result.map((p, i) => ({
+      distance: (i / samples) * length,
+      height: Number.isFinite(p.height) ? p.height : NaN,
+      latitude: Cesium.Math.toDegrees(p.latitude),
+      longitude: Cesium.Math.toDegrees(p.longitude),
+    }));
+  } catch (err) {
+    console.warn("[globe] profile sampling failed", err);
+    return null;
   }
 }

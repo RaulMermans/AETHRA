@@ -14,6 +14,18 @@ const PATHS = {
   chart: "M3 3v18h18M7 15l4-4 3 3 5-6",
   info: "M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
   copy: "M8 8h11v11H8zM5 16V5h11",
+  ruler: "M3 17L17 3l4 4L7 21l-4-4zM7 13l2 2M10 10l2 2M13 7l2 2",
+  axes: "M5 3v16h16M5 3L3 6M5 3l2 3M21 19l-3-2M21 19l-3 2M9 15l6-6",
+  polygon: "M4 8l7-5 9 5-3 12H7zM4 8h0",
+  radius: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 12h9M12 12h.01",
+  profile: "M3 20h18M3 16l5-7 4 4 4-6 5 9",
+  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4",
+  mountain: "M3 20l6-11 4 6 3-4 5 9zM9 9l1.5 2.5",
+  camera: "M4 8h3l2-3h6l2 3h3v11H4zM12 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  undo: "M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3",
+  check: "M5 12l5 5L20 7",
+  globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18",
 } as const;
 
 export type IconName = keyof typeof PATHS;

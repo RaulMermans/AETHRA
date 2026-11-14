@@ -2,40 +2,54 @@ import type { LayerDescriptor, LayerStateMap, OrbitView, Place } from "./types";
 
 // --- Camera views ------------------------------------------------------------------------
 
-/** Top-down view framing all of Spain: Peninsula, Balearics, Canarias, Ceuta and Melilla. */
-export const HOME_VIEW: OrbitView = {
-  target: { latitude: 35.6, longitude: -10.0 },
+/** Whole-Earth view centred on Spain, used in "world" mode. */
+export const WORLD_VIEW: OrbitView = {
+  target: { latitude: 30, longitude: -5 },
   heading: 0,
   pitch: -90,
-  range: 3_300_000,
+  range: 21_000_000,
+  durationSeconds: 2.4,
+};
+
+/** Top-down view framing all of Spain: Peninsula, Balearics, Canarias, Ceuta and Melilla. */
+export const HOME_VIEW: OrbitView = {
+  target: { latitude: 35.7, longitude: -11.5 },
+  heading: 0,
+  pitch: -90,
+  range: 3_900_000,
   durationSeconds: 2.4,
 };
 
 /**
- * Only Spain is rendered on the globe (everything outside this outline is clipped). Simplified
- * from Eurostat GISCO NUTS 2021 1:1M by scripts/build_web_boundary.py.
+ * Spain land, simplified from Eurostat GISCO NUTS 2021 1:1M by scripts/build_web_boundary.py.
  */
 export const SPAIN_BOUNDARY_URL = "/data/spain-boundary.geojson";
+/**
+ * What the globe renders (everything else is clipped): Spain land + a 200 nautical-mile (≈370 km)
+ * sea band for visual context (plain coastline buffer, NOT the official EEZ), minus other
+ * countries' land.
+ */
+export const SPAIN_RENDER_AREA_URL = "/data/spain-render-area.geojson";
 /** Same outline as lines, for the outline layer (polygon outlines are not drawn on terrain). */
 export const SPAIN_OUTLINE_URL = "/data/spain-outline.geojson";
 
 type Box = { west: number; south: number; east: number; north: number };
 
 /**
- * Boxes around everything that is rendered (D21): Peninsula + Balearics + Ceuta/Melilla, and
- * Canarias. Imagery is only requested inside them, so no tiles are fetched for the open sea,
+ * Boxes around everything that is rendered (D21, incl. the 200 nm sea band): Peninsula +
+ * Balearics + Ceuta/Melilla, and Canarias. Imagery is only requested inside them, so no tiles are fetched for the open sea,
  * Portugal, France or Morocco between them. ~0.1° margin around the outline.
  */
 export const SPAIN_IMAGERY_EXTENTS: readonly Box[] = [
-  { west: -9.4, south: 35.1, east: 4.4, north: 43.9 },
-  { west: -18.3, south: 27.5, east: -13.3, north: 29.5 },
+  { west: -14.0, south: 33.2, east: 8.7, north: 47.3 },
+  { west: -22.1, south: 24.1, east: -9.5, north: 33.0 },
 ];
 
 /**
  * The camera position is kept inside this box (lon/lat, degrees), generous enough for oblique
  * views from the south and for the home view, so panning can't drift away from Spain.
  */
-export const CAMERA_BOUNDS: Box = { west: -24, south: 18, east: 10, north: 48 };
+export const CAMERA_BOUNDS: Box = { west: -30, south: 14, east: 16, north: 52 };
 
 /** Default analysis extent (DECISIONS D5): Peninsula + Balearics, lon/lat WGS84. */
 export const SPAIN_BBOX = { west: -9.5, south: 35.9, east: 4.4, north: 43.9 } as const;

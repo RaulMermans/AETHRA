@@ -175,8 +175,58 @@ export interface GlobeStatus {
 }
 
 /** Imperative camera API exposed by the globe to the surrounding UI. */
+/** Map tools that take clicks on the globe. Add new ids here and in components/explore/ToolsBar.tsx. */
+export type ClickToolId = "distance" | "offset" | "area" | "radius" | "profile";
+/** Tools that only open a panel (no clicks on the globe). */
+export type PanelToolId = "goto" | "relief";
+export type ToolId = ClickToolId | PanelToolId;
+
+/**
+ * Active click tool with the points clicked so far. `preview` follows the cursor while a
+ * measurement is incomplete; `closed` marks a finished polygon (area tool).
+ */
+export interface MeasureState {
+  tool: ClickToolId;
+  points: GeoCoordinate[];
+  preview?: GeoCoordinate | null;
+  closed?: boolean;
+}
+
+/** One sample of a terrain profile: distance from A along the geodesic and terrain height. */
+export interface ProfileSample {
+  distance: number;
+  height: number;
+  latitude: number;
+  longitude: number;
+}
+
+/** Camera position (degrees, metres) — used for shareable links. */
+export interface CameraState {
+  latitude: number;
+  longitude: number;
+  height: number;
+  heading: number;
+  pitch: number;
+}
+
+/** "spain": only Spain + surrounding sea is rendered (D21). "world": the whole globe. */
+export type ViewMode = "spain" | "world";
+
+/** Flat map (2D, Web-Mercator-like projection seen from above) or the 3D globe. */
+export type SceneDim = "2d" | "3d";
+
 export interface GlobeController {
   flyTo(view: OrbitView): void;
+  /** Animated switch between the flat map and the globe (0 s = instant). */
+  setDimension(dim: SceneDim, durationSeconds?: number): void;
+  getCamera(): CameraState;
+  setCamera(camera: CameraState, durationSeconds?: number): void;
+  /** Terrain heights along the A→B geodesic; null without real terrain. */
+  sampleProfile(a: GeoCoordinate, b: GeoCoordinate, samples?: number): Promise<ProfileSample[] | null>;
+  /** Visual relief exaggeration (1 = true scale). Readouts stay in true metres. */
+  setVerticalExaggeration(factor: number): void;
+  /** PNG of the current view with attribution burned in. */
+  screenshot(): Promise<Blob | null>;
   zoom(direction: 1 | -1): void;
   tilt(direction: 1 | -1): void;
   rotate(direction: 1 | -1): void;

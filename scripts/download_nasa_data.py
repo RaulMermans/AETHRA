@@ -145,6 +145,11 @@ def file_record(p: Path) -> dict:
     return {"path": rel(p), "bytes": p.stat().st_size, "sha256": sha256(p)}
 
 
+def processed_records(entry: dict) -> list[dict]:
+    """Processed outputs of a batch: one record (GPM/MERRA-2) or one per composite (MODIS)."""
+    return entry.get("processed_files") or ([entry["processed"]] if entry.get("processed") else [])
+
+
 def files_ok(records: list[dict]) -> bool:
     return all((ROOT / r["path"]).exists() and sha256(ROOT / r["path"]) == r["sha256"]
                for r in records)
@@ -221,9 +226,9 @@ def grid_cells(bbox, res) -> float:
 
 
 # ----------------------------------------------------------------------------- dry run
-def dry_run(keys: list[str], years: range, manifest: dict) -> dict:
+def dry_run(keys: list[str], years: list[int], manifest: dict) -> dict:
     today = dt.date.today()
-    first, last_req = dt.date(years.start, 1, 1), min(dt.date(years.stop - 1, 12, 31), today)
+    first, last_req = dt.date(min(years), 1, 1), min(dt.date(max(years), 12, 31), today)
     report = {"run_at": now(), "mode": "dry-run", "requested_period": [first.isoformat(),
               last_req.isoformat()], "endpoints": {}, "datasets": {}}
     for name, url in [("CMR", f"{CMR}/collections.json?page_size=0"), ("Harmony", f"{HARMONY}/versions"),
@@ -455,27 +460,59 @@ def process_gridded(k: str, cfg: dict, raw_files: list[Path], boundary, out: Pat
     return out
 
 
-def process_modis(cfg: dict, raw_nc: Path, out: Path, prov: dict) -> Path:
-    """AppEEARS already masked to the polygon. Add QA-usable flag; never drop observations."""
+MODIS_KEEP = {  # compact, lossless re-encoding (MOD13Q1 native int types and scale factor)
+    "NDVI": dict(dtype="int16", scale_factor=1e-4, _FillValue=-3000),
+    "pixel_reliability": dict(dtype="int8", _FillValue=-1),
+    "composite_day_of_the_year": dict(dtype="int16", _FillValue=-1),
+}
+
+
+def process_modis(cfg: dict, raw_ncs: list[Path], out_dir: Path, region: str, prov: dict) -> list[Path]:
+    """One compact NetCDF per 16-day composite: NDVI + pixel_reliability + composite DOY.
+
+    AppEEARS already masked to the polygon in the native sinusoidal 250 m grid; values are only
+    re-encoded in MOD13Q1's own int16/scale 1e-4 form (lossless). EVI and VI_Quality stay in data/raw.
+    """
     import xarray as xr
-    ds = xr.open_dataset(raw_nc)
-    rel_var = next(v for v in ds.data_vars if v.endswith("pixel_reliability"))
-    ds["qa_usable"] = ds[rel_var].isin([0, 1]).astype("int8")
-    ds["qa_usable"].attrs = {"long_name": "1 where pixel_reliability is 0 (good) or 1 (marginal)",
-                             "rule": "MOD13Q1 C6.1 user guide pixel reliability; 2=snow/ice, 3=cloudy, -1=fill",
-                             "note": "Flag only; NDVI/EVI values are not masked"}
-    for v in ds.data_vars:
-        if str(v).endswith(("_NDVI", "_EVI")):
-            src = ds[v].attrs.get("units")
-            ds[v].attrs.update({"units": "1", "source_units": str(src),
-                                "note": "Dimensionless vegetation index; scale_factor applied on read"})
-    ds.attrs["display_variables"] = "NDVI, EVI (dimensionless) with qa_usable"
-    steps = ["AppEEARS server-side subset + polygon mask to Spain region, native sinusoidal projection",
-             "NDVI/EVI units attribute set to '1' (dimensionless); original kept as source_units",
-             "added qa_usable flag from pixel_reliability; no values removed; 16-day dates kept"]
-    ds.attrs.update(provenance_attrs(cfg, prov, steps))
-    write_nc(ds, out)
-    return out
+    outs = []
+    for raw_nc in raw_ncs:
+        ds = xr.open_dataset(raw_nc, decode_coords="all")
+        crs = ds.rio.crs
+        if crs is None:
+            raise RuntimeError(f"{raw_nc.name}: AppEEARS file has no CRS")
+        names = {k: next(v for v in ds.data_vars if str(v).endswith(k)) for k in MODIS_KEEP}
+        ds = ds[list(names.values())].rename({v: k for k, v in names.items()})
+        ds = ds.drop_vars([c for c in ds.coords if c in ("crs", "spatial_ref")])
+        ds = ds.rio.write_crs(crs, grid_mapping_name="crs")
+        ds["NDVI"].attrs.update({"units": "1", "source_units": "NDVI", "source_layer": names["NDVI"],
+                                 "note": "Dimensionless; scale_factor 0.0001 applied on read"})
+        ds["pixel_reliability"].attrs.update({
+            "flag_values": "0 1 2 3", "flag_meanings": "good marginal snow_ice cloudy",
+            "usable_rule": "pixel_reliability in (0, 1); nothing is masked in this file"})
+        ds["composite_day_of_the_year"].attrs["note"] = "Actual day of year of the selected observation"
+        ds.attrs["display_variables"] = "NDVI (dimensionless); filter with pixel_reliability in (0, 1)"
+        steps = ["AppEEARS server-side subset + polygon mask to Spain region, native sinusoidal 250 m grid",
+                 "split into one file per 16-day composite (no temporal aggregation)",
+                 "kept NDVI, pixel_reliability, composite_day_of_the_year; lossless int16/int8 re-encoding",
+                 "EVI and VI_Quality bit field kept only in the raw AppEEARS file"]
+        for i in range(ds.sizes["time"]):
+            one = ds.isel(time=[i])
+            date = str(one.time.values[0])[:10]
+            one.attrs.update(provenance_attrs(cfg, prov, steps))
+            one.attrs.update({"composite_start_date": date, "region": region})
+            for v in one.variables:
+                one[v].encoding = {k: x for k, x in one[v].encoding.items()
+                                   if k in ("units", "calendar", "grid_mapping")}
+            out = out_dir / f"MOD13Q1_061_NDVI_spain_{region}_{date}.nc"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            tmp = out.with_suffix(".partial.nc")
+            for k in MODIS_KEEP:  # link each layer to the sinusoidal CRS variable
+                one[k].attrs.pop("grid_mapping", None)
+            one.to_netcdf(tmp, encoding={k: {**e, "zlib": True, "complevel": 6, "shuffle": True,
+                                             "grid_mapping": "crs"} for k, e in MODIS_KEEP.items()})
+            os.replace(tmp, out)
+            outs.append(out)
+    return outs
 
 
 def provenance_attrs(cfg: dict, prov: dict, steps: list[str]) -> dict:
@@ -528,11 +565,37 @@ def validate(k: str, cfg: dict, path: Path, boundary, n_expected: int | None) ->
     return {"ok": not issues, "issues": issues, "coverage": cov}
 
 
+def validate_modis(paths: list[Path]) -> dict:
+    import xarray as xr
+    issues, valid, lo, hi, dates = [], [], 1.0, -1.0, []
+    for p in paths:
+        ds = xr.open_dataset(p, decode_coords="all")
+        missing = [k for k in MODIS_KEEP if k not in ds]
+        if missing:
+            issues.append(f"{p.name}: missing {missing}")
+            continue
+        if ds.rio.crs is None:
+            issues.append(f"{p.name}: no CRS")
+        n = ds["NDVI"]
+        valid.append(float(n.notnull().mean()))
+        lo, hi = min(lo, float(n.min())), max(hi, float(n.max()))
+        dates.append(str(ds.time.values[0])[:10])
+        if valid[-1] == 0:
+            issues.append(f"{p.name}: no valid NDVI")
+    if lo < -0.2001 or hi > 1.0001:
+        issues.append(f"NDVI outside [-0.2, 1]: {lo}..{hi}")
+    if not paths:
+        issues.append("no composites produced")
+    cov = {"time_steps": len(paths), "first": min(dates) if dates else None, "last": max(dates) if dates else None,
+           "ndvi_valid_fraction_mean": round(sum(valid) / len(valid), 3) if valid else 0, "ndvi_range": [lo, hi]}
+    return {"ok": not issues, "issues": issues, "coverage": cov}
+
+
 # ----------------------------------------------------------------------------- batches
 def harmony_batch(k, cfg, label, start, stop, token, boundary, store, pilot=False) -> dict:
     from harmony import BBox, Client, Collection, Request
     entry = store.get(label)
-    if entry and entry.get("status") == "ok" and files_ok(entry["raw_files"] + [entry["processed"]]):
+    if entry and entry.get("status") == "ok" and files_ok(entry["raw_files"] + processed_records(entry)):
         log(f"  {label}: already downloaded and verified, skipping")
         return entry
     granules = search_granules(cfg, start, stop, SPAIN_BBOX)
@@ -581,11 +644,13 @@ def appeears_token(user: str, pw: str) -> str:
     return retry(lambda: http("POST", f"{APPEEARS}/login", auth=(user, pw)).json()["token"], "AppEEARS login")
 
 
-def appeears_batch(cfg, label, start, stop, region, geo, creds, store, pilot=False) -> dict:
+def appeears_batch(cfg, label, start, stop, region, geo, creds, store, pilot=False, submit_only=False) -> dict:
     key = f"{label}/{region}"
     entry = store.get(key, {})
-    if entry.get("status") == "ok" and files_ok(entry["raw_files"] + [entry["processed"]]):
+    if entry.get("status") == "ok" and files_ok(entry["raw_files"] + processed_records(entry)):
         log(f"  {key}: already downloaded and verified, skipping")
+        return entry
+    if submit_only and entry.get("appeears_task_id"):
         return entry
     user, pw, _ = creds
     if not (user and pw):
@@ -602,6 +667,9 @@ def appeears_batch(cfg, label, start, stop, region, geo, creds, store, pilot=Fal
         store[key] = entry = {"status": "submitted", "appeears_task_id": task_id, "period": [str(start), str(stop)],
                               "region": region, "submitted_at": now()}
         save_json(MANIFEST, _MANIFEST)
+        log(f"  {key}: submitted AppEEARS task {task_id}")
+    if submit_only:
+        return entry
     log(f"  {key}: AppEEARS task {task_id}, waiting (polls every 60 s)...")
     while True:
         st = retry(lambda: http("GET", f"{APPEEARS}/task/{task_id}", headers=hdr).json(), "AppEEARS status")
@@ -630,17 +698,19 @@ def appeears_batch(cfg, label, start, stop, region, geo, creds, store, pilot=Fal
     shutil.rmtree(final, ignore_errors=True)
     tmp.rename(final)
     ncs = sorted(final.glob("*.nc"))
-    if len(ncs) != 1:
-        raise RuntimeError(f"expected one NetCDF in AppEEARS bundle, got {[p.name for p in ncs]}")
+    if not ncs:
+        raise RuntimeError(f"no NetCDF in AppEEARS bundle {task_id}")
     granules = search_granules(cfg, start, stop, MODIS_REGIONS[region])
     prov = {"granules": [g_record(g) for g in granules]}
-    out = PROC / "modis" / f"MOD13Q1_061_spain_{region}_{sub}.nc"
-    process_modis(cfg, ncs[0], out, prov)
-    check = validate("modis", cfg, out, None, None)
+    out_dir = PROC / "modis" / ("pilot" if pilot else region)
+    outs = process_modis(cfg, ncs, out_dir, region, prov)
+    check = validate_modis(outs)
+    entry.pop("processed", None)
     entry.update({"status": "ok" if check["ok"] else "invalid", "source_granules": prov["granules"],
                   "checksums": "AppEEARS bundle sha256 verified",
                   "raw_files": [file_record(p) for p in sorted(final.iterdir())],
-                  "processed": file_record(out), "validation": check, "completed_at": now()})
+                  "processed_files": [file_record(p) for p in outs], "validation": check,
+                  "completed_at": now()})
     store[key] = entry
     log(f"  {key}: {entry['status']} {check['coverage']} {check['issues'] or ''}")
     return entry
@@ -655,7 +725,7 @@ def modis_geo(boundary, region: str) -> dict:
 
 
 def bytes_per_period(store: dict) -> float | None:
-    sizes = [sum(f["bytes"] for f in e["raw_files"]) + e["processed"]["bytes"]
+    sizes = [sum(f["bytes"] for f in e["raw_files"] + processed_records(e))
              for e in store.values() if e.get("status") == "ok"]
     steps = [e["validation"]["coverage"]["time_steps"] for e in store.values() if e.get("status") == "ok"]
     return sum(sizes) / max(sum(steps), 1) if sizes else None
@@ -677,7 +747,7 @@ def disk_ok(k: str, store: dict, periods: int, min_free_gb: float) -> bool:
 _MANIFEST: dict = {}
 
 
-def execute(keys, years: range, historical: bool, min_free_gb: float, manifest: dict) -> None:
+def execute(keys, years: list[int], historical: bool, min_free_gb: float, manifest: dict) -> None:
     if not manifest.get("last_dry_run"):
         sys.exit("Run a dry run first (no --execute) and review it.")
     token = login()
@@ -692,7 +762,7 @@ def execute(keys, years: range, historical: bool, min_free_gb: float, manifest: 
                                                                   "doi": cfg["doi"], "batches": {}, "failures": []})
         store = ds_m["batches"]
         log(f"\n== {k}: {cfg['short_name']} v{cfg['version']}")
-        y0 = years.start
+        y0 = min(years)
         try:
             if k == "modis":
                 p0 = dt.date(y0, 2, 18) if y0 == 2000 else dt.date(y0, 1, 1)
@@ -712,6 +782,15 @@ def execute(keys, years: range, historical: bool, min_free_gb: float, manifest: 
             continue
         if not historical:
             continue
+        if k == "modis":  # queue every AppEEARS task first so they process in parallel
+            for y in years:
+                for r in MODIS_REGIONS:
+                    try:
+                        appeears_batch(cfg, str(y), dt.date(y, 1, 1), min(dt.date(y, 12, 31), today), r,
+                                       modis_geo(boundary, r), creds, store, submit_only=True)
+                    except Exception as e:  # noqa: BLE001
+                        log(f"  ! submit {y}/{r} failed: {e}")
+            save_json(MANIFEST, manifest)
         for y in years:
             start, stop = dt.date(y, 1, 1), min(dt.date(y, 12, 31), today)
             periods = 23 if k == "modis" else 12
@@ -736,7 +815,7 @@ def summary(manifest: dict) -> None:
     total = 0
     for k, d in manifest.get("datasets", {}).items():
         ok = {b: e for b, e in d["batches"].items() if e.get("status") == "ok"}
-        size = sum(sum(f["bytes"] for f in e["raw_files"]) + e["processed"]["bytes"] for e in ok.values())
+        size = sum(sum(f["bytes"] for f in e["raw_files"] + processed_records(e)) for e in ok.values())
         total += size
         cov = [e["validation"]["coverage"] for e in ok.values()]
         firsts = [c.get("first") for c in cov if c.get("first")]
@@ -757,14 +836,18 @@ def main() -> None:
     ap.add_argument("--execute", action="store_true", help="download (pilot only unless --historical)")
     ap.add_argument("--historical", action="store_true", help="with --execute: all yearly batches")
     ap.add_argument("--datasets", default="gpm,merra2,modis", help="comma list of gpm,merra2,modis")
-    ap.add_argument("--years", default=f"{FIRST_YEAR}-{dt.date.today().year}", help="e.g. 2000-2026")
+    ap.add_argument("--years", default=f"{FIRST_YEAR}-{dt.date.today().year}",
+                    help="range and/or list, e.g. 2000-2026 or 2000,2012,2024")
     ap.add_argument("--min-free-gb", type=float, default=5.0, help="disk space to always leave free")
     a = ap.parse_args()
     keys = [k.strip() for k in a.datasets.split(",")]
     if bad := set(keys) - set(DATASETS):
         sys.exit(f"unknown datasets: {bad}")
-    y0, y1 = (int(x) for x in a.years.split("-"))
-    years = range(max(y0, FIRST_YEAR), y1 + 1)
+    years = sorted({y for part in a.years.split(",") for y in (
+        range(int(part.split("-")[0]), int(part.split("-")[1]) + 1) if "-" in part else [int(part)])
+        if y >= FIRST_YEAR})
+    if not years:
+        sys.exit("no years >= 2000 selected")
     try:
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")

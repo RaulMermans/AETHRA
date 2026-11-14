@@ -3,14 +3,16 @@
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import type * as CesiumNS from "cesium";
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { HOME_VIEW, MIN_ZOOM_DISTANCE } from "@/lib/globe/catalog";
+import { HOME_VIEW, MIN_ZOOM_DISTANCE, WORLD_VIEW } from "@/lib/globe/catalog";
 import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera";
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
+import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
 import { pickCoordinate } from "@/lib/globe/cesium/picking";
 import {
   clipGlobeToSpain,
   constrainCameraToSpain,
+  createSpain2DMask,
   loadSpainBoundary,
   type SpainBoundary,
 } from "@/lib/globe/cesium/spain-mask";
@@ -18,7 +20,9 @@ import {
   createBaseImagery,
   createFallbackImagery,
   loadTerrain,
+  sampleProfile,
   sampleTerrainHeight,
+  spainRectangles,
   type TerrainResult,
 } from "@/lib/globe/cesium/providers";
 import {
@@ -34,8 +38,10 @@ import type {
   GlobeStatus,
   LayerDescriptor,
   LayerStateMap,
+  MeasureState,
   QualityMode,
   QualityProfile,
+  ViewMode,
 } from "@/lib/globe/types";
 
 export interface GlobeProps {
@@ -43,6 +49,11 @@ export interface GlobeProps {
   layerStates: LayerStateMap;
   selected: GeoCoordinate | null;
   qualityMode: QualityMode;
+  /** "spain": render only Spain + surrounding sea (D21); "world": whole globe. */
+  viewMode: ViewMode;
+  /** Active map tool (distance, offset…). While set, clicks go to `onToolClick`, not `onSelect`. */
+  measure?: MeasureState | null;
+  onToolClick?: (coordinate: GeoCoordinate) => void;
   onHover?: (coordinate: GeoCoordinate | null) => void;
   onSelect?: (coordinate: GeoCoordinate | null) => void;
   onStatus?: (status: GlobeStatus) => void;
@@ -60,6 +71,37 @@ function isContextLost(canvas: HTMLCanvasElement): boolean {
 }
 
 /**
+ * PNG of the next rendered frame (read inside postRender, so no preserveDrawingBuffer is needed),
+ * with the imagery/terrain attribution drawn along the bottom as the providers require.
+ */
+function captureScreenshot(scene: CesiumNS.Scene, credits: string): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const remove = scene.postRender.addEventListener(() => {
+      remove();
+      const src = scene.canvas;
+      const out = document.createElement("canvas");
+      out.width = src.width;
+      out.height = src.height;
+      const ctx = out.getContext("2d");
+      if (!ctx) return resolve(null);
+      ctx.drawImage(src, 0, 0);
+      const scale = src.width / (src.clientWidth || src.width);
+      const pad = 8 * scale;
+      const size = Math.round(11 * scale);
+      const text = `${credits.replace(/Data attribution/g, "").replace(/\s+/g, " ").trim()} · ${new Date().toISOString().slice(0, 10)}`;
+      ctx.font = `${size}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.fillStyle = "rgba(3,5,10,0.75)";
+      ctx.fillRect(0, out.height - size - 2 * pad, out.width, size + 2 * pad);
+      ctx.fillStyle = "#e8edf3";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(text, pad, out.height - pad, out.width - 2 * pad);
+      out.toBlob((blob) => resolve(blob), "image/png");
+    });
+    scene.requestRender();
+  });
+}
+
+/**
  * CesiumJS globe. Client-only: load it through `GlobeClient` (next/dynamic, ssr: false).
  * Owns the Cesium Viewer lifecycle; everything else (layer state, selection, quality mode)
  * comes in via props.
@@ -74,8 +116,10 @@ export default function Globe(props: GlobeProps) {
     viewer: CesiumNS.Viewer;
     layers: CesiumLayerManager;
     controller: GlobeController;
-    marker: CesiumNS.Entity;
+    placeMarker: (at: GeoCoordinate | null) => void;
     setQuality: (mode: QualityMode) => void;
+    setViewMode: (mode: ViewMode) => void;
+    measureSource: CesiumNS.CustomDataSource;
   } | null>(null);
 
   // --- Viewer lifecycle -------------------------------------------------------------------
@@ -123,7 +167,6 @@ export default function Globe(props: GlobeProps) {
 
       const onImageryFailures = (n: number) =>
         emit({ imagery: { ...status.imagery, failedTiles: n } });
-      const base = createBaseImagery(Cesium, token, onImageryFailures);
 
       try {
         viewer = new Cesium.Viewer(container, {
@@ -157,24 +200,39 @@ export default function Globe(props: GlobeProps) {
       const { scene } = v;
       const ctrl = scene.screenSpaceCameraController;
 
-      // Base imagery (see providers.ts). If ion imagery fails, fall back explicitly.
-      base.layers.forEach((l, i) => v.imageryLayers.add(l, i));
-      ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE[base.tier];
+      // Base imagery (see providers.ts): one set limited to the Spain extents and one for the
+      // whole globe; only the set of the current view mode is shown (hidden layers fetch nothing).
+      // If ion imagery fails, fall back explicitly.
+      let viewMode: ViewMode = propsRef.current.viewMode;
+      let baseSets: Record<ViewMode, CesiumNS.ImageryLayer[]> = { spain: [], world: [] };
+      const showBase = () => {
+        for (const m of ["spain", "world"] as const) for (const l of baseSets[m]) l.show = m === viewMode;
+      };
+      const installBase = (make: (rectangles?: CesiumNS.Rectangle[]) => ReturnType<typeof createFallbackImagery>) => {
+        for (const l of [...baseSets.spain, ...baseSets.world]) v.imageryLayers.remove(l, true);
+        const spainSet = make(spainRectangles(Cesium));
+        const worldSet = make(undefined);
+        baseSets = { spain: spainSet.layers, world: worldSet.layers };
+        [...worldSet.layers, ...spainSet.layers].forEach((l, i) => v.imageryLayers.add(l, i));
+        showBase();
+        return spainSet;
+      };
+      const tier = token ? "ion" : "fallback"; // createBaseImagery uses ion iff a token is set
+      const base = installBase((r) => createBaseImagery(Cesium, token, onImageryFailures, r));
+      ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE[tier];
       emit({ imagery: { label: base.label, finestDetail: base.finestDetail, failedTiles: 0 } });
-      if (base.tier === "ion") {
+      if (tier === "ion") {
         let fellBack = false;
         const fallBack = () => {
           if (fellBack || v.isDestroyed()) return;
           fellBack = true;
-          base.layers.forEach((l) => v.imageryLayers.remove(l, true));
-          const fb = createFallbackImagery(Cesium, onImageryFailures);
-          fb.layers.forEach((l, i) => v.imageryLayers.add(l, i));
+          const fb = installBase((r) => createFallbackImagery(Cesium, onImageryFailures, r));
           ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE.fallback;
           emit({
             imagery: { label: `${fb.label} (ion imagery failed)`, finestDetail: fb.finestDetail, failedTiles: 0 },
           });
         };
-        base.layers.forEach((l) => l.errorEvent.addEventListener(fallBack));
+        [...baseSets.spain, ...baseSets.world].forEach((l) => l.errorEvent.addEventListener(fallBack));
       }
 
       // Rendering quality (adaptive) and atmosphere.
@@ -193,13 +251,10 @@ export default function Globe(props: GlobeProps) {
       });
 
       scene.backgroundColor = Cesium.Color.BLACK;
-      scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b1424");
       scene.globe.enableLighting = true;
       scene.globe.dynamicAtmosphereLighting = true;
       scene.globe.dynamicAtmosphereLightingFromSun = true;
-      scene.globe.showGroundAtmosphere = true;
       scene.globe.depthTestAgainstTerrain = true; // markers/lines are hidden behind mountains
-      if (scene.skyAtmosphere) scene.skyAtmosphere.show = true;
       scene.fog.enabled = true;
       // Sun fixed at 12:00 UTC today: real solar geometry for that instant, so Europe is lit
       // regardless of the viewer's clock. Cosmetic lighting only; not tied to any data timestamp.
@@ -208,8 +263,6 @@ export default function Globe(props: GlobeProps) {
       v.clock.currentTime = Cesium.JulianDate.fromDate(noon);
       v.clock.shouldAnimate = false;
 
-      // Only Spain is rendered (see spain-mask.ts): no need to zoom out to a whole-Earth view.
-      ctrl.maximumZoomDistance = 9_000_000;
       ctrl.enableCollisionDetection = true;
       v.cesiumWidget.screenSpaceEventHandler.removeInputAction(
         Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK,
@@ -227,7 +280,9 @@ export default function Globe(props: GlobeProps) {
 
       setOrbitView(Cesium, v, { ...HOME_VIEW, range: HOME_VIEW.range * 1.6 });
 
-      // Selected-location marker (halo + point), hidden until a location is chosen.
+      // Selected-location marker: ground halo + point. The point is placed at an explicit height
+      // (sampled terrain × vertical exaggeration) because Cesium's ground clamping of points
+      // does not follow later exaggeration changes.
       const marker = v.entities.add({
         id: "selected-location",
         show: false,
@@ -237,7 +292,6 @@ export default function Globe(props: GlobeProps) {
           color: Cesium.Color.fromCssColorString(ACCENT),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
         ellipse: {
@@ -247,22 +301,67 @@ export default function Globe(props: GlobeProps) {
           outline: false, // no height => drawn on the ground (terrain-clamped)
         },
       });
+      let markerRequest = 0;
+      let markerAt: GeoCoordinate | null = null;
+      const placeMarker = (at: GeoCoordinate | null) => {
+        markerAt = at;
+        marker.show = at !== null;
+        if (!at) return scene.requestRender();
+        const id = ++markerRequest;
+        const put = (h: number) => {
+          marker.position = new Cesium.ConstantPositionProperty(
+            Cesium.Cartesian3.fromDegrees(at.longitude, at.latitude, h * (scene.verticalExaggeration || 1)),
+          );
+          scene.requestRender();
+        };
+        put(at.elevation?.metres ?? 0);
+        void sampleTerrainHeight(Cesium, v, at.latitude, at.longitude).then((h) => {
+          if (id === markerRequest && h !== undefined && !v.isDestroyed()) put(h);
+        });
+      };
 
-      // Render only Spain. Until the outline loads, the full globe is shown; if it fails to load
-      // the full globe stays (logged) rather than showing nothing.
+      // View mode. Spain: only Spain + sea is rendered (clipped), no atmosphere halo (there is no
+      // full Earth disc behind it), zoom-out limited and the camera kept near Spain. World: the
+      // whole globe. Until the outline loads, the full globe is shown; if it fails to load the full
+      // globe stays (logged) rather than showing nothing.
       let spain: SpainBoundary | null = null;
-      stopCameraConstraint = constrainCameraToSpain(Cesium, v);
+      // Globe clipping only renders in 3D; the flat 2D map uses an opaque mask instead.
+      let mask2D: CesiumNS.Entity[] = [];
+      const WORLD_BASE = Cesium.Color.fromCssColorString("#0b1424");
+      const applyViewMode = () => {
+        const focus = viewMode === "spain";
+        const is3D = scene.mode === Cesium.SceneMode.SCENE3D;
+        showBase();
+        if (scene.globe.clippingPolygons) scene.globe.clippingPolygons.enabled = focus && is3D;
+        for (const e of mask2D) e.show = focus && !is3D && scene.mode !== Cesium.SceneMode.MORPHING;
+        // Spain mode: everything outside Spain reads as empty space (black), in 2D and 3D.
+        scene.globe.baseColor = focus ? Cesium.Color.BLACK : WORLD_BASE;
+        scene.globe.showGroundAtmosphere = !focus;
+        if (scene.skyAtmosphere) scene.skyAtmosphere.show = !focus;
+        ctrl.maximumZoomDistance = focus ? 9_000_000 : 40_000_000;
+        scene.requestRender();
+      };
+      const setViewMode = (mode: ViewMode) => {
+        if (mode === viewMode) return;
+        viewMode = mode;
+        applyViewMode();
+        if (layers) void layers.sync(propsRef.current.layers, propsRef.current.layerStates, mode);
+      };
+      applyViewMode();
+      stopCameraConstraint = constrainCameraToSpain(Cesium, v, () => viewMode === "spain");
       void loadSpainBoundary()
         .then((b) => {
           if (disposed || v.isDestroyed()) return;
           spain = b;
-          clipGlobeToSpain(Cesium, v, b);
+          clipGlobeToSpain(Cesium, v, b, viewMode === "spain");
+          mask2D = createSpain2DMask(Cesium, v, b, Cesium.Color.BLACK);
+          applyViewMode();
         })
         .catch((err) => console.warn("[globe] Spain boundary failed; showing the full globe", err));
-      // Hover/click outside Spain (clipped area) yields no coordinate.
+      // In Spain mode, hover/click outside the rendered area yields no coordinate.
       const pickSpain = (p: CesiumNS.Cartesian2 | undefined) => {
         const c = pickCoordinate(Cesium, v, p, terrain);
-        return c && spain && !spain.contains(c.longitude, c.latitude) ? null : c;
+        return c && viewMode === "spain" && spain && !spain.contains(c.longitude, c.latitude) ? null : c;
       };
 
       // Pointer interaction.
@@ -282,6 +381,10 @@ export default function Globe(props: GlobeProps) {
       handler.setInputAction((c: CesiumNS.ScreenSpaceEventHandler.PositionedEvent) => {
         const coord = pickSpain(c.position);
         if (!coord) return; // sky / outside Spain: keep the current selection
+        if (propsRef.current.measure) {
+          propsRef.current.onToolClick?.(coord);
+          return;
+        }
         const id = ++selectionId;
         propsRef.current.onSelect?.(coord);
         if (!terrain) return;
@@ -309,18 +412,69 @@ export default function Globe(props: GlobeProps) {
       layers = new CesiumLayerManager(Cesium, v, (id, err) =>
         console.warn(`[globe] layer "${id}" failed`, err),
       );
-      const controller = createCameraController(Cesium, v);
-      engine.current = { Cesium, viewer: v, layers, controller, marker, setQuality };
+      const measureSource = new Cesium.CustomDataSource("measure");
+      void v.dataSources.add(measureSource);
+      drawMeasure(Cesium, measureSource, propsRef.current.measure ?? null);
+      const cameraCtl = createCameraController(Cesium, v);
+      const controller: GlobeController = {
+        ...cameraCtl,
+        setDimension(dim, durationSeconds = 1.2) {
+          const target = dim === "2d" ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D;
+          if (scene.mode === target) return;
+          // Keep looking at the same place at a similar scale after the switch.
+          const before = cameraCtl.getCamera();
+          const centre = cameraCtl.centre() ?? before;
+          const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : durationSeconds;
+          const stop = scene.morphComplete.addEventListener(() => {
+            stop();
+            applyViewMode();
+            cameraCtl.setCamera(
+              { latitude: centre.latitude, longitude: centre.longitude, height: before.height, heading: 0, pitch: -90 },
+              duration ? 0.6 : 0,
+            );
+          });
+          applyViewMode(); // hide the 2D mask / clipping while morphing
+          if (dim === "2d") scene.morphTo2D(duration);
+          else scene.morphTo3D(duration);
+          scene.requestRender();
+        },
+        sampleProfile: (a, b, samples) => sampleProfile(Cesium, v, a, b, samples),
+        setVerticalExaggeration(factor) {
+          scene.verticalExaggeration = factor;
+          // Ground-clamped entities don't re-clamp on their own when the exaggeration changes:
+          // re-set them so they sit on the (re-scaled) surface.
+          placeMarker(markerAt);
+          // Measurement entities are re-created once the re-scaled terrain tiles are in (doing
+          // it immediately would clamp them to the old surface).
+          const reclamp = () => {
+            if (v.isDestroyed()) return;
+            drawMeasure(Cesium, measureSource, propsRef.current.measure ?? null);
+            scene.requestRender();
+          };
+          let frames = 0;
+          const stop = scene.postRender.addEventListener(() => {
+            // Wait at least a couple of frames, then until all visible tiles are loaded (max ~5 s).
+            if (++frames < 3 || (!scene.globe.tilesLoaded && frames < 300)) return scene.requestRender();
+            stop();
+            reclamp();
+          });
+          scene.requestRender();
+        },
+        screenshot: () => captureScreenshot(scene, propsRef.current.creditContainer?.innerText ?? ""),
+      };
+      engine.current = { Cesium, viewer: v, layers, controller, placeMarker, setQuality, setViewMode, measureSource };
+      placeMarker(propsRef.current.selected);
       if (process.env.NODE_ENV === "development") {
         // Debug hook for local testing only (stripped from production builds).
         (window as unknown as { __globe?: unknown }).__globe = { controller, viewer: v, Cesium };
       }
-      void layers.sync(propsRef.current.layers, propsRef.current.layerStates);
+      void layers.sync(propsRef.current.layers, propsRef.current.layerStates, viewMode);
+      if (propsRef.current.viewMode !== viewMode) setViewMode(propsRef.current.viewMode);
       if (propsRef.current.qualityMode !== initialMode) setQuality(propsRef.current.qualityMode);
 
       emit({ phase: "ready" });
       propsRef.current.onReady?.(controller);
-      controller.flyTo(HOME_VIEW);
+      controller.flyTo(viewMode === "spain" ? HOME_VIEW : WORLD_VIEW);
 
       // Real terrain (see providers.ts). Without it the globe is a smooth ellipsoid and the UI
       // says so; elevation is then never shown.
@@ -353,23 +507,31 @@ export default function Globe(props: GlobeProps) {
     engine.current?.setQuality(props.qualityMode);
   }, [props.qualityMode]);
 
+  // --- View mode --------------------------------------------------------------------------
+  useEffect(() => {
+    engine.current?.setViewMode(props.viewMode);
+  }, [props.viewMode]);
+
   // --- Layers -----------------------------------------------------------------------------
   useEffect(() => {
-    void engine.current?.layers.sync(props.layers, props.layerStates);
+    void engine.current?.layers.sync(props.layers, props.layerStates, props.viewMode);
+    // viewMode changes are synced by setViewMode.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.layers, props.layerStates]);
+
+  // --- Map tools (measurements) -----------------------------------------------------------
+  useEffect(() => {
+    const e = engine.current;
+    if (!e) return;
+    drawMeasure(e.Cesium, e.measureSource, props.measure ?? null);
+    e.viewer.scene.requestRender();
+  }, [props.measure]);
 
   // --- Selected marker --------------------------------------------------------------------
   useEffect(() => {
     const e = engine.current;
     if (!e) return;
-    const { Cesium, viewer, marker } = e;
-    marker.show = props.selected !== null;
-    if (props.selected) {
-      marker.position = new Cesium.ConstantPositionProperty(
-        Cesium.Cartesian3.fromDegrees(props.selected.longitude, props.selected.latitude),
-      );
-    }
-    viewer.scene.requestRender();
+    e.placeMarker(props.selected);
   }, [props.selected]);
 
   // --- Keyboard ---------------------------------------------------------------------------
@@ -397,6 +559,7 @@ export default function Globe(props: GlobeProps) {
     <div
       ref={containerRef}
       className={props.className}
+      style={props.measure ? { cursor: "crosshair" } : undefined}
       tabIndex={0}
       role="application"
       aria-label="Interactive 3D globe. Drag to rotate, scroll or pinch to zoom, Ctrl-drag or middle-drag to tilt. Keyboard: arrow keys rotate and tilt, plus and minus zoom, N resets north."

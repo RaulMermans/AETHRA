@@ -24,17 +24,20 @@ const GROUPS: Action[][] = [
 export function CameraControls({
   controller,
   onReset,
+  flat = false,
 }: {
   controller: GlobeController | null;
   onReset: () => void;
+  /** Flat 2D map: no tilt or rotation, only zoom and reset. */
+  flat?: boolean;
 }) {
   const disabled = !controller;
   const btn =
     "focus-ring grid size-9 place-items-center text-muted transition-colors hover:bg-white/6 hover:text-ink active:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
   return (
     <div role="toolbar" aria-label="Camera" aria-orientation="vertical" className="pointer-events-auto flex flex-col gap-2">
-      {GROUPS.map((group, i) => (
-        <div key={i} className={`panel flex-col overflow-hidden !rounded-lg ${i === 0 ? "flex" : "hidden sm:flex"}`}>
+      {(flat ? GROUPS.slice(0, 1) : GROUPS).map((group, i) => (
+        <div key={i} className={`panel flex-col overflow-hidden !rounded-lg ${i === 0 ? "flex" : "hidden sm:flex [@media(max-height:760px)]:!hidden"}`}>
           {group.map((a) => (
             <button
               key={a.label}
@@ -51,7 +54,7 @@ export function CameraControls({
         </div>
       ))}
       <div className="panel flex flex-col overflow-hidden !rounded-lg">
-        <button type="button" className={btn} aria-label="Reset to global view" title="Reset to global view" disabled={disabled} onClick={onReset}>
+        <button type="button" className={btn} aria-label="Reset view" title="Reset view" disabled={disabled} onClick={onReset}>
           <Icon name="home" />
         </button>
       </div>

@@ -19,7 +19,7 @@ export function pickCoordinate(
 ): GeoCoordinate | null {
   if (!position || viewer.isDestroyed()) return null;
   const { scene } = viewer;
-  if (scene.mode !== Cesium.SceneMode.SCENE3D) return null;
+  if (scene.mode === Cesium.SceneMode.MORPHING) return null; // mid 2D↔3D transition
 
   let cartesian: CesiumNS.Cartesian3 | undefined;
   let onTerrain = false;
@@ -39,9 +39,11 @@ export function pickCoordinate(
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
 
   if (!terrain || !onTerrain || !Number.isFinite(carto.height)) return { latitude, longitude };
+  // The rendered mesh is scaled by the vertical exaggeration (relative to 0 m): report true height.
+  const metres = carto.height / (scene.verticalExaggeration || 1);
   return {
     latitude,
     longitude,
-    elevation: { metres: carto.height, datum: terrain.datum, source: terrain.label, approximate: true },
+    elevation: { metres, datum: terrain.datum, source: terrain.label, approximate: true },
   };
 }

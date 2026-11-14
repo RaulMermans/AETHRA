@@ -192,8 +192,8 @@
     }
   },
   "summary": {
-    "updated_at": "2026-11-14T13:39:28+00:00",
-    "total_bytes": 96845259
+    "updated_at": "2026-11-14T14:07:47+00:00",
+    "total_bytes": 159490438
   },
   "boundary": {
     "name": "Eurostat GISCO NUTS 2021, level 2, scale 1:1 million, EPSG:4326 (country code ES)",
@@ -4976,7 +4976,7 @@
         },
         {
           "batch": "pilot",
-          "error": "[Errno 2] No such file or directory: 'data/raw/gpm/pilot.partial/.harmony-z72p9mc8'",
+          "error": "[Errno 2] No such file or directory: '/Users/raulm/Desktop/nasa-project-spain-main/data/raw/gpm/pilot.partial/.harmony-z72p9mc8'",
           "at": "2026-11-14T12:40:24+00:00"
         },
         {
@@ -9900,7 +9900,7 @@
         },
         {
           "batch": "pilot",
-          "error": "[Errno 2] No such file or directory: 'data/raw/merra2/pilot.partial/.harmony-fgc4s80c'",
+          "error": "[Errno 2] No such file or directory: '/Users/raulm/Desktop/nasa-project-spain-main/data/raw/merra2/pilot.partial/.harmony-fgc4s80c'",
           "at": "2026-11-14T12:45:09+00:00"
         }
       ]
@@ -9911,14 +9911,265 @@
       "doi": "10.5067/MODIS/MOD13Q1.061",
       "batches": {
         "pilot/peninsula_baleares_ceuta_melilla": {
-          "status": "submitted",
+          "status": "ok",
           "appeears_task_id": "859f9223-a8af-4cea-8f4c-ed8ff4672cdf",
           "period": [
             "2000-02-18",
             "2000-02-19"
           ],
           "region": "peninsula_baleares_ceuta_melilla",
-          "submitted_at": "2026-11-14T13:39:45+00:00"
+          "submitted_at": "2026-11-14T13:39:45+00:00",
+          "source_granules": [
+            {
+              "granule_ur": "MOD13Q1.A2000049.h18v04.061.2020041155709",
+              "concept_id": "G2192028117-LPCLOUD",
+              "start": "2000-02-18",
+              "size_mb": 170.881,
+              "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/MOD13Q1.061/MOD13Q1.A2000049.h18v04.061.2020041155709/BROWSE.MOD13Q1.A2000049.h18v04.061.2020041155709.1.jpg"
+            },
+            {
+              "granule_ur": "MOD13Q1.A2000049.h17v05.061.2020041154919",
+              "concept_id": "G2192066409-LPCLOUD",
+              "start": "2000-02-18",
+              "size_mb": 143.553,
+              "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/MOD13Q1.061/MOD13Q1.A2000049.h17v05.061.2020041154919/BROWSE.MOD13Q1.A2000049.h17v05.061.2020041154920.1.jpg"
+            },
+            {
+              "granule_ur": "MOD13Q1.A2000049.h17v04.061.2020041154836",
+              "concept_id": "G2192165311-LPCLOUD",
+              "start": "2000-02-18",
+              "size_mb": 77.227,
+              "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/MOD13Q1.061/MOD13Q1.A2000049.h17v04.061.2020041154836/BROWSE.MOD13Q1.A2000049.h17v04.061.2020041154836.1.jpg"
+            },
+            {
+              "granule_ur": "MOD13Q1.A2000049.h18v05.061.2020041155329",
+              "concept_id": "G2192227333-LPCLOUD",
+              "start": "2000-02-18",
+              "size_mb": 156.174,
+              "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/MOD13Q1.061/MOD13Q1.A2000049.h18v05.061.2020041155329/BROWSE.MOD13Q1.A2000049.h18v05.061.2020041155330.1.jpg"
+            }
+          ],
+          "checksums": "AppEEARS bundle sha256 verified",
+          "raw_files": [
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1-061-250m-16-days-VI-Quality-Statistics-QA.csv",
+              "bytes": 2347,
+              "sha256": "29ece04c388baed7855357e8e633ef86afd063bc88262c22f9caac1efdbc4b6a"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1-061-250m-16-days-VI-Quality-lookup.csv",
+              "bytes": 30444,
+              "sha256": "3aefe6a6049e3a12a10aa500d00e96f1d10eb396fd7595985e623efbf4ec9ea3"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1-061-250m-16-days-pixel-reliability-Statistics-QA.csv",
+              "bytes": 132,
+              "sha256": "16686352500ca5efb7a29d18ecf4951ec274cd333e17aa5abc50078941d806d2"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1-061-250m-16-days-pixel-reliability-lookup.csv",
+              "bytes": 205,
+              "sha256": "b9b2508a953924e4f406a2e4cf4f8185eaa1f4eedcd2b7db996272b649a877ae"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1-061-Statistics.csv",
+              "bytes": 773,
+              "sha256": "c2130d196355c17cf1f91ae76588fe9256d8d529335351ee35c2598fbc456c08"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/MOD13Q1.061_250m_aid0001.nc",
+              "bytes": 30190624,
+              "sha256": "2716a7394e9ea5e95884f7e68afb1c7ad3cbe484b8e40b7b2a01fbd210e3a574"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/README.md",
+              "bytes": 39770,
+              "sha256": "db75af787e50c04f14c9b5ff22dc78a327ec0a346e969ce186c9da50501c9436"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/spain-peninsula-baleares-ceuta-melilla-pilot-MOD13Q1-061-metadata.xml",
+              "bytes": 22115,
+              "sha256": "074deda58972c6821635266d47e09be196ba06c5cf19ae50e280e186170cfa5d"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/spain-peninsula-baleares-ceuta-melilla-pilot-granule-list.txt",
+              "bytes": 648,
+              "sha256": "471174b1e3b88227a1bf8944896d8cdd38ec1c85cf573fd44adcb66187e2508a"
+            },
+            {
+              "path": "data/raw/modis/pilot/peninsula_baleares_ceuta_melilla/spain-peninsula-baleares-ceuta-melilla-pilot-request.json",
+              "bytes": 223599,
+              "sha256": "233f941a7eee2d78045c985da6b5a4e06422181a34aeaa54e5050cd9ebb7b8b9"
+            }
+          ],
+          "processed": {
+            "path": "data/processed/spain/modis/MOD13Q1_061_spain_peninsula_baleares_ceuta_melilla_pilot.nc",
+            "bytes": 30746811,
+            "sha256": "c701db9925233a51f521cc1f16dfa9d1db2878a67331f9853383a532583f3740"
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "coverage": {
+              "time_steps": 1,
+              "ndvi_valid_fraction": 0.461,
+              "ndvi_range": [
+                -0.2,
+                0.9986
+              ]
+            }
+          },
+          "completed_at": "2026-11-14T14:05:13+00:00"
+        },
+        "pilot/canarias": {
+          "status": "ok",
+          "appeears_task_id": "2603250d-46a4-4d8f-bdeb-99c99f08e66b",
+          "period": [
+            "2000-02-18",
+            "2000-02-19"
+          ],
+          "region": "canarias",
+          "submitted_at": "2026-11-14T14:05:15+00:00",
+          "source_granules": [
+            {
+              "granule_ur": "MOD13Q1.A2000049.h16v06.061.2020041154446",
+              "concept_id": "G2192161435-LPCLOUD",
+              "start": "2000-02-18",
+              "size_mb": 70.734,
+              "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/MOD13Q1.061/MOD13Q1.A2000049.h16v06.061.2020041154446/BROWSE.MOD13Q1.A2000049.h16v06.061.2020041154447.1.jpg"
+            }
+          ],
+          "checksums": "AppEEARS bundle sha256 verified",
+          "raw_files": [
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1-061-250m-16-days-VI-Quality-Statistics-QA.csv",
+              "bytes": 849,
+              "sha256": "8161cb6c174d6b6ed7254fd49bbadf1a5ab8577c826e3e147276798278b21a68"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1-061-250m-16-days-VI-Quality-lookup.csv",
+              "bytes": 10504,
+              "sha256": "4e6e1625580aeae249c55b1515cff145fd2113bf29df3f97b899afc27740fe86"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1-061-250m-16-days-pixel-reliability-Statistics-QA.csv",
+              "bytes": 120,
+              "sha256": "1fa635548495bd51de8feb7fec6dd7af92b4dbc35e6e4fd94fd54f44a394f495"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1-061-250m-16-days-pixel-reliability-lookup.csv",
+              "bytes": 165,
+              "sha256": "ef0cde2de2606d86a91d673695401be1cc256a3f187c240555546dfde1e29aa0"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1-061-Statistics.csv",
+              "bytes": 781,
+              "sha256": "e0580008a06776e3455f8015f827e4e66f539ffd5ffa5329dd4a9e060eecec15"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/MOD13Q1.061_250m_aid0001.nc",
+              "bytes": 620068,
+              "sha256": "b14b4d893d82900e69488e1edfa5c30c2c149c196fba4c7e0bd3920503ec0537"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/README.md",
+              "bytes": 39673,
+              "sha256": "2595a8e7f94a8adac98e4c074898b3a6b8fac713411bea45ad61f63f8a34400b"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/spain-canarias-pilot-MOD13Q1-061-metadata.xml",
+              "bytes": 22068,
+              "sha256": "e51da31c9f778648868be0d8fea5ef9bcb54d116c1e3291ad35a983eed9af49b"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/spain-canarias-pilot-granule-list.txt",
+              "bytes": 162,
+              "sha256": "0f273af0e6de35597fa634a1b7fef5261f19ea0ee7ce8e81a740ef0acc968e4a"
+            },
+            {
+              "path": "data/raw/modis/pilot/canarias/spain-canarias-pilot-request.json",
+              "bytes": 37313,
+              "sha256": "c7213ec4c065027312a5858d33d97bf4356e5162cff9c8b90288a35c58c5bde3"
+            }
+          ],
+          "processed": {
+            "path": "data/processed/spain/modis/MOD13Q1_061_spain_canarias_pilot.nc",
+            "bytes": 656008,
+            "sha256": "b19e3ca791cc701f1213677aaaee5286dc94bfdc84b1893b97b862c94365b134"
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "coverage": {
+              "time_steps": 1,
+              "ndvi_valid_fraction": 0.074,
+              "ndvi_range": [
+                -0.1774,
+                0.9743
+              ]
+            }
+          },
+          "completed_at": "2026-11-14T14:07:46+00:00"
+        },
+        "2000/peninsula_baleares_ceuta_melilla": {
+          "status": "submitted",
+          "appeears_task_id": "f5b28c8b-c772-4b8b-9c2a-7aca0f7bf9d5",
+          "period": [
+            "2000-01-01",
+            "2000-12-31"
+          ],
+          "region": "peninsula_baleares_ceuta_melilla",
+          "submitted_at": "2026-11-14T14:34:55+00:00"
+        },
+        "2000/canarias": {
+          "status": "submitted",
+          "appeears_task_id": "ec532f9f-669c-44f7-9e13-3df783fc7ca5",
+          "period": [
+            "2000-01-01",
+            "2000-12-31"
+          ],
+          "region": "canarias",
+          "submitted_at": "2026-11-14T14:34:57+00:00"
+        },
+        "2012/peninsula_baleares_ceuta_melilla": {
+          "status": "submitted",
+          "appeears_task_id": "dc9659bd-fb77-4ebf-bed8-2170fc950834",
+          "period": [
+            "2012-01-01",
+            "2012-12-31"
+          ],
+          "region": "peninsula_baleares_ceuta_melilla",
+          "submitted_at": "2026-11-14T14:35:02+00:00"
+        },
+        "2012/canarias": {
+          "status": "submitted",
+          "appeears_task_id": "f2fc2c2a-46a5-4d73-9973-d098df9b8f85",
+          "period": [
+            "2012-01-01",
+            "2012-12-31"
+          ],
+          "region": "canarias",
+          "submitted_at": "2026-11-14T14:35:04+00:00"
+        },
+        "2024/peninsula_baleares_ceuta_melilla": {
+          "status": "submitted",
+          "appeears_task_id": "54a142c9-a6b2-49bc-8707-00a151c91315",
+          "period": [
+            "2024-01-01",
+            "2024-12-31"
+          ],
+          "region": "peninsula_baleares_ceuta_melilla",
+          "submitted_at": "2026-11-14T14:35:13+00:00"
+        },
+        "2024/canarias": {
+          "status": "submitted",
+          "appeears_task_id": "aa0339ed-3373-470b-8376-3c96fb84a5f8",
+          "period": [
+            "2024-01-01",
+            "2024-12-31"
+          ],
+          "region": "canarias",
+          "submitted_at": "2026-11-14T14:35:18+00:00"
         }
       },
       "failures": []
