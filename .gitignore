@@ -28,7 +28,6 @@ venv/
 .mypy_cache/
 
 # Raw / heavy scientific data (keep provenance in data/metadata/)
-data/raw/
 data/cache/
 *.nc
 *.nc4
@@ -38,3 +37,29 @@ data/cache/
 *.tif
 *.tiff
 *.zarr/
+
+# Raw NASA subsets: GPM + MERRA-2 (~75 MB, small monthly files) and the boundary source ARE committed.
+# MODIS is NOT (files of hundreds of MB; GitHub rejects > 100 MB) - keep data/raw/modis/ ignored.
+data/raw/*
+!data/raw/gpm/
+!data/raw/merra2/
+!data/raw/boundary/
+data/raw/boundary/*
+!data/raw/boundary/NUTS_RG_01M_2021_4326_LEVL_2.geojson
+!data/raw/gpm/**/*.nc4
+!data/raw/merra2/**/*.nc4
+data/raw/*/pilot/
+data/raw/*/*.partial/
+
+# Processed scientific subsets (regenerate with scripts/download_nasa_data.py).
+# Spain GPM/MERRA-2 yearly NetCDFs (~20 MB total) and the boundary are committed; the rest is not.
+data/processed/*
+!data/processed/spain/
+data/processed/spain/*
+!data/processed/spain/README.md
+!data/processed/spain/spain_boundary_nuts2021_01m.geojson
+!data/processed/spain/gpm/
+!data/processed/spain/merra2/
+!data/processed/spain/gpm/*.nc
+!data/processed/spain/merra2/*.nc
+data/processed/spain/**/*_pilot.nc

@@ -24,9 +24,9 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
 ## Local catalogs in this repo
 
 - [`data/noaa_ghcnd_spain_daily/`](../data/noaa_ghcnd_spain_daily/README.md) — NOAA GHCN-Daily station
-  data for Spain, 2011-01-01 → 2026-11-07, one raw NOAA CSV per 3 years (PRCP, SNWD, TAVG, TMAX,
+  data for Spain, 2001-01-01 → 2026-11-07, one raw NOAA CSV per period (PRCP, SNWD, TAVG, TMAX,
   TMIN), ~170-177 stations, metric (°C, mm). `harmonize_ghcnd_spain.py` (same folder) converts and
-  merges exports into one schema. **Not NASA**: ground truth/validation. ~16 years is short for a
+  merges exports into one schema. **Not NASA**: ground truth/validation. ~26 years is borderline for a
   climate trend (older years being added); check quality flags in `*_ATTRIBUTES`.
 
 ## Candidate NASA datasets for Spain
@@ -53,3 +53,56 @@ documentation (worth a quick check in CMR).
 - Longer records make trends more convincing (20+ years is great, shorter is OK for exploration).
 - Noting units, scale factors and source helps the *Validity* judging criterion.
 - A small provenance note in `data/metadata/` is handy but optional.
+
+## NASA downloads for Spain (`scripts/download_nasa_data.py`)
+
+Setup and usage: [`scripts/README.md`](../scripts/README.md). Machine-readable metadata:
+[`data/metadata/datasets.json`](../data/metadata/datasets.json); per-file provenance, checksums and
+the last dry-run report: [`data/metadata/download_manifest.json`](../data/metadata/download_manifest.json).
+
+Verified in CMR on 14 Nov 2026 (dry run, from 2000-01-01):
+
+| Key | Product | Concept ID / DOI | Type | Native res. | Granules for Spain | Coverage | Subsetting |
+|---|---|---|---|---|---|---|---|
+| `gpm` | GPM_3IMERGM V07 (IMERG Final, monthly) | `C2723754851-GES_DISC` / 10.5067/GPM/IMERG/3B-MONTH/07 | Satellite-gauge estimate | 0.1° | 309 | 2000-01 → **2025-09** (collection metadata ends 2025-09-30; nothing newer published) | Harmony HOSS |
+| `merra2` | M2TMNXSLV 5.12.4 (monthly) | `C1276812859-GES_DISC` / 10.5067/AP1B0BA5PD2K | **Reanalysis (model), not observation** | 0.5° × 0.625° | 321 | 2000-01 → 2026-09 | Harmony HOSS |
+| `modis` | MOD13Q1 061 (Terra, 16-day) | `C1748066515-LPCLOUD` / 10.5067/MODIS/MOD13Q1.061 | Satellite observation | 250 m, sinusoidal | 3,070 tiles (614 composites × tiles h17v04, h17v05, h18v04, h18v05 + h16v06 Canarias) | 2000-02-18 → 2026-10-16 | AppEEARS area request (no Harmony service in CMR) |
+
+No missing months or composites were found in these ranges (every expected period has a granule).
+CMR publishes **no checksums** for these granules. The script records SHA-256 for every saved file
+and validates each file by opening it. AppEEARS bundle files are also checked against the SHA-256
+that AppEEARS publishes.
+
+**Variables and units**
+
+- `gpm`: `precipitation` (mm/hr, monthly mean **rate**), `randomError` (mm/hr),
+  `gaugeRelativeWeighting` (%), `probabilityLiquidPrecipitation` (%), `precipitationQualityIndex`
+  (equivalent gauges per 2.5° box). The processed file adds `precipitation_monthly_accumulation`
+  (mm), computed as rate × hours in the calendar month. It is labelled DERIVED, and the native
+  rate is kept unchanged alongside it.
+- `merra2`: `T2M` (K). The processed file adds `T2M_celsius` (degC), computed as T2M − 273.15 and
+  labelled DERIVED. The original K values are kept.
+- Units policy (D20): the frontend shows only the converted display variables (°C, mm, and the
+  dimensionless NDVI/EVI with units set to `1`). Each processed file lists them in its global
+  `display_variables` attribute. Source units and formulas stay in each variable's attributes
+  (`source_units`, `derivation`).
+- `modis` (AppEEARS layer names): `_250m_16_days_NDVI`, `_250m_16_days_EVI` (scale 0.0001, fill
+  −3000, valid −0.2…1), `_250m_16_days_VI_Quality` (bit field), `_250m_16_days_pixel_reliability`
+  (0 good, 1 marginal, 2 snow/ice, 3 cloudy, −1 fill), `_250m_16_days_composite_day_of_the_year`.
+  The processed file adds a `qa_usable` flag (reliability 0 or 1). No values are masked.
+
+**Processing rules.** Native units, grid and time step are kept. MODIS is not resampled to monthly,
+and nothing is interpolated or gap-filled. GPM and MERRA-2 are clipped to the Spain polygon with
+`all_touched=True`, so any grid cell that touches Spain is kept. Without that rule, Ceuta, Melilla
+and the smaller islands, which are each smaller than one cell, would be lost. Cells outside Spain
+become NaN. MODIS is masked to the polygon on the server by AppEEARS, as two areas:
+`peninsula_baleares_ceuta_melilla` and `canarias`.
+
+**Boundary.** Eurostat GISCO NUTS 2021, level 2, 1:1 million (`CNTR_CODE = ES`), © EuroGeographics.
+It includes ES53 Illes Balears, ES63 Ceuta, ES64 Melilla and ES70 Canarias. The minor sovereign
+territories (plazas de soberanía) are not in NUTS. See D19.
+
+**Storage.** GPM and MERRA-2 for Spain come to under 0.5 GB. The full MODIS history is estimated
+at 185–500 GB for raw plus processed files, which is far more than the ~22 GB free on the
+development laptop. The script refuses any batch that would leave less than `--min-free-gb` free.
+The pilot measures the real size per composite.
