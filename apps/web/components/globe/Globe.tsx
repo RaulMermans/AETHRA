@@ -3,23 +3,40 @@
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import type * as CesiumNS from "cesium";
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { FALLBACK_BASE_IMAGERY, HOME_VIEW } from "@/lib/globe/catalog";
+import { HOME_VIEW, MIN_ZOOM_DISTANCE } from "@/lib/globe/catalog";
 import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera";
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { loadCesium } from "@/lib/globe/cesium/load";
 import { pickCoordinate } from "@/lib/globe/cesium/picking";
+import {
+  createBaseImagery,
+  createFallbackImagery,
+  loadTerrain,
+  sampleTerrainHeight,
+  type TerrainResult,
+} from "@/lib/globe/cesium/providers";
+import {
+  applyQualityProfile,
+  detectQualityProfile,
+  nextLowerProfile,
+  QUALITY_PROFILES,
+  watchFrameTimes,
+} from "@/lib/globe/cesium/quality";
 import type {
   GeoCoordinate,
   GlobeController,
   GlobeStatus,
   LayerDescriptor,
   LayerStateMap,
+  QualityMode,
+  QualityProfile,
 } from "@/lib/globe/types";
 
 export interface GlobeProps {
   layers: LayerDescriptor[];
   layerStates: LayerStateMap;
   selected: GeoCoordinate | null;
+  qualityMode: QualityMode;
   onHover?: (coordinate: GeoCoordinate | null) => void;
   onSelect?: (coordinate: GeoCoordinate | null) => void;
   onStatus?: (status: GlobeStatus) => void;
@@ -31,9 +48,15 @@ export interface GlobeProps {
 
 const ACCENT = "#7cc4ff";
 
+function isContextLost(canvas: HTMLCanvasElement): boolean {
+  const gl = (canvas.getContext("webgl2") ?? canvas.getContext("webgl")) as WebGLRenderingContext | null;
+  return gl?.isContextLost() ?? false;
+}
+
 /**
  * CesiumJS globe. Client-only: load it through `GlobeClient` (next/dynamic, ssr: false).
- * Owns the Cesium Viewer lifecycle; everything else (layer state, selection) comes in via props.
+ * Owns the Cesium Viewer lifecycle; everything else (layer state, selection, quality mode)
+ * comes in via props.
  */
 export default function Globe(props: GlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,6 +69,7 @@ export default function Globe(props: GlobeProps) {
     layers: CesiumLayerManager;
     controller: GlobeController;
     marker: CesiumNS.Entity;
+    setQuality: (mode: QualityMode) => void;
   } | null>(null);
 
   // --- Viewer lifecycle -------------------------------------------------------------------
@@ -56,16 +80,24 @@ export default function Globe(props: GlobeProps) {
     let viewer: CesiumNS.Viewer | undefined;
     let handler: CesiumNS.ScreenSpaceEventHandler | undefined;
     let layers: CesiumLayerManager | undefined;
+    let stopFrameWatch: (() => void) | undefined;
     let frame = 0;
 
+    const detected = detectQualityProfile();
+    const initialMode = propsRef.current.qualityMode;
     const status: GlobeStatus = {
       phase: "loading",
-      baseImagery: FALLBACK_BASE_IMAGERY.title,
-      terrain: { available: false, label: "Loading…" },
+      imagery: { label: "Loading…", finestDetail: "—", failedTiles: 0 },
+      terrain: { available: false, label: "Loading…", failedTiles: 0 },
+      quality: {
+        mode: initialMode,
+        profile: initialMode === "auto" ? detected.profile : initialMode,
+        reason: initialMode === "auto" ? detected.reason : "manual",
+      },
     };
     const emit = (patch: Partial<GlobeStatus>) => {
       Object.assign(status, patch);
-      propsRef.current.onStatus?.({ ...status });
+      if (!disposed) propsRef.current.onStatus?.({ ...status });
     };
     emit({});
 
@@ -79,21 +111,16 @@ export default function Globe(props: GlobeProps) {
       }
       if (disposed) return;
 
-      const token = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN?.trim();
+      const token = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN?.trim() || undefined;
       Cesium.Ion.defaultAccessToken = token ?? "";
 
-      const fallbackBase = () =>
-        new Cesium.ImageryLayer(
-          new Cesium.UrlTemplateImageryProvider({
-            url: FALLBACK_BASE_IMAGERY.urlTemplate,
-            maximumLevel: FALLBACK_BASE_IMAGERY.maximumLevel,
-            credit: new Cesium.Credit(FALLBACK_BASE_IMAGERY.credit, true),
-          }),
-        );
+      const onImageryFailures = (n: number) =>
+        emit({ imagery: { ...status.imagery, failedTiles: n } });
+      const base = createBaseImagery(Cesium, token, onImageryFailures);
 
       try {
         viewer = new Cesium.Viewer(container, {
-          baseLayer: token ? Cesium.ImageryLayer.fromWorldImagery({}) : fallbackBase(),
+          baseLayer: false,
           animation: false,
           timeline: false,
           baseLayerPicker: false,
@@ -108,7 +135,7 @@ export default function Globe(props: GlobeProps) {
           requestRenderMode: true,
           maximumRenderTimeChange: Infinity,
           showRenderLoopErrors: false,
-          msaaSamples: 4,
+          msaaSamples: QUALITY_PROFILES[status.quality.profile].msaaSamples,
         });
       } catch (err) {
         emit({
@@ -121,45 +148,71 @@ export default function Globe(props: GlobeProps) {
       }
       const v = viewer;
       const { scene } = v;
+      const ctrl = scene.screenSpaceCameraController;
 
-      if (token) {
-        emit({ baseImagery: "Cesium World Imagery (Bing Maps Aerial)" });
-        const base = v.imageryLayers.get(0);
-        base.errorEvent.addEventListener(() => {
+      // Base imagery (see providers.ts). If ion imagery fails, fall back explicitly.
+      base.layers.forEach((l, i) => v.imageryLayers.add(l, i));
+      ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE[base.tier];
+      emit({ imagery: { label: base.label, finestDetail: base.finestDetail, failedTiles: 0 } });
+      if (base.tier === "ion") {
+        base.layers[0].errorEvent.addEventListener(() => {
           if (v.isDestroyed()) return;
-          v.imageryLayers.remove(base, true);
-          v.imageryLayers.add(fallbackBase(), 0);
-          emit({ baseImagery: `${FALLBACK_BASE_IMAGERY.title} (ion imagery failed)` });
+          v.imageryLayers.remove(base.layers[0], true);
+          const fb = createFallbackImagery(Cesium, onImageryFailures);
+          fb.layers.forEach((l, i) => v.imageryLayers.add(l, i));
+          ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE.fallback;
+          emit({
+            imagery: { label: `${fb.label} (ion imagery failed)`, finestDetail: fb.finestDetail, failedTiles: 0 },
+          });
         });
       }
 
-      // Rendering quality and atmosphere.
-      v.resolutionScale = Math.min(window.devicePixelRatio || 1, 2) / (window.devicePixelRatio || 1);
-      v.useBrowserRecommendedResolution = false;
+      // Rendering quality (adaptive) and atmosphere.
+      applyQualityProfile(v, status.quality.profile);
+      const setQuality = (mode: QualityMode) => {
+        const profile: QualityProfile = mode === "auto" ? detected.profile : mode;
+        applyQualityProfile(v, profile);
+        emit({ quality: { mode, profile, reason: mode === "auto" ? detected.reason : "manual" } });
+      };
+      stopFrameWatch = watchFrameTimes(v, (median) => {
+        if (status.quality.mode !== "auto") return;
+        const lower = nextLowerProfile(status.quality.profile);
+        if (!lower) return;
+        applyQualityProfile(v, lower);
+        emit({ quality: { mode: "auto", profile: lower, reason: `measured ${Math.round(median)} ms/frame` } });
+      });
+
       scene.backgroundColor = Cesium.Color.BLACK;
       scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b1424");
       scene.globe.enableLighting = true;
       scene.globe.dynamicAtmosphereLighting = true;
       scene.globe.dynamicAtmosphereLightingFromSun = true;
       scene.globe.showGroundAtmosphere = true;
-      scene.globe.depthTestAgainstTerrain = false;
+      scene.globe.depthTestAgainstTerrain = true; // markers/lines are hidden behind mountains
       if (scene.skyAtmosphere) scene.skyAtmosphere.show = true;
       scene.fog.enabled = true;
-      scene.postProcessStages.fxaa.enabled = true;
-      // Sun fixed at 12:00 UTC today so Europe/Spain is lit regardless of the viewer's clock.
-      // Cosmetic lighting only; not tied to any data timestamp.
+      // Sun fixed at 12:00 UTC today: real solar geometry for that instant, so Europe is lit
+      // regardless of the viewer's clock. Cosmetic lighting only; not tied to any data timestamp.
       const noon = new Date();
       noon.setUTCHours(12, 0, 0, 0);
       v.clock.currentTime = Cesium.JulianDate.fromDate(noon);
       v.clock.shouldAnimate = false;
 
-      const ctrl = scene.screenSpaceCameraController;
-      ctrl.minimumZoomDistance = 100;
       ctrl.maximumZoomDistance = 40_000_000;
       ctrl.enableCollisionDetection = true;
       v.cesiumWidget.screenSpaceEventHandler.removeInputAction(
         Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK,
       );
+
+      // GPU context loss cannot be recovered by Cesium: show a clear state instead of a frozen canvas.
+      const CONTEXT_LOST =
+        "The GPU context was lost (driver reset or memory pressure). Reload to restore the globe.";
+      let contextLost = false;
+      scene.canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        contextLost = true;
+        emit({ phase: "error", error: CONTEXT_LOST });
+      });
 
       setOrbitView(Cesium, v, { ...HOME_VIEW, range: HOME_VIEW.range * 1.6 });
 
@@ -177,14 +230,15 @@ export default function Globe(props: GlobeProps) {
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
         ellipse: {
-          semiMajorAxis: 12_000,
-          semiMinorAxis: 12_000,
-          material: Cesium.Color.fromCssColorString(ACCENT).withAlpha(0.18),
+          semiMajorAxis: 1_500,
+          semiMinorAxis: 1_500,
+          material: Cesium.Color.fromCssColorString(ACCENT).withAlpha(0.2),
           outline: false, // no height => drawn on the ground (terrain-clamped)
         },
       });
 
       // Pointer interaction.
+      let terrain: TerrainResult | null = null;
       handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
       let pending: CesiumNS.Cartesian2 | undefined;
       handler.setInputAction((m: CesiumNS.ScreenSpaceEventHandler.MotionEvent) => {
@@ -193,19 +247,34 @@ export default function Globe(props: GlobeProps) {
         frame = requestAnimationFrame(() => {
           frame = 0;
           if (v.isDestroyed()) return;
-          propsRef.current.onHover?.(pickCoordinate(Cesium, v, pending, status.terrain.available));
+          propsRef.current.onHover?.(pickCoordinate(Cesium, v, pending, terrain));
         });
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+      let selectionId = 0;
       handler.setInputAction((c: CesiumNS.ScreenSpaceEventHandler.PositionedEvent) => {
-        const coord = pickCoordinate(Cesium, v, c.position, status.terrain.available);
-        if (coord) propsRef.current.onSelect?.(coord);
+        const coord = pickCoordinate(Cesium, v, c.position, terrain);
+        if (!coord) return; // sky / off-globe click: keep the current selection
+        const id = ++selectionId;
+        propsRef.current.onSelect?.(coord);
+        if (!terrain) return;
+        const source = terrain;
+        // Replace the mesh (level-of-detail) height with the most detailed terrain sample.
+        void sampleTerrainHeight(Cesium, v, coord.latitude, coord.longitude).then((h) => {
+          if (disposed || id !== selectionId || h === undefined) return;
+          propsRef.current.onSelect?.({
+            ...coord,
+            elevation: { metres: h, datum: source.datum, source: source.label, approximate: false },
+          });
+        });
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
       scene.canvas.addEventListener("pointerleave", () => propsRef.current.onHover?.(null));
 
       scene.renderError.addEventListener((_s: CesiumNS.Scene, err: unknown) => {
+        console.error("[globe] render error", err);
+        const lost = contextLost || isContextLost(scene.canvas);
         emit({
           phase: "error",
-          error: `Rendering stopped: ${err instanceof Error ? err.message : String(err)}`,
+          error: lost ? CONTEXT_LOST : `Rendering stopped: ${err instanceof Error ? err.message : String(err)}`,
         });
       });
 
@@ -213,29 +282,29 @@ export default function Globe(props: GlobeProps) {
         console.warn(`[globe] layer "${id}" failed`, err),
       );
       const controller = createCameraController(Cesium, v);
-      engine.current = { Cesium, viewer: v, layers, controller, marker };
+      engine.current = { Cesium, viewer: v, layers, controller, marker, setQuality };
+      if (process.env.NODE_ENV === "development") {
+        // Debug hook for local testing only (stripped from production builds).
+        (window as unknown as { __globe?: unknown }).__globe = { controller, viewer: v, Cesium };
+      }
       void layers.sync(propsRef.current.layers, propsRef.current.layerStates);
+      if (propsRef.current.qualityMode !== initialMode) setQuality(propsRef.current.qualityMode);
 
       emit({ phase: "ready" });
       propsRef.current.onReady?.(controller);
       controller.flyTo(HOME_VIEW);
 
-      // Terrain (needs Cesium ion). Without a token the globe is a smooth ellipsoid.
-      if (!token) {
-        emit({ terrain: { available: false, label: "Off — no Cesium ion token" } });
-        return;
-      }
-      try {
-        const terrain = await Cesium.createWorldTerrainAsync({
-          requestVertexNormals: true,
-          requestWaterMask: true,
-        });
-        if (disposed || v.isDestroyed()) return;
-        v.terrainProvider = terrain;
-        emit({ terrain: { available: true, label: "Cesium World Terrain" } });
-      } catch {
-        if (!disposed) emit({ terrain: { available: false, label: "Unavailable — ion request failed" } });
-      }
+      // Real terrain (see providers.ts). Without it the globe is a smooth ellipsoid and the UI
+      // says so; elevation is then never shown.
+      terrain = await loadTerrain(Cesium, v, token, (n) =>
+        emit({ terrain: { ...status.terrain, failedTiles: n } }),
+      );
+      if (disposed) return;
+      emit({
+        terrain: terrain
+          ? { available: true, label: terrain.label, datum: terrain.datum, failedTiles: 0 }
+          : { available: false, label: "Unavailable — showing smooth ellipsoid, no relief", failedTiles: 0 },
+      });
     })();
 
     return () => {
@@ -243,11 +312,17 @@ export default function Globe(props: GlobeProps) {
       if (frame) cancelAnimationFrame(frame);
       propsRef.current.onReady?.(null);
       engine.current = null;
+      stopFrameWatch?.();
       layers?.destroy();
       if (handler && !handler.isDestroyed()) handler.destroy();
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
     };
   }, []);
+
+  // --- Quality override -------------------------------------------------------------------
+  useEffect(() => {
+    engine.current?.setQuality(props.qualityMode);
+  }, [props.qualityMode]);
 
   // --- Layers -----------------------------------------------------------------------------
   useEffect(() => {

@@ -1,4 +1,4 @@
-import type { LayerDescriptor, LayerStateMap, OrbitView } from "./types";
+import type { LayerDescriptor, LayerStateMap, OrbitView, Place } from "./types";
 
 // --- Camera views ------------------------------------------------------------------------
 
@@ -21,16 +21,80 @@ export const SPAIN_VIEW: OrbitView = {
   durationSeconds: 3.2,
 };
 
+/**
+ * Regional views. Mountain views are oblique and terrain-aware (the orbit target is raised to
+ * the sampled terrain height) so relief is visible without the camera clipping into slopes.
+ * Heading 0 = camera south of the target looking north, i.e. towards sunlit south faces.
+ */
+export const PLACES: Place[] = [
+  { id: "spain", name: "Spain", hint: "Iberian Peninsula", view: SPAIN_VIEW },
+  {
+    id: "sierra-nevada",
+    name: "Sierra Nevada",
+    hint: "Mulhacén, 3,479 m",
+    view: { target: { latitude: 37.05, longitude: -3.31 }, heading: 345, pitch: -20, range: 42_000, durationSeconds: 3.4, terrainAware: true },
+  },
+  {
+    id: "pyrenees",
+    name: "Pyrenees",
+    hint: "Aneto, 3,404 m",
+    view: { target: { latitude: 42.62, longitude: 0.62 }, heading: 10, pitch: -18, range: 95_000, durationSeconds: 3.4, terrainAware: true },
+  },
+  {
+    id: "picos-de-europa",
+    name: "Picos de Europa",
+    hint: "Cantabrian Mountains",
+    view: { target: { latitude: 43.19, longitude: -4.85 }, heading: 0, pitch: -22, range: 34_000, durationSeconds: 3.4, terrainAware: true },
+  },
+  {
+    id: "canary-islands",
+    name: "Canary Islands",
+    hint: "Teide, 3,715 m",
+    view: { target: { latitude: 28.27, longitude: -16.64 }, heading: 330, pitch: -24, range: 70_000, durationSeconds: 3.8, terrainAware: true },
+  },
+];
+
 // --- Layers ------------------------------------------------------------------------------
 
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 
+/** Closest camera distance (m) per imagery tier so texels are not stretched into fake detail. */
+export const MIN_ZOOM_DISTANCE = { ion: 150, fallback: 2_500 } as const;
+
 /** Base imagery used when no Cesium ion token is configured. */
 export const FALLBACK_BASE_IMAGERY = {
   title: "NASA Blue Marble (shaded relief, bathymetry)",
+  finestDetail: "~600 m",
   urlTemplate: `${GIBS}/BlueMarble_ShadedRelief_Bathymetry/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg`,
   maximumLevel: 8,
   credit: "NASA Blue Marble · NASA GIBS",
+};
+
+/**
+ * Terrain without a Cesium ion token. Esri states heights are orthometric metres (above sea
+ * level), multi-source (1000 m – 0.5 m); Cesium uses them without geoid conversion.
+ */
+export const TERRAIN_FALLBACK = {
+  title: "Esri World Elevation 3D",
+  url: "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer",
+  credit: "Elevation: Esri World Elevation 3D",
+};
+
+/**
+ * Detail imagery over the fallback base once zoomed in (Blue Marble stops at ~600 m/pixel).
+ * Sentinel-2 cloudless 2024 mosaic, 10 m. Licence CC BY-NC-SA 4.0 (non-commercial use).
+ */
+export const DETAIL_BASE_IMAGERY = {
+  title: "Sentinel-2 cloudless 2024 (EOX), 10 m",
+  finestDetail: "10 m",
+  urlTemplate: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg",
+  // Native 10 m ≈ Web Mercator level 14 at Spain's latitude (7.3 m/px). Higher levels served by
+  // EOX are resampled, so we stop at 14 and let the zoom limit avoid visibly stretched texels.
+  maximumLevel: 14,
+  /** Terrain level from which the layer is drawn; the full-globe view stays Blue Marble. */
+  minimumTerrainLevel: 6,
+  credit:
+    "Sentinel-2 cloudless 2024 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024) · s2maps.eu",
 };
 
 function isoDateUTC(daysAgo: number, now = new Date()): string {

@@ -1,5 +1,6 @@
 import type * as CesiumNS from "cesium";
 import type { GlobeController, OrbitView } from "../types";
+import { sampleTerrainHeight } from "./providers";
 
 type Cesium = typeof CesiumNS;
 
@@ -8,6 +9,8 @@ const MAX_PITCH = -8; // degrees (near-horizon)
 const TILT_STEP = 15;
 const ROTATE_STEP = 30;
 const STEP_DURATION = 0.7;
+
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Places the camera on an orbit view immediately (no animation). */
 export function setOrbitView(Cesium: Cesium, viewer: CesiumNS.Viewer, view: OrbitView) {
@@ -48,25 +51,37 @@ export function createCameraController(Cesium: Cesium, viewer: CesiumNS.Viewer):
         Cesium.Math.toRadians(Math.min(MAX_PITCH, Math.max(MIN_PITCH, pitchDeg))),
         Math.min(Math.max(range, 150), 40_000_000),
       ),
-      duration: STEP_DURATION,
+      duration: reducedMotion() ? 0 : STEP_DURATION,
     });
   };
+
+  // Increments on every flyTo so a slow terrain sample never overrides a newer request.
+  let flightId = 0;
 
   const deg = Cesium.Math.toDegrees;
 
   return {
     flyTo(view) {
+      const id = ++flightId;
       camera.cancelFlight();
-      const target = Cesium.Cartesian3.fromDegrees(view.target.longitude, view.target.latitude);
-      camera.flyToBoundingSphere(new Cesium.BoundingSphere(target, 0), {
-        offset: new Cesium.HeadingPitchRange(
-          Cesium.Math.toRadians(view.heading),
-          Cesium.Math.toRadians(view.pitch),
-          view.range,
-        ),
-        duration: view.durationSeconds ?? 2.5,
-        easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
-      });
+      const go = (targetHeight: number) => {
+        if (id !== flightId || viewer.isDestroyed()) return;
+        const target = Cesium.Cartesian3.fromDegrees(view.target.longitude, view.target.latitude, targetHeight);
+        camera.flyToBoundingSphere(new Cesium.BoundingSphere(target, 0), {
+          offset: new Cesium.HeadingPitchRange(
+            Cesium.Math.toRadians(view.heading),
+            Cesium.Math.toRadians(view.pitch),
+            view.range,
+          ),
+          duration: reducedMotion() ? 0 : (view.durationSeconds ?? 2.5),
+          easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+        });
+      };
+      if (!view.terrainAware) return go(0);
+      // Orbit around the real ground point so oblique mountain views don't clip into slopes.
+      void sampleTerrainHeight(Cesium, viewer, view.target.latitude, view.target.longitude, 10).then(
+        (h) => go(h ?? 0),
+      );
     },
     zoom(direction) {
       orbit(deg(camera.heading), deg(camera.pitch), direction > 0 ? 0.5 : 2);

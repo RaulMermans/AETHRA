@@ -51,7 +51,7 @@ export function CameraControls({
         </div>
       ))}
       <div className="panel flex flex-col overflow-hidden !rounded-lg">
-        <button type="button" className={btn} aria-label="Reset camera" title="Reset camera" disabled={disabled} onClick={onReset}>
+        <button type="button" className={btn} aria-label="Reset to global view" title="Reset to global view" disabled={disabled} onClick={onReset}>
           <Icon name="home" />
         </button>
       </div>

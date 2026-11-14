@@ -5,5 +5,11 @@ export function formatDegrees(value: number, digits = 5): string {
 }
 
 export function formatMetres(value: number): string {
-  return `${Math.round(value).toLocaleString("en-US")} m`;
+  const rounded = Math.round(value) || 0; // avoid "-0 m"
+  return `${rounded.toLocaleString("en-US")} m`;
+}
+
+/** Terrain elevation with its reference surface, e.g. "≈1,721 m a.s.l." or "1,768 m ellipsoidal". */
+export function formatElevation(e: { metres: number; datum: "ellipsoid-wgs84" | "orthometric"; approximate: boolean }): string {
+  return `${e.approximate ? "≈" : ""}${formatMetres(e.metres)} ${e.datum === "orthometric" ? "a.s.l." : "ellipsoidal"}`;
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { formatDegrees, formatMetres } from "@/lib/format";
+import { formatDegrees, formatElevation } from "@/lib/format";
 import type { GeoCoordinate } from "@/lib/globe/types";
 import { Icon } from "./Icon";
 
-function Row({ label, value, terrain }: { label: string; value: GeoCoordinate | null; terrain: boolean }) {
+function Row({ label, value }: { label: string; value: GeoCoordinate | null }) {
   return (
     <div className="grid grid-cols-[4.25rem_1fr] items-baseline gap-x-2">
       <dt className="text-[10px] uppercase tracking-[0.12em] text-faint">{label}</dt>
@@ -14,8 +14,16 @@ function Row({ label, value, terrain }: { label: string; value: GeoCoordinate | 
           <>
             <span className="inline-block min-w-[6.5rem]">{formatDegrees(value.latitude)}</span>
             <span className="inline-block min-w-[7rem]">{formatDegrees(value.longitude)}</span>
-            {terrain && value.height !== undefined && (
-              <span className="text-muted"> {formatMetres(value.height)}</span>
+            {value.elevation && (
+              <span
+                className="text-muted"
+                title={`Terrain elevation from ${value.elevation.source}${
+                  value.elevation.approximate ? " (rendered mesh, approximate)" : " (most detailed sample)"
+                }. ${value.elevation.datum === "orthometric" ? "Above sea level." : "Height above the WGS84 ellipsoid."}`}
+              >
+                {" "}
+                {formatElevation(value.elevation)}
+              </span>
             )}
           </>
         ) : (
@@ -29,12 +37,10 @@ function Row({ label, value, terrain }: { label: string; value: GeoCoordinate | 
 export function CoordinateReadout({
   hover,
   selected,
-  terrain,
   onClear,
 }: {
   hover: GeoCoordinate | null;
   selected: GeoCoordinate | null;
-  terrain: boolean;
   onClear: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -82,9 +88,9 @@ export function CoordinateReadout({
       </div>
       <dl className="space-y-1" aria-live="polite">
         <div className="hidden [@media(hover:hover)]:block">
-          <Row label="Cursor" value={hover} terrain={terrain} />
+          <Row label="Cursor" value={hover} />
         </div>
-        <Row label="Selected" value={selected} terrain={terrain} />
+        <Row label="Selected" value={selected} />
       </dl>
       {!selected && <p className="mt-1.5 text-[11px] text-faint">Click or tap the globe to select a location.</p>}
       <span className="sr-only" aria-live="polite">{copied ? "Coordinates copied" : ""}</span>

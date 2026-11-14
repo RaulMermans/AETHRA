@@ -2,14 +2,24 @@
 
 import { useCallback, useEffect, useState } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
-import { buildLayerCatalog, HOME_VIEW, initialLayerStates, SPAIN_VIEW } from "@/lib/globe/catalog";
-import type { GeoCoordinate, GlobeController, GlobeStatus, LayerState, LayerStateMap } from "@/lib/globe/types";
+import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
+import type {
+  GeoCoordinate,
+  GlobeController,
+  GlobeStatus,
+  LayerState,
+  LayerStateMap,
+  QualityMode,
+} from "@/lib/globe/types";
 import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { EvidencePanel } from "./EvidencePanel";
+import { ExploreSpain } from "./ExploreSpain";
 import { Icon } from "./Icon";
 import { LayerPanel } from "./LayerPanel";
 import { TopNav } from "./TopNav";
+
+const QUALITY_KEY = "globe-quality-mode";
 
 export function ExploreView() {
   const [layers] = useState(() => buildLayerCatalog());
@@ -21,17 +31,32 @@ export function ExploreView() {
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
 
-  // Layer panel starts open on wider screens only.
+  // Layer panel starts open on wider screens only; rendering override is remembered per browser.
   useEffect(() => {
     setLayersOpen(window.matchMedia("(min-width: 640px)").matches);
+    try {
+      const saved = localStorage.getItem(QUALITY_KEY);
+      if (saved && ["auto", "high", "balanced", "performance"].includes(saved)) setQualityMode(saved as QualityMode);
+    } catch {
+      /* storage unavailable: keep auto */
+    }
+  }, []);
+
+  const changeQuality = useCallback((mode: QualityMode) => {
+    setQualityMode(mode);
+    try {
+      localStorage.setItem(QUALITY_KEY, mode);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const updateLayer = useCallback((id: string, patch: Partial<LayerState>) => {
     setLayerStates((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
   }, []);
 
-  const terrain = status?.terrain.available ?? false;
   const ready = status?.phase === "ready";
 
   return (
@@ -44,6 +69,7 @@ export function ExploreView() {
           layers={layers}
           layerStates={layerStates}
           selected={selected}
+          qualityMode={qualityMode}
           onHover={setHover}
           onSelect={setSelected}
           onStatus={setStatus}
@@ -92,6 +118,8 @@ export function ExploreView() {
           states={layerStates}
           onChange={updateLayer}
           status={status}
+          qualityMode={qualityMode}
+          onQualityChange={changeQuality}
         />
       </div>
 
@@ -106,18 +134,10 @@ export function ExploreView() {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="sm:w-[22rem]">
-            <CoordinateReadout hover={hover} selected={selected} terrain={terrain} onClear={() => setSelected(null)} />
+            <CoordinateReadout hover={hover} selected={selected} onClear={() => setSelected(null)} />
           </div>
           <div className="flex items-center justify-between gap-2 sm:contents">
-            <button
-              type="button"
-              disabled={!controller}
-              onClick={() => controller?.flyTo(SPAIN_VIEW)}
-              className="focus-ring pointer-events-auto inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink shadow-lg shadow-black/40 transition hover:brightness-110 active:brightness-95 disabled:opacity-50 sm:mb-1"
-            >
-              <Icon name="target" />
-              Explore Spain
-            </button>
+            <ExploreSpain controller={controller} />
             <button
               type="button"
               onClick={() => setEvidenceOpen((o) => !o)}
