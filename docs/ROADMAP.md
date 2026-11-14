@@ -1,7 +1,7 @@
 # Roadmap
 
 - [x] Repository foundation
-- [ ] Team workflow configured — documented; still needs GitHub branch protection on `main` (require PR + 1 review, block force push)
+- [x] Team workflow configured — direct pushes to `main` allowed; pull --rebase before push
 - [x] UX/UI rules documented
 - [ ] NASA challenge requirements verified
 - [ ] Spain geographic scope defined

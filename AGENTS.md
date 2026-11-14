@@ -17,9 +17,9 @@ These rules are mandatory. Read the relevant documents **before** modifying anyt
 3. Keep changes small, focused and simple. No speculative features, extra dependencies or
    boilerplate.
 4. Do not change a LOCKED decision. Propose changes to OPEN ones in `docs/DECISIONS.md`.
-5. Follow `docs/TEAM_WORKFLOW.md` exactly: feature branch, fetch + rebase before every commit, no
-   force push or destructive Git commands without explicit human approval.
-6. Never commit secrets (`.env`, `~/.netrc`, tokens) or large raw data.
+5. Follow `docs/TEAM_WORKFLOW.md`: pushing to `main` is allowed; always pull --rebase before
+   pushing; no force push or destructive Git commands without explicit human approval.
+6. Never commit secrets (`.env`, `~/.netrc`, tokens) or data files over 50 MB.
 
 ## Scientific
 
