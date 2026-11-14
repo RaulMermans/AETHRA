@@ -1,9 +1,9 @@
 # Datasets
 
-**Status legend:** `CANDIDATE` = researched, not tested · `VALIDATED` = downloaded for Spain, units,
-QA and coverage checked, recorded in `data/metadata/` · `REJECTED` = reason given.
+**Status legend (informal):** `CANDIDATE` = looks useful · `IN USE` = being used in the app ·
+`DROPPED` = not used (note why if useful).
 
-**No dataset is VALIDATED yet.** The primary variable is OPEN (see `DECISIONS.md`).
+The primary variable is OPEN (see `DECISIONS.md`). Use any dataset that helps — just note it here.
 
 ## Access tools
 
@@ -14,46 +14,43 @@ QA and coverage checked, recorded in `data/metadata/` · `REJECTED` = reason giv
 | [Giovanni](https://giovanni.gsfc.nasa.gov/giovanni/) | Quick exploratory time series / maps (GES DISC data) |
 | [GES DISC Hydrology Time Series](https://disc.gsfc.nasa.gov/information/tools?title=Hydrology%20Time%20Series) | Point time series for hydrology models |
 | [NASA Science Data Portal](https://science.data.nasa.gov/) · [NASA Open Data](https://data.nasa.gov/) · [NASA APIs](https://api.nasa.gov/) | Catalogs and APIs |
+| [NASA GIBS](https://nasa-gibs.github.io/gibs-api-docs/) | Ready-made satellite imagery tiles (WMTS) for map/globe layers |
 
-Non-NASA references collected earlier (complementary only): [NOAA CDO](https://www.ncei.noaa.gov/cdo-web/),
+Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web/),
 [KNMI Climate Explorer](https://climexp.knmi.nl/), [CSA RCM](https://donnees-data.asc-csa.gc.ca/en/dataset/rcm),
 [CSA SWOT](https://www.asc-csa.gc.ca/eng/satellites/swot/), [geo.ca](https://geo.ca/).
+(Event rule: at least one NASA resource must be used — see `PROJECT.md`.)
 
 ## Local catalogs in this repo
 
 - [`data/nasa_lpcloud/`](../data/nasa_lpcloud/README.md) — 1,084 LP DAAC (LPCLOUD) collections,
   classified by theme, 714 with coverage over Spain. Each has a `metadata.json` with concept ID,
   temporal scope and pre-filtered Spain search/API links.
-- [`data/dataset1/`](../data/dataset1/) — NOAA GHCN-Daily station data for Spain, 2022-01-01 →
-  2026-11-07 (PRCP, SNWD, TAVG, TMAX, TMIN). **Not NASA**: usable only as ground-truth/validation.
-  Limitations: < 5 years (too short for a climate trend); exported in CDO "Standard" units
-  (°F, inches — verify before use); sparse TAVG/SNWD; check quality flags in `*_ATTRIBUTES`.
+- [`data/dataset1/`](../data/dataset1/) — NOAA GHCN-Daily station data for Spain (PRCP, SNWD, TAVG,
+  TMAX, TMIN). Useful alongside NASA data. Tips: the record is short (a few years); check units
+  and the quality flags in `*_ATTRIBUTES`.
 
 ## Candidate NASA datasets for Spain
 
-Coverage for LP DAAC rows comes from the local catalog metadata; other rows are from provider
-documentation and **must be re-checked in CMR before selection**.
+Coverage for LP DAAC rows comes from the local catalog metadata; other rows come from provider
+documentation (worth a quick check in CMR).
 
-| Variable | Dataset (version) | Spatial / temporal res. | Coverage | Units | Known limitations | Status |
+| Variable | Dataset (version) | Spatial / temporal res. | Coverage | Units | Notes | Status |
 |---|---|---|---|---|---|---|
-| Land surface temperature | MOD11A1 v061 (`C1748058432-LPCLOUD`) | 1 km / daily | 2000-02-24 → present | K (scale 0.02) | Clear-sky only; LST ≠ air temperature; view-angle & cloud gaps | CANDIDATE |
-| Vegetation (NDVI/EVI) | MOD13Q1 v061 (`C1748066515-LPCLOUD`) | 250 m / 16-day | 2000-02-18 → present | unitless (scale 0.0001) | Composite; use pixel reliability QA; land-cover change confounds trends | CANDIDATE |
-| Evapotranspiration | MOD16A2GF v061 (`C2565791021-LPCLOUD`) | 500 m / 8-day | 2000-01-01 → present | kg/m²/8-day (scale 0.1) | Model product; gap-filled annually; urban/water fill values | CANDIDATE |
-| Burned area | MCD64A1 v061 (`C2565786756-LPCLOUD`) | 500 m / monthly | 2000-11-01 → present | burn date (day of year) | Misses small fires; event data — trend needs careful aggregation | CANDIDATE |
-| Land cover | MCD12Q1 v061 (`C2484079608-LPCLOUD`) | 500 m / yearly | 2001 → present | class | Classification noise year-to-year; context layer, not a trend target | CANDIDATE (context) |
-| Vegetation, high-res | HLSS30_VI v2.0 (`C3246894861-LPCLOUD`) | 30 m / ~2–5 day | 2015-11-28 → present | unitless | Short record; heavy volume | CANDIDATE |
-| LST, high-res | ECO_L2T_LSTE v002 (`C2076090826-LPCLOUD`) | 70 m / irregular | 2018-07-09 → present | K | Irregular ISS overpass times; not suited to trends | CANDIDATE (unlikely) |
-| Precipitation | GPM IMERG Final (GES DISC) | 0.1° / daily, monthly | ~2000 → present (verify) | mm | Satellite-gauge merged; coarse for small regions | CANDIDATE — verify |
-| Air temperature, reanalysis | MERRA-2 (GES DISC) | 0.5° × 0.625° / hourly–monthly | 1980 → present (verify) | K | Reanalysis (model), not observation; coarse | CANDIDATE — verify |
-| Soil moisture | SMAP L3 (NSIDC) / GLDAS (GES DISC) | 9–36 km / 0.25° | SMAP 2015 →; GLDAS-2.1 2000 → (verify) | m³/m³, kg/m² | Short record (SMAP) or model (GLDAS) | CANDIDATE — verify |
+| Land surface temperature | MOD11A1 v061 (`C1748058432-LPCLOUD`) | 1 km / daily | 2000-02-24 → present | K (scale 0.02) | Clear-sky only; LST ≠ air temperature | CANDIDATE |
+| Vegetation (NDVI/EVI) | MOD13Q1 v061 (`C1748066515-LPCLOUD`) | 250 m / 16-day | 2000-02-18 → present | unitless (scale 0.0001) | 16-day composite; pixel reliability QA available | CANDIDATE |
+| Evapotranspiration | MOD16A2GF v061 (`C2565791021-LPCLOUD`) | 500 m / 8-day | 2000-01-01 → present | kg/m²/8-day (scale 0.1) | Model product, gap-filled | CANDIDATE |
+| Burned area | MCD64A1 v061 (`C2565786756-LPCLOUD`) | 500 m / monthly | 2000-11-01 → present | burn date (day of year) | Event data; aggregate for trends | CANDIDATE |
+| Land cover | MCD12Q1 v061 (`C2484079608-LPCLOUD`) | 500 m / yearly | 2001 → present | class | Good context layer | CANDIDATE |
+| Vegetation, high-res | HLSS30_VI v2.0 (`C3246894861-LPCLOUD`) | 30 m / ~2–5 day | 2015-11-28 → present | unitless | Short record; large volume | CANDIDATE |
+| LST, high-res | ECO_L2T_LSTE v002 (`C2076090826-LPCLOUD`) | 70 m / irregular | 2018-07-09 → present | K | Irregular overpass times | CANDIDATE |
+| Precipitation | GPM IMERG Final (GES DISC) | 0.1° / daily, monthly | ~2000 → present | mm | Satellite-gauge merged | CANDIDATE |
+| Air temperature, reanalysis | MERRA-2 (GES DISC) | 0.5° × 0.625° / hourly–monthly | 1980 → present | K | Reanalysis (model) | CANDIDATE |
+| Soil moisture | SMAP L3 (NSIDC) / GLDAS (GES DISC) | 9–36 km / 0.25° | SMAP 2015 →; GLDAS-2.1 2000 → | m³/m³, kg/m² | SMAP record is short | CANDIDATE |
 
-## Selection criteria
+## Tips for picking a dataset
 
-A dataset can become VALIDATED only when:
-
-1. It is a NASA resource relevant to the challenge.
-2. Record length supports a trend (target ≥ 20 years for climate-style trends).
-3. A Spain subset was actually downloaded and inspected (sample first).
-4. Units, scale factors, fill values and QA flags are documented.
-5. Licence/citation is recorded.
-6. A provenance file exists in `data/metadata/`.
+- A NASA resource relevant to the challenge (event rule).
+- Longer records make trends more convincing (20+ years is great, shorter is OK for exploration).
+- Noting units, scale factors and source helps the *Validity* judging criterion.
+- A small provenance note in `data/metadata/` is handy but optional.

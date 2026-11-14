@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* Design tokens — dark, restrained, scientific. */
+@theme {
+  --color-space: #03050a;
+  --color-ink: #e8edf3;
+  --color-muted: #9aa8b8;
+  --color-faint: #64748b;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-accent: #7cc4ff;
+  --color-accent-ink: #04121f;
+  --color-warn: #f5c26b;
+  --color-danger: #ff8a80;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@utility panel {
+  background-color: rgb(8 12 20 / 0.84);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+html,
+body {
+  background: var(--color-space);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Cesium: fill container, quiet attribution styling (credits stay visible). */
+.cesium-viewer,
+.cesium-widget,
+.cesium-widget canvas {
+  width: 100%;
+  height: 100%;
+}
+.cesium-widget canvas:focus {
+  outline: none;
+}
+.globe-credits .cesium-widget-credits {
+  position: static;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.globe-credits .cesium-credit-textContainer,
+.globe-credits .cesium-credit-expand-link,
+.globe-credits a {
+  color: var(--color-muted) !important;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.globe-credits .cesium-credit-logoContainer img {
+  max-height: 14px;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
