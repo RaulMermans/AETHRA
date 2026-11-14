@@ -1,0 +1,80 @@
+{
+  "collection": {
+    "short_name": "GLREFL",
+    "version": "001",
+    "title": "G-LiHT Hyperspectral Reflectance V001",
+    "concept_id": "C2763264745-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "08_reflectancia_radiancia_e_imagenes",
+    "has_granules": true,
+    "granule_count": 4215,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "3",
+    "platforms": [
+      "G-LiHT"
+    ],
+    "instruments": [
+      "Headwall",
+      "Riegl Airborne Lidar"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2011-06-30",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "386.8 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -170,
+        "south": 10,
+        "east": -50,
+        "north": 73
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "REFLECTANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "LIDAR",
+        "variable_level_1": ""
+      }
+    ],
+    "summary": "Goddard’s LiDAR, Hyperspectral, and Thermal Imager ([G-LiHT](https://gliht.gsfc.nasa.gov/)) mission is a portable, airborne imaging system that aims to simultaneously map the composition, structure, and function of terrestrial ecosystems. G-LiHT primarily focuses on a broad diversity of forest communities and ecoregions in North America, mapping aerial swaths over the Conterminous United States (CONUS), Alaska, Puerto Rico, and Mexico. The purpose of G-LiHT’s Hyperspectral Reflectance data product (GLREFL) is to provide high-resolution reflectance data, ranging in wavelength from 418 to 920 nanometers across 114 spectral ranges. Reflectance data is computed as the ratio between observed upwelling radiance and downwelling hemispheric irradiance and corrected for differences in cross-track illumination and Bidirectional Reflectance Distribution Function (BRDF) using an empirically derived multiplier. At a nominal flying height of 335 m above ground level (AGL), the at-sensor reflectance is a close approximation of surface reflectance. GLREFL data are processed as a zipped raster data product (GeoTIFF) with associated header file (.hdr) at 1 meter spatial resolution over locally defined areas. A low-resolution browse is also provided with a color map applied in PNG format.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/GLIHT/GLREFL.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763264745-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763264745-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

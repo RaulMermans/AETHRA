@@ -1,0 +1,106 @@
+{
+  "collection": {
+    "short_name": "GFSAD30SAAFGIRCE",
+    "version": "001",
+    "title": "Global Food Security-support Analysis Data (GFSAD) Cropland Extent 2015 South Asia, Afghanistan, and Iran product 30 m V001",
+    "concept_id": "C2763261689-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "04_agricultura_cultivos_y_cobertura_suelo",
+    "has_granules": true,
+    "granule_count": 18,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "3",
+    "platforms": [
+      "LANDSAT-8",
+      "LANDSAT-7",
+      "DEM",
+      "LANDSAT-5"
+    ],
+    "instruments": [
+      "OLI",
+      "ETM+",
+      "TM"
+    ],
+    "temporal_scope": {
+      "resolution": "4 Year",
+      "start_date": "2013-01-01",
+      "end_date": "2016-06-30",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "27.5 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": 39.998656,
+        "south": -10.038404,
+        "east": 100.001086,
+        "north": 40.10861
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "AGRICULTURE",
+        "term": "AGRICULTURAL PLANT SCIENCE",
+        "variable_level_1": "CROP/PLANT YIELDS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE CLASSES"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LANDSCAPE",
+        "variable_level_1": "LANDSCAPE PATTERNS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "ECOSYSTEMS",
+        "variable_level_1": "ANTHROPOGENIC/HUMAN INFLUENCED ECOSYSTEMS"
+      }
+    ],
+    "summary": "The NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Global Food Security-support Analysis Data (GFSAD) data product provides cropland extent data over South Asia, Afghanistan, and Iran for nominal year 2015 at 30 meter resolution (GFSAD30SAAFGIRCE). The monitoring of global cropland extent is critical for policymaking and provides important baseline data that are used in many agricultural cropland studies pertaining to water sustainability and food security. The GFSAD30SAAFGIRCE data product uses the pixel-based supervised classifier, Random Forest (RF), to retrieve cropland extent from a combination of Landsat 8 Operational Land Imager (OLI) and elevation derived from the Shuttle Radar Topography Mission (SRTM) Version 3 data products. Each GFSAD30SAAFGIRCE GeoTIFF file contains a cropland extent layer that defines areas of cropland, non-cropland, and water bodies over a 10° by 10° area. Known Issues * Known issues, including constraints and limitations, are provided on page 18 of the ATBD.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEaSUREs/GFSAD/GFSAD30SAAFGIRCE.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763261689-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763261689-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1396/GFSAD30SAAFGIRCE_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1396/GFSAD30SAAFGIRCE_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1397/GFSAD30SAAFGIRCE_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT SOFTWARE DOCUMENTATION",
+          "url": "https://lpdaac.usgs.gov/documents/161/GFSAD30SAAFGIRCE_Source_Code_V1.zip",
+          "description": "This documentation contains the software code used to generate the cropland extent data."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "collection": {
+    "short_name": "MSLSP30NA",
+    "version": "011",
+    "title": "MuSLI Multi-Source Land Surface Phenology Yearly North America 30 m V011",
+    "concept_id": "C2763268457-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 11120,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "3",
+    "platforms": [
+      "LANDSAT-8",
+      "Sentinel-2A",
+      "Sentinel-2B"
+    ],
+    "instruments": [
+      "OLI",
+      "Sentinel-2 MSI"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Year",
+      "start_date": "2016-01-01",
+      "end_date": "2019-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "netCDF-4",
+      "avg_file_size": "113.5 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": 0,
+        "east": 0,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "PLANT PHENOLOGY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": ""
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      }
+    ],
+    "summary": "The Multi-Source Land Surface Phenology (LSP) Yearly North America 30 meter (m) Version 1.1 product (MSLSP) provides a Land Surface Phenology product for North America derived from Harmonized Landsat Sentinel-2 (HLS) data. Data from the combined Landsat 8 Operational Land Imager (OLI) and Sentinel-2A and 2B Multispectral Instrument (MSI) provides the user community with dates of phenophase transitions, including the timing of greenup, maturity, senescence, and dormancy at 30m spatial resolution. These data sets are useful for a wide range of applications, including ecosystem and agro-ecosystem modeling, monitoring the response of terrestrial ecosystems to climate variability and extreme events, crop-type discrimination, and land cover, land use, and land cover change mapping. Provided in the MSLSP product are layers for percent greenness, onset greenness dates, Enhanced Vegetative Index (EVI2) amplitude, and maximum EVI2, and data quality information for up to two phenological cycles per year. For areas where the data values are missing due to cloud cover or other reasons, the data gaps are filled with good quality values from the year directly preceding or following the product year. A low resolution browse image representing maximum EVI is also available for each MSLSP30NA granule. Known Issues * Data are sparse in 2016 and early 2017, as Sentinel-2B was not yet launched, and Sentinel-2A was not fully operational, leading to poorer quality retrievals of phenology in 2016 and 2017. However, poor quality pixels can be masked with Quality Assurance (QA) flags. * Disturbance has not been explicitly accounted for or mapped, which can lead to premature detections of senescence and dormancy when sharp spectral changes occur. * Pixels with more than two growth cycles per year (e.g., alfalfa fields) may not be accurately characterized, especially if they occur in rapid succession.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/MuSLI/MSLSP30NA.011",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763268457-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763268457-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1121/MSLSP30NA_User_Guide_V011.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1121/MSLSP30NA_User_Guide_V011.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

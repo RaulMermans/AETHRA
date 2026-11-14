@@ -1,0 +1,95 @@
+{
+  "collection": {
+    "short_name": "LGRIP30_L2_RAIN",
+    "version": "002",
+    "title": "Landsat-Derived Global Rainfed-Cropland Product L2 2020 30 m V002",
+    "concept_id": "C3263433662-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "04_agricultura_cultivos_y_cobertura_suelo",
+    "thematic_group": "04_agricultura_cultivos_y_cobertura_suelo",
+    "has_granules": true,
+    "granule_count": 17,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "LANDSAT-8"
+    ],
+    "instruments": [
+      "OLI"
+    ],
+    "temporal_scope": {
+      "resolution": "3 Year",
+      "start_date": "2019-01-01",
+      "end_date": "2021-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "24.2 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "AGRICULTURE",
+        "term": "AGRICULTURAL PLANT SCIENCE",
+        "variable_level_1": "CROP/PLANT YIELDS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE CLASSES"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LANDSCAPE",
+        "variable_level_1": "LANDSCAPE PATTERNS"
+      }
+    ],
+    "summary": "The Landsat-Derived Global Rainfed-Cropland Product Level 2 2020 (LGRIP30_L2_RAIN) Version 2 data provides high-resolution, 30 meter (m) cropland data to assist and address food and water security issues of the twenty-first century. As an extension of the Global Food Security-support Analysis Data ([GFSAD](https://www.usgs.gov/centers/western-geographic-science-center/science/global-food-security-support-analysis-data-30-m)) project, LGRIP_L2_RAIN V2 maps agricultural lands by dividing them into rainfed single croplands and rainfed single croplands mixed with natural vegetation, and calculates applicable cropland areas across the globe. LGRIP data are produced using Landsat 8 time-series satellite sensor data for the 2019 through 2021 time period to create a nominal 2020 product. Each LGRIP L2 Rainfed 30 m resolution GeoTIFF file contains a layer that identifies areas of rainfed cropland (cropland areas that are purely dependent on direct precipitation without any artificial watering) divided into single crop and single crop that is mixed with natural vegetation, non-rainfed land (irrigated croplands and areas not classified as cropland), and water bodies over a 10° by 10° area, as well as an accuracy assessment of the product. A low-resolution browse image is also included. Currently, LGRIP30 V2 products only contain data for the conterminous United States (CONUS). LGRIP30 V2 data covering the rest of the globe will be added at a later date.",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/LGRIP/LGRIP30_L2_RAIN.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C3263433662-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C3263433662-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C3263433662-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C3263433662-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3263433662-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3263433662-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/2087/LGRIP30_User_Guide_v2.pdf",
+      "documentation": [
+        {
+          "subtype": "VIEW RELATED INFORMATION",
+          "url": "https://www.usgs.gov/centers/western-geographic-science-center/science/global-food-security-support-analysis-data-30-m",
+          "description": "GFSAD Homepage"
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/2158/LGRIP30_ATBD_v2.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/2087/LGRIP30_User_Guide_v2.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

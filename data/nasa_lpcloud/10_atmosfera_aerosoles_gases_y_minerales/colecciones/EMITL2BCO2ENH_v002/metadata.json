@@ -1,0 +1,93 @@
+{
+  "collection": {
+    "short_name": "EMITL2BCO2ENH",
+    "version": "002",
+    "title": "EMIT L2B Carbon Dioxide Enhancement Data 60 m V002",
+    "concept_id": "C3243477145-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "10_atmosfera_aerosoles_gases_y_minerales",
+    "thematic_group": "10_atmosfera_aerosoles_gases_y_minerales",
+    "has_granules": true,
+    "granule_count": 248520,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Regional (incluye España)",
+    "processing_level": "2B",
+    "platforms": [
+      "ISS"
+    ],
+    "instruments": [
+      "EMIT Imaging Spectrometer"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2022-08-09",
+      "end_date": "2026-08-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "COG",
+      "avg_file_size": "26.4 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -54,
+        "east": 180,
+        "north": 54
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "ATMOSPHERE",
+        "term": "AIR QUALITY",
+        "variable_level_1": "EMISSIONS"
+      }
+    ],
+    "summary": "The Earth Surface Mineral Dust Source Investigation (EMIT) instrument measures surface mineralogy, targeting the Earth’s arid dust source regions. EMIT is installed on the International Space Station. EMIT uses imaging spectroscopy to take measurements of sunlit regions of interest between 52° N latitude and 52° S latitude. An interactive map showing the regions being investigated, current and forecasted data coverage, and additional data resources can be found on the VSWIR Imaging Spectroscopy Interface for Open Science (VISIONS) [EMIT Open Data Portal](https://earth.jpl.nasa.gov/emit/data/data-portal/coverage-and-forecasts/). In addition to its primary objective described above, EMIT has demonstrated the capacity to characterize methane (CH4) and carbon dioxide (CO2) point-source emissions by measuring gas absorption features in the shortwave infrared bands. The EMIT Level 2B Carbon Dioxide Enhancement Data (EMITL2BCO2ENH) Version 2 data product is a total vertical column enhancement estimate of carbon dioxide in parts per million meter (ppm m) based on an adaptive matched filter approach. EMITL2BCO2ENH provides per-pixel carbon dioxide enhancement data used to identify carbon dioxide plume complexes, per-pixel carbon dioxide uncertainty due to sensor noise, and per-pixel carbon dioxide sensitivity that can be used to remove bias from the enhancement data. The EMITL2BCO2ENH Version 2 data product includes methane enhancement granules for all captured scenes, regardless of carbon dioxide plume complex identification. Each granule contains three Cloud Optimized GeoTIFF (COG) files at a spatial resolution of 60 meters (m): Carbon Dioxide Enhancement (EMIT_L2B_CO2ENH), Carbon Dioxide Uncertainty (EMIT_L2B_CO2UNCERT), and Carbon Dioxide Sensitivity (EMIT_L2B_CO2SENS). The EMITL2BCO2ENH COG files contain carbon dioxide enhancement data based primarily on [EMITL1BRAD](https://doi.org/10.5067/EMIT/EMITL1BRAD.001) radiance values. Each granule is approximately 75 kilometers (km) by 75 km, nominal at the equator, with some granules near the end of an orbit segment reaching 150 km in length. Known Issues * Data acquisition gap: From September 13, 2022, through January 6, 2023, a power issue outside of EMIT caused a pause in operations. Due to this shutdown, no data were acquired during that timeframe.",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/EMIT/EMITL2BCO2ENH.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C3243477145-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C3243477145-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C3243477145-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C3243477145-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3243477145-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3243477145-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://github.com/emit-sds/emit-sds-tgp/blob/main/docs/EMIT_L2B_TRACE_GAS_User_Guide.md",
+      "documentation": [
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://github.com/emit-sds/emit-sds-tgp/blob/main/docs/EMIT_L2B_TRACE_GAS_ATBD.md",
+          "description": "The Algorithm Theoretical Basis Document (ATBD) describes the physical and mathematical algorithms for the product."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://github.com/emit-sds/emit-sds-tgp/blob/main/docs/EMIT_L2B_TRACE_GAS_User_Guide.md",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT SOFTWARE DOCUMENTATION",
+          "url": "https://github.com/emit-sds/emit-ghg",
+          "description": "EMIT Level 2B greenhouse gas science data system repository."
+        },
+        {
+          "subtype": "HOW-TO",
+          "url": "https://github.com/nasa/EMIT-Data-Resources",
+          "description": "The LP DAAC GitHub repository provides guides, Python notebooks, and scripts to help users access and work with data from the EMIT mission."
+        },
+        {
+          "subtype": "HOW-TO",
+          "url": "https://lpdaac.usgs.gov/search/?query=EMIT&content_types=E-Learning&view=cards&sort=relevance",
+          "description": "EMIT data E-Learning resources provided by NASA's LP DAAC."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

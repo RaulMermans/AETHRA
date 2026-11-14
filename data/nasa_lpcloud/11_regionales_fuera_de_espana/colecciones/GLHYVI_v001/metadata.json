@@ -1,0 +1,110 @@
+{
+  "collection": {
+    "short_name": "GLHYVI",
+    "version": "001",
+    "title": "G-LiHT Hyperspectral Vegetative Indices V001",
+    "concept_id": "C2763264731-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 3309,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "3",
+    "platforms": [
+      "G-LiHT"
+    ],
+    "instruments": [
+      "Headwall",
+      "Riegl Airborne Lidar"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2011-06-30",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "324.6 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -170,
+        "south": 10,
+        "east": -50,
+        "north": 73
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "LIDAR",
+        "variable_level_1": ""
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "VISIBLE WAVELENGTHS",
+        "variable_level_1": "VISIBLE RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "INFRARED WAVELENGTHS",
+        "variable_level_1": "INFRARED RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "ULTRAVIOLET WAVELENGTHS",
+        "variable_level_1": "ULTRAVIOLET RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "MICROWAVE",
+        "variable_level_1": "MICROWAVE RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      }
+    ],
+    "summary": "Goddard’s LiDAR, Hyperspectral, and Thermal Imager ([G-LiHT](https://gliht.gsfc.nasa.gov/)) mission is a portable, airborne imaging system that aims to simultaneously map the composition, structure, and function of terrestrial ecosystems. G-LiHT primarily focuses on a broad diversity of forest communities and ecoregions in North America, mapping aerial swaths over the Conterminous United States (CONUS), Alaska, Puerto Rico, and Mexico. The purpose of G-LiHT’s Hyperspectral Vegetative Indices data product (GLHYVI) is to provide vegetative, stress, and other index data in 44 science dataset layers. Included in the product are vegetative indices such as Normalized Difference Vegetation Index (NDVI), Triangular Vegetation Index (TVI), Renormalized Difference Vegetation Index (RDVI), Modified Triangular Vegetation Index (MTVI), and Difference Vegetation Index (DVI). Stress indices include, but are not limited to, Carter Stress, Gitelson and Merzlyac Stress, Maccioni Stress, and Vogelmann Stress. GLHYVI data are processed as a raster data product (GeoTIFF) at 1 meter spatial resolution over locally defined areas. A browse image displaying NDVI is also included. Some data files may be in ENVI format.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/GLIHT/GLHYVI.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763264731-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763264731-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

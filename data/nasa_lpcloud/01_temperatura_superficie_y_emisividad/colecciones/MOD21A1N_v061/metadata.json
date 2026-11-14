@@ -1,0 +1,109 @@
+{
+  "collection": {
+    "short_name": "MOD21A1N",
+    "version": "061",
+    "title": "MODIS/Terra Land Surface Temperature/3-Band Emissivity Daily L3 Global 1km SIN Grid Night V061",
+    "concept_id": "C2545303093-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "01_temperatura_superficie_y_emisividad",
+    "thematic_group": "01_temperatura_superficie_y_emisividad",
+    "has_granules": true,
+    "granule_count": 2757764,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Terra"
+    ],
+    "instruments": [
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2000-02-24",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "0.9 MB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "EMISSIVITY"
+      }
+    ],
+    "summary": "A suite of Moderate Resolution Imaging Spectroradiometer (MODIS) Land Surface Temperature and Emissivity (LST&E) products are available in Collection 6.1. The MOD21 Land Surface Temperature (LST) algorithm differs from the algorithm of the [MOD11](https://doi.org/10.5067/modis/mod11_l2.061) LST products, in that the MOD21 algorithm is based on the ASTER Temperature/Emissivity Separation (TES) technique, whereas the MOD11 uses the split-window technique. The MOD21 TES algorithm uses a physics-based algorithm to dynamically retrieve both the LST and spectral emissivity simultaneously from the MODIS thermal infrared bands 29, 31, and 32. The TES algorithm is combined with an improved Water Vapor Scaling (WVS) atmospheric correction scheme to stabilize the retrieval during very warm and humid conditions. The MOD21A1N dataset is produced daily from nighttime Level 2 Gridded (L2G) intermediate LST products at a spatial resolution of 1,000 meters. The L2G process maps the daily [MOD21](http://doi.org/10.5067/MODIS/MOD21.061) swath granules onto a sinusoidal MODIS grid and stores all observations falling over a gridded cell for a given day. The MOD21A1 algorithm sorts through these observations for each cell and estimates the final LST value as an average from all observations that are cloud free and have good LST&E accuracies. The nighttime average is weighted by the observation coverage for that cell. Only observations having an observation coverage greater than a 15% threshold are considered. The MOD21A1N product contains seven Science Datasets (SDS), which include the calculated LST as well as quality control, the three emissivity bands, view zenith angle, and time of observation. Additional details regarding the methodology used to create this Level 3 (L3) product are available in the Algorithm Theoretical Basis Document (ATBD). Known Issues * Users of MODIS LST products may notice an increase in occurrences of [extreme high temperature outliers](https://landweb.modaps.eosdis.nasa.gov/displayissue?id=117) in the unfiltered MxD21 Version 6 and 6.1 products compared to the heritage MxD11 LST products. This can occur especially over desert regions like the Sahara where undetected cloud and dust can negatively impact both the MxD21 and MxD11 retrieval algorithms. * In the MxD11 LST products, these contaminated pixels are flagged in the algorithm and set to fill values in the output products based on differences in the band 32 and band 31 radiances used in the generalized split window algorithm. In the MxD21 LST products, values for the contaminated pixels are retained in the output products (and may result in overestimated temperatures), and users need to apply Quality Control (QC) filtering and other error analyses for filtering out bad values. High temperature outlier thresholds are not employed in MxD21 since it would potentially remove naturally occurring hot surface targets such as fires and lava flows. * High atmospheric aerosol optical depth (AOD) caused by vast dust outbreaks in the Sahara and other deserts highlighted in the example documentation are the primary reason for high outlier surface temperature values (and corresponding low emissivity values) in the MxD21 LST products. Future versions of the MxD21 product will include a dust flag from the MODIS aerosol product and/or brightness temperature look up tables to filter out contaminated dust pixels. It should be noted that in the MxD11B day/night algorithm products, more advanced cloud filtering is employed in the multi-day products based on a temporal analysis of historical LST over cloudy areas. This may result in more stringent filtering of dust contaminated pixels in these products. * In order to mitigate the impact of dust in the MxD21 V6 and 6.1 products, the science team recommends using a combination of the existing QC bits, emissivity values, and estimated product errors, to confidently remove bad pixels from analysis. For more details, refer to this dust and cloud contamination [example documentation](https://landweb.modaps.eosdis.nasa.gov/data/userguide/MOD21_dust_QC_examples.pdf). * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=MODIS&sat=Terra&as=61).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MODIS/MOD21A1N.061",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2545303093-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2545303093-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2545303093-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2545303093-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545303093-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545303093-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1398/MOD21_User_Guide_V61.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1398/MOD21_User_Guide_V61.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1399/MOD21_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/MODIS/61/MOD21A1N_c61",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/MODLAND_val.html",
+          "description": "Validation at stage 2 has been achieved for the MODIS Land Surface Temperature and Emissivity data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/ValStatus.php?ProductID=MOD21",
+          "description": "Further details regarding MODIS land product validation for the MOD21 data products are available from the MODIS Land Team Validation site."
+        },
+        {
+          "subtype": "DATA QUALITY",
+          "url": "https://appeears.earthdatacloud.nasa.gov/",
+          "description": "In addition to data access and transformation processes, AppEEARS also has the capability to unpack and interpret the quality layers."
+        },
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov/",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

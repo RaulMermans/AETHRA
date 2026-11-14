@@ -1,0 +1,76 @@
+{
+  "collection": {
+    "short_name": "LPJ_L2_SSREF",
+    "version": "002",
+    "title": "LPJ-PROSAIL L2 Global Simulated Dynamic Surface Reflectance V002",
+    "concept_id": "C2814093815-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "08_reflectancia_radiancia_e_imagenes",
+    "thematic_group": "08_reflectancia_radiancia_e_imagenes",
+    "has_granules": true,
+    "granule_count": 23,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "LPJ-PROSAIL"
+    ],
+    "instruments": [],
+    "temporal_scope": {
+      "resolution": "1 Month",
+      "start_date": "2000-01-01",
+      "end_date": "2022-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "netCDF-4",
+      "avg_file_size": "1198.7 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "REFLECTANCE"
+      }
+    ],
+    "summary": "[LPJ-PROSAIL](https://www.greencurrey.com/lpj-prosail) simulated data products are produced through the coupling of the Lund-Potsdam-Jena dynamic global vegetation model (LPJ) and PROSAIL, a radiative transfer model. The simulated imaging spectroscopy data were produced to aid in the development of workflows, algorithm testing, and other activities during the lead up to future global spaceborne imaging spectroscopy missions such as NASA’s Surface Biology and Geology ([SBG](https://sbg.jpl.nasa.gov/)). The LPJ-PROSAIL Level 2 Global Simulated Dynamic Surface Reflectance (LPJ_L2_SSREF) Version 2 data product provides simulated dynamic surface reflectance data in five Network Common Data Format Version 4 (netCDF-4) files, each containing a different reflectance stream at a spatial resolution of 0.5 degrees (~50 kilometers): bidirectional (BDR), bi-hemispherical (BHR), hemispherical-directional (HDR), directional-hemispherical (DHR), and directional (DR). Each reflectance file within a granule contains simulated surface reflectance measurements of 211 bands with 10 nanometer (nm) spectral resolution across a spectral range of 400 to 2500 nm for the entire globe. The data are presented with four dimensions: latitude, longitude, bands (wavelength), and time. Each netCDF-4 file holds a one-dimensional list for each of the four dimensions containing the values that are associated with those dimensions. LPJ_L2_SSREF Version 2 is composed of data for the years 2000 to 2022 with monthly time increments. Known Issues * Data Usage Warning: These data are meant to be used in development of workflows, algorithms, and other instances where large imaging spectroscopy datasets are needed for testing. Due to the simulated nature of these data, these data are not intended for scientific use and should not be used for any real-world scientific analyses or conclusions.",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/LPJ-PROSAIL/LPJ_L2_SSREF.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2814093815-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2814093815-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2814093815-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2814093815-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2814093815-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2814093815-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1903/LPJ-PROSAIL_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "RELATED ARTICLES",
+          "url": "https://doi.org/10.1029/2022JG006935",
+          "description": "Simulating Global Dynamic Surface Reflectances for Imaging Spectroscopy Spaceborne Missions: LPJ-PROSAIL"
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1903/LPJ-PROSAIL_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

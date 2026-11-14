@@ -1,0 +1,138 @@
+{
+  "collection": {
+    "short_name": "AG5KMMOH",
+    "version": "041",
+    "title": "ASTER Global Emissivity Dataset, Monthly, 0.05 deg, HDF5 V041",
+    "concept_id": "C2763268461-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "01_temperatura_superficie_y_emisividad",
+    "thematic_group": "01_temperatura_superficie_y_emisividad",
+    "has_granules": true,
+    "granule_count": 184,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Terra"
+    ],
+    "instruments": [
+      "ASTER"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Month",
+      "start_date": "2000-03-01",
+      "end_date": "2015-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "HDF5",
+      "avg_file_size": "321.4 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "EMISSIVITY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "TOPOGRAPHY",
+        "variable_level_1": "TERRAIN ELEVATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "TOPOGRAPHY",
+        "variable_level_1": "TERRAIN ELEVATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE/LAND COVER CLASSIFICATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE/LAND COVER CLASSIFICATION"
+      }
+    ],
+    "summary": "The Terra Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) Global Emissivity Dataset (GED) is a collection of monthly files (see known issues for gaps) for each year of global emissivity. The ASTER GED data products are generated for 2000 through 2015 using the ASTER Temperature Emissivity Separation (TES) algorithm atmospheric correction method. This algorithm method uses Moderate Resolution Imaging Spectroradiometer (MODIS) Atmospheric Profiles product MOD07 and the MODerate spectral resolution TRANsmittance (MODTRAN) 5.2 radiative transfer model along with the snow cover data from the standard monthly MODIS/Terra snow cover monthly global 0.05 degree product [MOD10CM](https://doi.org/10.5067/MODIS/MOD10CM.006), and vegetation information from the MODIS monthly gridded NDVI product [MOD13C2](https://doi.org/10.5067/MODIS/MOD13C2.006). ASTER GED Monthly V041 data products are offered in Hierarchical Data Format 5 (HDF5). The National Aeronautics and Space Administration’s (NASA) Jet Propulsion Laboratory (JPL), California Institute of Technology, developed the ASTER GED product. When using this data product in a publication, please include the citations listed under the Publications header on the Documents and Resources tab in addition to the data product citation provided below. Known Issues * Since ASTER GED Monthly V041 uses MOD10CM as an input, there will be some months that were unable to be created due to missing data. Please see the [MODIS/Terra Data Outages Webpage](https://landweb.modaps.eosdis.nasa.gov/knownissue?as=61) for more information.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/COMMUNITY/ASTER_GED/AG5KMMOH.041",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763268461-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763268461-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763268461-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763268461-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268461-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268461-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/16/ASTERGED_User_Guide_V4.1.pdf",
+      "documentation": [
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://doi.org/10.1002/2015GL065564",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/16/ASTERGED_User_Guide_V4.1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1029/2012JD018506",
+          "description": "Hulley, G.C., Hughes, C.G., and Hook, S.J., 2012, Quantifying uncertainties in land surface temperature and emissivity retrievals from ASTER and MODIS thermal infrared data: Journal of Geophysical Research D - Atmospheres, v. 117, no. 23, D23113, doi:10.1029/2012JD018506."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1109/TGRS.2010.2063034",
+          "description": "Hulley, G.C., and Hook, S.J., 2011, Generating consistent land surface temperature and emissivity products between ASTER and MODIS data for earth science research: IEEE Transactions on Geoscience and Remote Sensing, v. 49, no. 4, p. 1304-1315, doi:10.1109/TGRS.2010.2063034."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1016/j.rse.2009.05.005",
+          "description": "Hulley, G.C., and Hook, S.J., 2009, The North American ASTER Land Surface Emissivity Database (NAALSED) version 2.0: Remote Sensing of Environment, v. 113, no. 9, p. 1967-1975, doi:10.1016/j.rse.2009.05.005."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1016/j.rse.2009.06.005",
+          "description": "Hulley, G.C., Hook, S.J., and Baldridge, A.M., 2009, Validation of the North American ASTER Land Surface Emissivity Database (NAALSED) version 2.0 using pseudo-invariant sand dune sites: Remote Sensing of Environment, v. 113, no. 10, p. 2224-2233, doi:10.1016/j.rse.2009.06.005."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1029/2008GL034644",
+          "description": "Hulley, G.C., and Hook, S.J., 2008, A new methodology for cloud detection and classification with ASTER data: Geophysical Research Letters, v. 35, no. 16, L16812, doi:10.1029/2008GL034644."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1029/2008GL034507",
+          "description": "Hulley, G.C., Hook, S.J., and Baldridge, A.M., 2008, ASTER land surface emissivity database of California and Nevada: Geophysical Research Letters, v. 35, no. 13, L13401, doi:10.1029/2008GL034507."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

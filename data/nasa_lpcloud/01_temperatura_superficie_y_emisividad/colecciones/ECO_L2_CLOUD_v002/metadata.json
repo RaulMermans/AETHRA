@@ -1,0 +1,108 @@
+{
+  "collection": {
+    "short_name": "ECO_L2_CLOUD",
+    "version": "002",
+    "title": "ECOSTRESS Swath Cloud Mask Instantaneous L2 Global 70 m V002",
+    "concept_id": "C2076115306-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "01_temperatura_superficie_y_emisividad",
+    "thematic_group": "01_temperatura_superficie_y_emisividad",
+    "has_granules": true,
+    "granule_count": 837859,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Regional (incluye España)",
+    "processing_level": "2",
+    "platforms": [
+      "ISS"
+    ],
+    "instruments": [
+      "ECOSTRESS"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2018-07-09",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF5",
+      "avg_file_size": "891.6 KB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -54,
+        "east": 180,
+        "north": 54
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      }
+    ],
+    "summary": "The ECOsystem Spaceborne Thermal Radiometer Experiment on Space Station (ECOSTRESS) mission measures the temperature of plants to better understand how much water plants need and how they respond to stress. ECOSTRESS is attached to the International Space Station (ISS) and collects data globally between 52° N and 52° S latitudes. The ECOSTRESS Swath Cloud Mask Instantaneous L2 Global 70 m (ECO_L2_CLOUD) Version 2 data product is derived using a single-channel Bayesian cloud threshold with a look-up-table (LUT) approach. The ECOSTRESS Level 2 cloud product provides a cloud mask that can be used to determine cloud cover for accurate land surface temperature and evapotranspiration estimation. The corresponding [ECO_L1B_GEO](https://doi.org/10.5067/ECOSTRESS/ECO_L1B_GEO.002) data product is required to georeference the ECO_L2_CLOUD data product. The ECO_L2_CLOUD Version 2 data product contains two cloud mask layers: Brightness temperature LUT test and Final cloud mask. Information on how to interpret the bit fields in the cloud mask is provided in Table 7 of the User Guide. Known Issues * Data acquisition gap: ECOSTRESS was launched on June 29, 2018, and moved to autonomous science operations on August 20, 2018, following a successful in-orbit checkout period. On September 29, 2018, ECOSTRESS experienced an anomaly with its primary mass storage unit (MSU). ECOSTRESS has a primary and secondary MSU (A and B). On December 5, 2018, the instrument was switched to the secondary MSU and science operations resumed. On March 14, 2019, the secondary MSU experienced a similar anomaly, temporarily halting science acquisitions. On May 15, 2019, a new data acquisition approach was implemented, and science acquisitions resumed. To optimize the new acquisition approach TIR bands 2, 4 and 5 are being downloaded. The data products are as previously, except the bands not downloaded contain fill values (L1 radiance and L2 emissivity). This approach was implemented from May 15, 2019, through April 28, 2023. * Data acquisition gap: From February 8 to February 16, 2020, an ECOSTRESS instrument issue resulted in a data anomaly that created striping in band 4 (10.5 micron). These data products have been reprocessed and are available for download. No ECOSTRESS data were acquired on February 17, 2020, due to the instrument being in SAFEHOLD. Data acquired following the anomaly have not been affected. * Data acquisition: ECOSTRESS has now successfully returned to 5-band mode after being in 3-band mode since 2019. This feature was successfully enabled following a Data Processing Unit firmware update (version 4.1) to the payload on April 28, 2023. To better balance contiguous science data scene variables, 3-band collection is currently being interleaved with 5-band acquisitions over the orbital day/night periods. * Solar Array Obstruction: Some ECOSTRESS scenes may be affected by solar array obstructions from the International Space Station (ISS), potentially impacting data quality of obstructed pixels. The 'FieldOfViewObstruction' metadata field is included in all Version 2 products to indicate possible obstructions: * Before October 24, 2024 (orbits prior to 35724): The field is present but was not populated and does not reliably identify affected scenes. * On or after October 24, 2024 (starting with orbit 35724): The field is populated and generally accurate, except for late December 2024, when a temporary processing error may have caused false positives. * A [list of scenes](https://lpdaac.usgs.gov/documents/2249/obst_all_sort.txt) confirmed to be affected by obstructions is available and is recommended for verifying historical data (before October 24, 2024) and scenes from late December 2024. * The ISS native pointing information is coarse relative to ECOSTRESS pixels, so ECOSTRESS geolocation is improved through image matching with a basemap. Metadata in the L1B_GEO file shows the success of this geolocation improvement, using categorizations \"best\", \"good\", \"suspect\", and \"poor\". We recommend that users use only \"best\" and \"good\" scenes for evaluations where geolocation is important (e.g., comparison to field sites). For some scenes, this metadata is not reflected in the higher-level products (e.g., land surface temperature, evapotranspiration, etc.). While this metadata is always available in the geolocation product, to save users additional download, we have produced a [summary text file](https://lpdaac.usgs.gov/documents/2253/qa_20250423-present.txt) that includes the geolocation quality flags for all scenes from launch to present. At a later date, all higher-level products will reflect the geolocation quality flag correctly (the field name is GeolocationAccuracyQA). *During the time period of May 15th, 2025, through July 1st, 2025, ECOSTRESS data was noisier than expected. Cycling the payload resolved the issue, but researchers should use all levels of ECOSTRESS data acquired during this time period with caution.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/ECOSTRESS/ECO_L2_CLOUD.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2076115306-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2076115306-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2076115306-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2076115306-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2076115306-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2076115306-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1574/ECOL2_User_Guide_V2.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1574/ECOL2_User_Guide_V2.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1575/ECOL2_ATBD_V2.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "DATA PRODUCT SPECIFICATION",
+          "url": "https://lpdaac.usgs.gov/documents/380/ECO2_PSD_V1.pdf",
+          "description": "The Product Specification Document (PSD) describes the format and contents of the ECOSTRESS product."
+        },
+        {
+          "subtype": "ALGORITHM DOCUMENTATION",
+          "url": "https://lpdaac.usgs.gov/documents/299/ECO2_ASD_V1.pdf",
+          "description": "The Algorithm Specification Document (ASD) describes the computer processing used to generate the ECOSTRESS products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://lpdaac.usgs.gov/documents/1573/Quick_Guide_for_Accessing_ECOSTRESS_Swath_Data_in_NASA_Earthdata_Search.pdf",
+          "description": "The Earthdata Search Quick Guide explains how to search ECOSTRESS data in NASA Earthdata Search."
+        },
+        {
+          "subtype": "HOW-TO",
+          "url": "https://github.com/nasa/ECOSTRESS-Data-Resources",
+          "description": "The ECOSTRESS Data Resources GitHub repository provides guides, short how-tos, and tutorials to help users access and work with ECOSTRESS data."
+        },
+        {
+          "subtype": "ANOMALIES",
+          "url": "https://lpdaac.usgs.gov/documents/2249/obst_all_sort.txt",
+          "description": "List of scenes confirmed to affected by obstructions."
+        },
+        {
+          "subtype": "DATA QUALITY",
+          "url": "https://lpdaac.usgs.gov/documents/2253/qa_20250423-present.txt",
+          "description": "Summary text file that includes the geolocation quality flags for all scenes from launch to present."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

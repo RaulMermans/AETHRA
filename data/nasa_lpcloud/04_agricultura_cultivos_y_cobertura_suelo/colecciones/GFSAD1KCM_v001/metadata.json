@@ -1,0 +1,93 @@
+{
+  "collection": {
+    "short_name": "GFSAD1KCM",
+    "version": "001",
+    "title": "Global Food Security Support Analysis Data (GFSAD) Crop Mask 2010 Global 1 km V001",
+    "concept_id": "C2763261632-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "04_agricultura_cultivos_y_cobertura_suelo",
+    "thematic_group": "04_agricultura_cultivos_y_cobertura_suelo",
+    "has_granules": true,
+    "granule_count": 1,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Terra",
+      "NOAA-7",
+      "NOAA-9",
+      "NOAA-11",
+      "NOAA-14",
+      "LANDSAT-5",
+      "LANDSAT-7"
+    ],
+    "instruments": [
+      "MODIS",
+      "AVHRR",
+      "TM",
+      "ETM+"
+    ],
+    "temporal_scope": {
+      "resolution": "6 Year",
+      "start_date": "2007-01-01",
+      "end_date": "2012-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "33.4 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION COVER"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "ECOSYSTEMS",
+        "variable_level_1": "ANTHROPOGENIC/HUMAN INFLUENCED ECOSYSTEMS"
+      }
+    ],
+    "summary": "The NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Global Food Security Support Analysis Data (GFSAD) Crop Mask Global 1 kilometer (km) dataset was created using multiple input data including: remote sensing such as Landsat, Advanced Very High Resolution Radiometer (AVHRR), Satellite Probatoire d'Observation de la Terre (SPOT) vegetation and Moderate Resolution Imaging Spectrometer (MODIS); secondary elevation data; climate 50-year precipitation and 20-year temperature data; reference submeter to 5 meter resolution ground data and country statistics data. The GFSAD1KCM provides spatial distribution of a disaggregated five class global cropland extent map derived for nominal 2010 at 1 km based on four major studies: Thenkabail et al. (2009a, 2011), Pittman et al. (2010), Yu et al. (2013), and Friedl et al. (2010). The GFSAD1KCM nominal 2010 product is based on data ranging from years 2007 through 2012. Known Issues * See Section 3.0 of the GFSAD 1 km User Guide.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEASURES/GFSAD/GFSAD1KCM.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763261632-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763261632-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763261632-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763261632-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763261632-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763261632-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/172/GFSAD1K_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/172/GFSAD1K_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/173/GFSAD1K_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

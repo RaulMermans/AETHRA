@@ -1,0 +1,104 @@
+{
+  "collection": {
+    "short_name": "MYD16A2",
+    "version": "061",
+    "title": "MODIS/Aqua Net Evapotranspiration 8-Day L4 Global 500m SIN Grid V061",
+    "concept_id": "C2565794064-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "03_agua_evapotranspiracion_y_humedad",
+    "thematic_group": "03_agua_evapotranspiracion_y_humedad",
+    "has_granules": true,
+    "granule_count": 76417,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "4",
+    "platforms": [
+      "Aqua"
+    ],
+    "instruments": [
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "8 Day",
+      "start_date": "2021-01-01",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "9 MB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "ATMOSPHERE",
+        "term": "ATMOSPHERIC WATER VAPOR",
+        "variable_level_1": "WATER VAPOR PROCESSES"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "ATMOSPHERE",
+        "term": "PRECIPITATION",
+        "variable_level_1": "PRECIPITATION PROFILES"
+      }
+    ],
+    "summary": "The Aqua Moderate Resolution Imaging Spectroradiometer (MODIS) MYD16A2 Version 6.1 Evapotranspiration/Latent Heat Flux product is an 8-day composite dataset produced at 500 meter (m) pixel resolution. The improved algorithm is based on the logic of the Penman-Monteith equation, which includes inputs of daily meteorological reanalysis data along with MODIS remotely sensed data products such as vegetation property dynamics, albedo, and land cover. Provided in the MYD16A2 product are layers for composited Evapotranspiration (ET), Latent Heat Flux (LE), Potential ET (PET) and Potential LE (PLE) along with a quality control layer. Two low resolution browse images, ET and LE, are also available for each MYD16A2 granule. The pixel values for the two Evapotranspiration layers (ET and PET) are the sum of all eight days within the composite period, and the pixel values for the two Latent Heat layers (LE and PLE) are the average of all eight days within the composite period. Note that the last acquisition period of each year is a 5 or 6-day composite period depending on the year. Known Issues * Operational and uncertainty issues are provided under Section 3 in the User Guide. * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=MODIS&sat=Aqua&as=61).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MODIS/MYD16A2.061",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2565794064-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2565794064-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2565794064-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2565794064-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565794064-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565794064-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/931/MOD16_User_Guide_V61.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/931/MOD16_User_Guide_V61.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/93/MOD16_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/MODIS/61/MYD16A2_c61",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/MODLAND_val.html",
+          "description": "Validation at stage 3 has been achieved for the MODIS Evapotranspiration data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/ValStatus.php?ProductID=MOD16",
+          "description": "Further details regarding MODIS land product validation for the MYD16 data products are available from the MODIS Land Team Validation site."
+        },
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

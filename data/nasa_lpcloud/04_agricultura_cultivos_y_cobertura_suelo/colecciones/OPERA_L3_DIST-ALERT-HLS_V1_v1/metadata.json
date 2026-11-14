@@ -1,0 +1,100 @@
+{
+  "collection": {
+    "short_name": "OPERA_L3_DIST-ALERT-HLS_V1",
+    "version": "1",
+    "title": "OPERA Land Surface Disturbance Alert from Harmonized Landsat Sentinel-2 product (Version 1)",
+    "concept_id": "C2746980408-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "04_agricultura_cultivos_y_cobertura_suelo",
+    "thematic_group": "04_agricultura_cultivos_y_cobertura_suelo",
+    "has_granules": true,
+    "granule_count": 16302476,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Sentinel-2A",
+      "Sentinel-2B",
+      "Sentinel-2C",
+      "LANDSAT-8",
+      "LANDSAT-9"
+    ],
+    "instruments": [
+      "Sentinel-2 MSI",
+      "OLI"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2023-01-01",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "COG",
+      "avg_file_size": "17 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": ""
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "HUMAN DIMENSIONS",
+        "term": "ENVIRONMENTAL IMPACTS",
+        "variable_level_1": "MECHANICAL DISTURBANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "DISTURBANCE"
+      }
+    ],
+    "summary": "The Observational Products for End-Users from Remote Sensing Analysis ([OPERA](https://www.jpl.nasa.gov/go/opera)) Land Surface Disturbance Alert from Harmonized Landsat Sentinel-2 (HLS) product Version 1 maps vegetation disturbance alerts that are derived from data collected by Landsat 8 and Landsat 9 Operational Land Imager (OLI) and Sentinel-2A, Sentinel-2B, and Sentinel-2C Multi-Spectral Instrument (MSI). A vegetation disturbance alert is detected at 30 meter (m) spatial resolution when there is an indicated decrease in vegetation cover within an HLS pixel. The Level-3 data product also provides additional information about more general disturbance trends and auxiliary generic disturbance information as determined from the variations of the reflectance through the HLS scenes. [HLS](https://lpdaac.usgs.gov/product_search/?collections=HLS&status=Operational&view=list) data represent the highest temporal frequency data available at medium spatial resolution. The combined observations will provide greater sensitivity to land changes, whether of large magnitude/short duration or small magnitude/long duration. The OPERA_L3_DIST-ALERT-HLS (or DIST-ALERT) data product is provided in Cloud Optimized GeoTIFF (COG) format, and each layer is distributed as a separate file. There are 19 layers contained within the DIST-ALERT product. The layers for both vegetation and generic disturbance include disturbance status, loss or anomaly, maximum loss anomaly, disturbance confidence layer, date of disturbance, count of observations with loss anomalies, days of ongoing anomalies, and day of last disturbance detection. Additional layers are vegetation cover percent, historical percent vegetation cover, and data mask. See the Product Specification Document (PSD) for a more detailed description of the individual layers provided in the DIST-ALERT product. The OPERA project is funded by NASA’s Satellite Needs Working Group (SNWG) which provides data products developed to meet the needs of stakeholders from US government agencies. The OPERA_L3_DIST-ALERT-HLS product contains modified Copernicus Sentinel data (2020-2025). Processing Improvements/Changes * For DIST-ALERT granules processed prior to July 21, 2026, the GeoTIFF \"Input_DIST-ALERT_granule\" metadata field lists a single granule. From July 21, 2026 onward, multiple prior granules may be referenced to account for all recent HLS granules as when a granule with an earlier sensing time is made available after a granule with a later sensing time. In this case, the field contains a comma-separated list. This processing update also applies to the \"Input_DIST-ALERT_granule\" field under the “AdditionalAttributes” section in the cmr.json file. Known Issues * Additional usage constraints are provided under Section 5 of the Algorithm Theoretical Basis Document (ATBD).",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/SNWG/OPERA_L3_DIST-ALERT-HLS_V1.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2746980408-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2746980408-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2746980408-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2746980408-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2746980408-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2746980408-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "",
+      "documentation": [
+        {
+          "subtype": "DATA PRODUCT SPECIFICATION",
+          "url": "https://lpdaac.usgs.gov/documents/1766/OPERA_DIST_HLS_Product_Specification_V1.pdf",
+          "description": "The technical information in the Product Specification enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1835/OPERA_DIST_ATBD__V1.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "PUBLICATIONS",
+          "url": "https://doi.org/10.1038/s41467-025-64014-9",
+          "description": "Rapid Monitoring of Global Land Change."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

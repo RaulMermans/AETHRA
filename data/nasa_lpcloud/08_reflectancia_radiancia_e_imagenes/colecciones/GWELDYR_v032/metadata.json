@@ -1,0 +1,97 @@
+{
+  "collection": {
+    "short_name": "GWELDYR",
+    "version": "032",
+    "title": "NASA Global Web-Enabled Landsat Data Annual Global 30 m V032",
+    "concept_id": "C2763268463-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "08_reflectancia_radiancia_e_imagenes",
+    "thematic_group": "08_reflectancia_radiancia_e_imagenes",
+    "has_granules": true,
+    "granule_count": 24258,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "LANDSAT-7",
+      "LANDSAT-5"
+    ],
+    "instruments": [
+      "ETM+",
+      "TM"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Year",
+      "start_date": "2004-01-01",
+      "end_date": "2006-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "351.9 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": ""
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "REFLECTANCE"
+      }
+    ],
+    "summary": "The NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Global Web-Enabled Landsat Data Annual (GWELDYR) Version 3.2 data product provides Landsat data at 30 meter (m) resolution for terrestrial non-Antarctica locations over annual reporting periods for the 2005 epoch. GWELD products are generated from all available Landsat 5 Thematic Mapper (TM) and Landsat 7 Enhanced Thematic Mapper Plus (ETM+) data in the U.S. Geological Survey (USGS) Landsat archive. The GWELD suite of products provides a consistent data source to derive land cover as well as geophysical and biophysical information for regional assessment of land surface dynamics. The GWELD products include Nadir Bidirectional Reflectance Distribution Function (BRDF)-Adjusted Reflectance (NBAR) for the reflective wavelength bands and top of atmosphere (TOA) brightness temperature for the thermal bands. The products are defined in the Sinusoidal coordinate system to promote continuity of NASA's Moderate Resolution Imaging Spectroradiometer (MODIS) land tile grid. Provided in the GWELDYR product are layers for surface reflectance bands 1-5 and 7, TOA brightness temperature for thermal bands, Normalized Difference Vegetation Index (NDVI), day of year, ancillary angle, and data quality information. A low-resolution red, green, blue (RGB) browse image of bands 5, 4, 3 is also available for each granule. Known Issues * GWELDYR Version 3.2 known issues can be found in Section 4 of the Algorithm Theoretical Basis Document (ATBD). * Within the CFMask_State layer, the valid range is listed in the granule metadata as 0 to 65534 which includes the fill value. To avoid inclusion of the fill value, the valid range should be considered 1 to 65534 as reflected in the Data Layers Characteristics table above. * Within the CFMask_State layer, the bit flag descriptions include a description for bit 0 that contradicts the listed fill value. In the description, bit 0 is stated as 1 when fill value is present, which prevents the use of 0 as the fill value. To avoid errors when using the CFMask_State layer, bit 0 should be ignored as an indicator of fill value.",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEaSUREs/GWELD/GWELDYR.032",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763268463-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763268463-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763268463-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763268463-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268463-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268463-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/2086/GWELD_User_Guide_V32.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/2086/GWELD_User_Guide_V32.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/2085/GWELD_ATBD_V32.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "VIEW RELATED INFORMATION",
+          "url": "https://earthdata.nasa.gov/esds/competitive-programs/measures/global-long-term-multi-sensor-weld",
+          "description": "GWELD Project Website"
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "collection": {
+    "short_name": "VJ114",
+    "version": "002",
+    "title": "VIIRS/JPSS1 Thermal Anomalies/Fire 6-Min L2 Swath 750m V002",
+    "concept_id": "C2545310869-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "05_incendios_y_anomalias_termicas",
+    "thematic_group": "05_incendios_y_anomalias_termicas",
+    "has_granules": true,
+    "granule_count": 776214,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "NOAA-20"
+    ],
+    "instruments": [
+      "VIIRS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2018-01-01",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "netCDF-4",
+      "avg_file_size": "658.6 KB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "ECOLOGICAL DYNAMICS",
+        "variable_level_1": "FIRE ECOLOGY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      }
+    ],
+    "summary": "The Visible Infrared Imaging Radiometer Suite (VIIRS) Thermal Anomalies (VJ114) Version 2 product is produced in 6-minute temporal satellite increments (swaths) at 750 meter resolution from the VIIRS sensor located on the NOAA-20 satellite. This product is designed after the Terra and Aqua Moderate Resolution Imaging Spectroradiometer (MODIS) Thermal Anomalies and Fire data products to promote the continuity of the Earth Observation System (EOS) mission. This data product can enable users to understand the location and intensity of fire events as well as identifying thermal anomalies. The VJ114 product includes 31 science dataset variables to analyze key factors in fire detection, including atmospheric conditions (e.g., atmospheric reflectance, solar zenith angle, brightness temperature) and fuel type for the event. The fire mask variable in the VJ114 product is the primary variable and can be used to identify fires and other thermal anomalies such as volcanoes. In addition to the fire mask, brightness temperature is provided for VIIRS channels M5, M7, M11, M13, M15, and M16. Each swath of data is approximately 3,060 kilometers along track (long) and 3,060 kilometers across track (wide). The VJ114 product is also used to generate higher-level fire data products. Use of the [VJ103MODLL](https://doi.org/10.5067/viirs/vj103modll.021) data product is required to apply accurate geolocation information to the VJ114 Science Datasets (SDS). Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=VIIRS) and in Section 5.0 “Frequently Asked Questions” of the User Guide.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/VIIRS/VJ114.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2545310869-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2545310869-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2545310869-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2545310869-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545310869-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545310869-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/427/VNP14_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/427/VNP14_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/133/VNP14_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/VIIRS/1/VNP14",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val/Fire_Val.html",
+          "description": "Validation at stage 1 has been achieved for the VIIRS Active Fire product suite."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val_overview.html",
+          "description": "Further details regarding VIIRS product validation and maturity status are available from VIIRS Land Product Quality Assessment site."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

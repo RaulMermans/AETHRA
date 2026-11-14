@@ -1,0 +1,134 @@
+{
+  "collection": {
+    "short_name": "MOD44B",
+    "version": "061",
+    "title": "MODIS/Terra Vegetation Continuous Fields Yearly L3 Global 250m SIN Grid V061",
+    "concept_id": "C2565805839-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "02_vegetacion_fenologia_y_productividad",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 7564,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Terra"
+    ],
+    "instruments": [
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Year",
+      "start_date": "2000-03-05",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "34.9 MB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "CANOPY CHARACTERISTICS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "EVERGREEN VEGETATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "CROWN"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "DECIDUOUS VEGETATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "LEAF CHARACTERISTICS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION COVER"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE/LAND COVER CLASSIFICATION"
+      }
+    ],
+    "summary": "The MOD44B Version 6.1 Vegetation Continuous Fields (VCF) yearly product is a global representation of surface vegetation cover as gradations of three ground cover components: percent tree cover, percent non-tree cover, and percent non-vegetated (bare). VCF products provide a continuous, quantitative portrayal of land surface cover at 250 meter (m) pixel resolution, with a sub-pixel depiction of percent cover in reference to the three ground cover components. The sub-pixel mixture of ground cover estimates represents a revolutionary approach to the characterization of vegetative land cover that can be used to enhance inputs to environmental modeling and monitoring applications. The MOD44B data product layers include percent tree cover, percent non-tree cover, percent non-vegetated, cloud cover, and quality indicators. The start date of the annual period for this product begins with day of year (DOY) 65 (March 6 except for leap year which corresponds to March 5). Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=MODIS&sat=Terra&as=61).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MODIS/MOD44B.061",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2565805839-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2565805839-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2565805839-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2565805839-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565805839-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565805839-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1494/MOD44B_User_Guide_V61.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1494/MOD44B_User_Guide_V61.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/113/MOD44B_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/MODIS/6/MOD44B",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/MODLAND_val.html",
+          "description": "Validation at stage 3 has been achieved for the MODIS Vegetation Continuous Fields data product."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/ValStatus.php?ProductID=MOD44",
+          "description": "Further details regarding MODIS land product validation for the MOD44 data are available from the MODIS Land Team Validation site."
+        },
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

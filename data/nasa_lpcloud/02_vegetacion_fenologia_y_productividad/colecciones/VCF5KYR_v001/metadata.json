@@ -1,0 +1,89 @@
+{
+  "collection": {
+    "short_name": "VCF5KYR",
+    "version": "001",
+    "title": "MEaSUREs Vegetation Continuous Fields (VCF) Yearly Global 0.05 Deg V001",
+    "concept_id": "C2763266333-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "02_vegetacion_fenologia_y_productividad",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 33,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "NOAA-7",
+      "NOAA-9",
+      "NOAA-11",
+      "NOAA-14",
+      "Terra"
+    ],
+    "instruments": [
+      "AVHRR",
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Year",
+      "start_date": "1982-01-01",
+      "end_date": "2016-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "74.2 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LANDSCAPE",
+        "variable_level_1": "LANDSCAPE PATTERNS"
+      }
+    ],
+    "summary": "The NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/community/community-data-system-programs/measures-projects)) Vegetation Continuous Fields (VCF) Version 1 data product (VCF5KYR) provides global fractional vegetation cover at 0.05 degree (5,600 meter) spatial resolution at yearly intervals from 1982 to 2016. The VCF5KYR data product is derived from a bagged linear model algorithm using Long Term Data Record Version 4 (LTDR V4) data compiled from Advanced Very High Resolution Radiometer (AVHRR) observations. Fractional vegetation cover (FVC) is the ratio of the area of the vertical projection of green vegetation above ground to the total area, capturing the horizontal distribution and density of vegetation on the Earth's surface. FVC is a primary means for measuring global forest cover change and is a key parameter for a variety of environmental and climate-related applications, including carbon land surface models and biomass measurements. The three bands included in each VCF5KYR Version 1 GeoTIFF are: percent of tree cover, non-tree vegetation, and bare ground. A water mask was applied with all pure water pixels (defined as ≥ 95% water coverage) set to zero. Data from years 1994 and 2000 were excluded due to lack of data in the LTDR V4. Known Issues * Known issues, including constraints and limitations, are provided on page 10 of the Algorithm Theoretical Basis Document (ATBD).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEaSUREs/VCF/VCF5KYR.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763266333-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763266333-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763266333-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763266333-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763266333-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763266333-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1320/VCF5KYR_User_Guide_v1.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1320/VCF5KYR_User_Guide_v1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/144/VCF5KYR_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

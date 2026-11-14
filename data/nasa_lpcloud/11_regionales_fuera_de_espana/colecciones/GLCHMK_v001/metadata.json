@@ -1,0 +1,86 @@
+{
+  "collection": {
+    "short_name": "GLCHMK",
+    "version": "001",
+    "title": "G-LiHT Canopy Height Model KML V001",
+    "concept_id": "C2763264695-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 22080,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "3",
+    "platforms": [
+      "G-LiHT"
+    ],
+    "instruments": [
+      "Headwall",
+      "Riegl Airborne Lidar"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2011-06-30",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "KML",
+      "avg_file_size": "2.4 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -170,
+        "south": 10,
+        "east": -50,
+        "north": 73
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "CANOPY CHARACTERISTICS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "TOPOGRAPHY",
+        "variable_level_1": "SURFACE ROUGHNESS"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "CANOPY CHARACTERISTICS"
+      }
+    ],
+    "summary": "Goddard’s LiDAR, Hyperspectral, and Thermal Imager ([G-LiHT](https://gliht.gsfc.nasa.gov/)) mission utilizes a portable, airborne imaging system that aims to simultaneously map the composition, structure, and function of terrestrial ecosystems. G-LiHT primarily focuses on a broad diversity of forest communities and ecoregions in North America, mapping aerial swaths over the Conterminous United States (CONUS), Alaska, Puerto Rico, and Mexico. The purpose of G-LiHT’s Canopy Height Model Keyhole Markup Language (KML) data product (GLCHMK) is to provide LiDAR-derived maximum canopy height and canopy variability information to aid in the study and analysis of biodiversity and climate change. Scientists at NASA’s Goddard Space Flight Center began collecting data over locally-defined areas in 2011 and that the collection will continue to grow as aerial campaigns are flown and processed. GLCHMK data are processed as a Google Earth overlay KML file at a nominal 1 meter spatial resolution over locally-defined areas. A low resolution browse is also provided showing the canopy height with a color map applied in JPEG format.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/GLIHT/GLCHMK.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763264695-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763264695-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1572/G-LiHT_User_Guide_V4.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "collection": {
+    "short_name": "VJ243DNBA1",
+    "version": "002",
+    "title": "VIIRS/JPSS2 DNB BRDF/Albedo Model Parameters Daily L3 Global 1km SIN Grid V002",
+    "concept_id": "C2843584342-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "09_albedo_y_brdf_por_banda",
+    "thematic_group": "09_albedo_y_brdf_por_banda",
+    "has_granules": true,
+    "granule_count": 474181,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "NOAA-21"
+    ],
+    "instruments": [
+      "VIIRS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2023-02-10",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS5",
+      "avg_file_size": "1.8 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "REFLECTANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "ALBEDO"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "ANISOTROPY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "BI-DIRECTIONAL SURFACE REFLECTANCE"
+      }
+    ],
+    "summary": "The NOAA-21 Visible Infrared Imaging Radiometer Suite (VIIRS) Day/Night Band (DNB) Bidirectional Reflectance Distribution Function (BRDF) and Albedo Model Parameters (VJ23DNBA1) Version 2 product provides BRDF/Albedo model parameters at 1 kilometer (km) resolution. The VJ243DNBA1 product is produced daily using 16 days of VIIRS data and is weighted temporally to the ninth day, which is reflected in the file name. The VJ243 data products are designed to promote the continuity of NASA’s Moderate Resolution Imaging Spectroradiometer (MODIS) BRDF/Albedo data product suite. The VJ243 algorithm uses the RossThick/Li-Sparse-Reciprocal (RTLSR) semi-empirical kernel-driven BRDF model, with the three kernel weights from VJ243DNBA1 to reconstruct surface anisotropic effects, correcting the directional reflectance to a common view geometry ([VJ243DNBA4](https://doi.org/10.5067/VIIRS/VJ243DNBA4.002)), while also computing integrated black-sky albedo (BSA) at local solar noon and white-sky albedo (WSA) ([VJ243DNBA3](https://doi.org/10.5067/VIIRS/VJ243DNBA3.002)). Researchers can use the BRDF model parameters with a simple polynomial to obtain black-sky albedo at any solar illumination angle. Likewise, both the BSA and WSA Science Dataset (SDS) variables can be used with a simple polynomial to manually estimate instantaneous actual albedo (blue-sky albedo). Additional details regarding the methodology are available in the Algorithm Theoretical Basis Document (ATBD). The VJ243DNBA1 data product provides two SDS variables for mandatory quality and model parameters representing fiso, fvol, and fgeo for the VIIRS DNB. A low-resolution browse is also available showing BRDF/Albedo parameters for the DNB as a red, green, blue (RGB) image in JPEG format. Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=VIIRS&sat=J2&as=5200).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/VIIRS/VJ243DNBA1.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2843584342-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2843584342-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2843584342-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2843584342-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2843584342-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2843584342-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://www.umb.edu/spectralmass/viirs-user-guides-c1-and-c2/vnp43dnba1-brdfalbedo-model-parameters-product/",
+      "documentation": [
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://www.umb.edu/spectralmass/viirs-user-guides-c1-and-c2/vnp43dnba1-brdfalbedo-model-parameters-product/",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/194/VNP43_ATBD_V1.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/VIIRS/1/VNP43DNBA1",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val/Albedo_Val.html",
+          "description": "Validation at stage 3 has been achieved for the VIIRS BRDF/Albedo product suite."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val_overview.html",
+          "description": "Further details regarding VIIRS product validation and maturity status are available from VIIRS Land Product Quality Assessment site."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "collection": {
+    "short_name": "MCD64A1",
+    "version": "061",
+    "title": "MODIS/Terra+Aqua Direct Broadcast Burned Area Monthly L3 Global 500m SIN Grid V061",
+    "concept_id": "C2565786756-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "05_incendios_y_anomalias_termicas",
+    "thematic_group": "05_incendios_y_anomalias_termicas",
+    "has_granules": true,
+    "granule_count": 83336,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "Terra",
+      "Aqua"
+    ],
+    "instruments": [
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Month",
+      "start_date": "2000-11-01",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "1.8 MB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "ECOLOGICAL DYNAMICS",
+        "variable_level_1": "FIRE ECOLOGY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "HUMAN DIMENSIONS",
+        "term": "ENVIRONMENTAL IMPACTS",
+        "variable_level_1": "BIOMASS BURNING"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "HUMAN DIMENSIONS",
+        "term": "NATURAL HAZARDS",
+        "variable_level_1": "WILDFIRES"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "ECOLOGICAL DYNAMICS",
+        "variable_level_1": "FIRE ECOLOGY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "HUMAN DIMENSIONS",
+        "term": "NATURAL HAZARDS",
+        "variable_level_1": "WILDFIRES"
+      }
+    ],
+    "summary": "The Terra and Aqua combined MCD64A1 Version 6.1 Burned Area data product is a monthly, global gridded 500 meter (m) product containing per-pixel burned-area and quality information. The MCD64A1 burned-area mapping approach employs 500 m Moderate Resolution Imaging Spectroradiometer (MODIS) Surface Reflectance imagery coupled with 1 kilometer (km) MODIS active fire observations. The algorithm uses a burn sensitive Vegetation Index (VI) to create dynamic thresholds that are applied to the composite data. The VI is derived from MODIS shortwave infrared atmospherically corrected surface reflectance bands 5 and 7 with a measure of temporal texture. The algorithm identifies the date of burn for the 500 m grid cells within each individual MODIS tile. The date is encoded in a single data layer as the ordinal day of the calendar year on which the burn occurred with values assigned to unburned land pixels and additional special values reserved for missing data and water grid cells. The data layers provided in the MCD64A1 product include Burn Date, Burn Data Uncertainty, Quality Assurance, along with First Day and Last Day of reliable change detection of the year. Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=MODIS&sat=TerraAqua&as=61).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MODIS/MCD64A1.061",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2565786756-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2565786756-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2565786756-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2565786756-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565786756-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2565786756-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1006/MCD64_User_Guide_V61.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1006/MCD64_User_Guide_V61.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/115/MCD64_ATBD_V6.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "GENERAL DOCUMENTATION",
+          "url": "https://ladsweb.modaps.eosdis.nasa.gov/filespec/MODIS/61/MCD64A1",
+          "description": "The File Specification provides a description of the product file including Scientific Data Sets and their attributes."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/MODLAND_val.html",
+          "description": "Validation at stage 3 has been achieved for the MODIS Burned Area product."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://modis-land.gsfc.nasa.gov/ValStatus.php?ProductID=MOD64",
+          "description": "Further details regarding MODIS land product validation for the MCD64A1 data product is available from the MODIS Land Team Validation site."
+        },
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

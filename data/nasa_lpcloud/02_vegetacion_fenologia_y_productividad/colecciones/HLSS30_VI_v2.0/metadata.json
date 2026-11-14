@@ -1,0 +1,98 @@
+{
+  "collection": {
+    "short_name": "HLSS30_VI",
+    "version": "2.0",
+    "title": "HLS Sentinel-2 Multi-spectral Instrument Vegetation Indices Daily Global 30 m V2.0",
+    "concept_id": "C3246894861-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "02_vegetacion_fenologia_y_productividad",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 22150883,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "Sentinel-2A",
+      "Sentinel-2B",
+      "Sentinel-2C"
+    ],
+    "instruments": [
+      "Sentinel-2 MSI"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2015-11-28",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "COG",
+      "avg_file_size": "200 MB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "REFLECTANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE/LAND COVER CLASSIFICATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      }
+    ],
+    "summary": "The Harmonized Landsat and Sentinel-2 (HLS) project provides consistent data products from the Operational Land Imager (OLI) aboard the joint NASA/USGS Landsat 8 and Landsat 9 satellites and the Multi-Spectral Instrument (MSI) aboard Europe’s Copernicus Sentinel-2A, Sentinel-2B, and Sentinel-2C satellites. The combined measurement enables global observations of the land every 1.6 days at 30 meter (m) spatial resolution. The HLSS30 Vegetation Indices (HLSS30_VI) product is derived from Sentinel-2A, Sentinel-2B, and Sentinel-2C MSI data products. Vegetation indices combine specific bands of satellite data to quantify various aspects of vegetation. Analysis of vegetation indices allows for tracking changes in vegetation over time, identifying areas of stress or deforestation, and assessing crop health. Vegetation indices provide a reliable and efficient means of understanding the complex dynamics of vegetation health. The HLSS30_VI and HLSL30_VI products are gridded to the same resolution and Military Grid Reference System ([MGRS](https://hls.gsfc.nasa.gov/products-description/tiling-system/)) tiling system and thus are “stackable” for time series analysis. The HLSS30_VI product is provided in Cloud Optimized GeoTIFF (COG) format, and each band is distributed as a separate file. Nine indicators of vegetation health are included in the HLSS30_VI product: Normalized Difference Vegetation Index (NDVI), Enhanced Vegetation Index (EVI), Soil Adjusted Vegetation Index (SAVI), Modified Soil Adjusted Vegetation Index (MSAVI), Normalized Difference Moisture Index (NDMI), Normalized Difference Water Index (NDWI), Normalized Burn Ratio (NBR), Normalized Burn Ratio 2 (NBR2), and Triangular Vegetation Index (TVI). See the User Guide for a more detailed description of the individual vegetation health variables provided in the HLSS30_VI product. The HLS project is funded by NASA’s Satellite Needs Working Group (SNWG) which provides data products developed to meet the needs of stakeholders from US government agencies.",
+    "purpose": "",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/HLS/HLSS30_VI.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C3246894861-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C3246894861-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C3246894861-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C3246894861-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3246894861-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3246894861-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/2088/HLS_VI_User_Guide_V2.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/2088/HLS_VI_User_Guide_V2.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "REQUIREMENTS AND DESIGN",
+          "url": "https://database.eohandbook.com/database/instrumentsummary.aspx?instrumentID=940",
+          "description": "CEOS Missions, Instruments, and Measurements (MIM) Database Record (Sentinel-2 MSI)"
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

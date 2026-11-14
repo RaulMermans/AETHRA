@@ -1,0 +1,99 @@
+{
+  "collection": {
+    "short_name": "VJ221A1D",
+    "version": "002",
+    "title": "VIIRS/JPSS2 Land Surface Temperature/Emissivity Daily L3 Global 1km SIN Grid Day V002",
+    "concept_id": "C2831628020-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "01_temperatura_superficie_y_emisividad",
+    "thematic_group": "01_temperatura_superficie_y_emisividad",
+    "has_granules": true,
+    "granule_count": 504084,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "NOAA-21"
+    ],
+    "instruments": [
+      "VIIRS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2023-02-10",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "HDF-EOS5",
+      "avg_file_size": "978.7 KB",
+      "supports_appeears": true,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "EMISSIVITY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      }
+    ],
+    "summary": "The NOAA-21 Visible Infrared Imaging Radiometer Suite (VIIRS) Land Surface Temperature and Emissivity (LST&E) Day Version 2 product (VJ221A1D) is compiled daily from daytime Level 2 Gridded (L2G) intermediate products. The L2G process maps the daily ([VJ221](https://doi.org/10.5067/VIIRS/VJ221.002)) swath granules onto a sinusoidal MODIS grid and stores all observations overlapping a gridded cell for a given day. The VJ221A1 algorithm sorts through all these observations for each cell and estimates the final LST value as an average from all cloud-free observations that have good LST accuracies. The daytime average is weighted by the observation coverage for that cell. Only observations having observation coverage more than a certain threshold (15%) are considered for this averaging. The 1 kilometer dataset is derived through resampling the native 750 meter VIIRS resolution in the input product. The VJ221A1D product is developed synergistically with the Moderate Resolution Imaging Spectroradiometer (MODIS) LST&E Version 6.1 product ([MOD21A1D](https://doi.org/10.5067/MODIS/MOD21A1D.061)) using the same input atmospheric products and algorithmic approach. The overall objective for NASA VIIRS products is to ensure the algorithms and products are compatible with the MODIS Terra and Aqua algorithms to promote the continuity of the Earth Observation System (EOS) mission. Additional details regarding the method used to create this Level 3 (L3) product are available in the Algorithm Theoretical Basis Document (ATBD). The VJ221A1D product contains seven variables: LST, quality control, emissivity for bands M14, M15, and M16, view zenith angle, and time of observation. A low-resolution browse image for LST is also available for each VJ221A1D granule. Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=VIIRS&sat=J2&as=5200) and the User Guide.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/VIIRS/VJ221A1D.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2831628020-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2831628020-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2831628020-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2831628020-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2831628020-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2831628020-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "https://appeears.earthdatacloud.nasa.gov/",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1662/VNP21_User_Guide_V2.pdf",
+      "documentation": [
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1662/VNP21_User_Guide_V2.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1332/VNP21_ATBD_V1.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val/LST_Val.html",
+          "description": "Validation at stage 1 has been achieved for the VIIRS Land Surface Temperature and Emissivity product suite."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val_overview.html",
+          "description": "Further details regarding VIIRS product validation and maturity status are available from VIIRS Land Product Quality Assessment site."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

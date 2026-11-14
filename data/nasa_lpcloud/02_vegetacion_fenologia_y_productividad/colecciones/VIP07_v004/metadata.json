@@ -1,0 +1,102 @@
+{
+  "collection": {
+    "short_name": "VIP07",
+    "version": "004",
+    "title": "Vegetation Index and Phenology (VIP) Vegetation Indices 7Days Global 0.05Deg CMG V004",
+    "concept_id": "C2763268449-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "02_vegetacion_fenologia_y_productividad",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 1768,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "NOAA-7",
+      "NOAA-9",
+      "NOAA-11",
+      "NOAA-14",
+      "Terra"
+    ],
+    "instruments": [
+      "AVHRR",
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Week",
+      "start_date": "1981-01-01",
+      "end_date": "2014-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "HDF-EOS2",
+      "avg_file_size": "73 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "PLANT PHENOLOGY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "CLIMATE INDICATORS",
+        "term": "BIOSPHERIC INDICATORS",
+        "variable_level_1": "PHENOLOGICAL CHANGES"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "BIOSPHERE",
+        "term": "VEGETATION",
+        "variable_level_1": "VEGETATION INDEX"
+      }
+    ],
+    "summary": "The NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Vegetation Index and Phenology (VIP) global datasets were created using Advanced Very High Resolution Radiometer (AVHRR) N07, N09, N11, and N14 datasets (1981 - 1999) and Moderate Resolution Imaging Spectroradiometer (MODIS)/Terra MOD09 surface reflectance data (2000 - 2014). The VIP Vegetation Index (VI) product was developed to provide consistent measurements of the Normalized Difference Vegetation Index (NDVI) and modified Enhanced Vegetation Index (EVI2) spanning more than 30 years of data from multiple sensors. The EVI2 is a backward extension of AVHRR. Vegetation indices such as NDVI and EVI2 are useful for assessing the biophysical properties of the land surface, and are used to characterize vegetation phenology. Phenology tracks the seasonal life cycle of vegetation, and provides information on the biotic response to environmental changes. The VIP07 VI data product is a composite of seven daily images with 0.05 degree (5600 meter (m)) spatial resolution in geographic (Lat/Lon) grid format. The data are stored in Hierarchical Data Format-Earth Observing System (HDF-EOS) file format. The VIP07 VI product contains 12 Science Datasets (SDS), which include the calculated VIs (NDVI and EVI2) as well as quality assurance/pixel reliability, the input Visible/Near Infrared (VNIR) surface reflectance data, and viewing geometry. The Blue and Middle Infrared (MIR) surface reflectance data are only available for the MODIS era (2000 - 2014). Gaps in the daily product are filled using long term mean VI records derived from the more than 30 year time series of data, and are indicated as gap-filled in the Pixel Reliability SDS. A low resolution browse image showing NDVI as a color map is also available. Known Issues * The Relative Azimuth Angle (RAA) for the input MODIS data is computed based on absolute values of the finer resolution pixels resulting in positive values and has minor usefulness. * The RAA for the input AVHRR data contain values in the -360° to 360° range. The routine to restrict the values in the -180° to 180° range was accidentally missed and can be corrected using the following routine described in Section 4.2.1 of the User Guide and Algorithm Theoretical Basis Document: * SinRelativeAz=sin(RAA) * CosRelativeAz=cos(RAA) * Correct-RAA = atan2(SinRelativeAz,CosRelativeAz)",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEASURES/VIP/VIP07.004",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763268449-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763268449-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763268449-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763268449-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268449-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763268449-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1328/VIP_User_Guide_ATBD_V4.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1328/VIP_User_Guide_ATBD_V4.pdf",
+          "description": "The combined User Guide and Algorithm Theoretical Basis Document provides information related to using the data product along with a description of the physical and mathematical algorithms used in generating the data product."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

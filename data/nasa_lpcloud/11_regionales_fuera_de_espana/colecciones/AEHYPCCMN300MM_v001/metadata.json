@@ -1,0 +1,90 @@
+{
+  "collection": {
+    "short_name": "AEHYPCCMN300MM",
+    "version": "001",
+    "title": "Airborne Hyperspectral Reflectance LTER Cedar Creek Minnesota Daily 300 mm",
+    "concept_id": "C2826848340-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "11_regionales_fuera_de_espana",
+    "thematic_group": "08_reflectancia_radiancia_e_imagenes",
+    "has_granules": true,
+    "granule_count": 1,
+    "is_latest_in_directory": true,
+    "covers_spain": false,
+    "spatial_scope": "Regional (fuera de España)",
+    "processing_level": "1B",
+    "platforms": [
+      "Airplane"
+    ],
+    "instruments": [
+      "MULTI-SPECTRAL"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "2014-08-02",
+      "end_date": "2014-08-03",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "ENVI",
+      "avg_file_size": "299.6 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "LAND USE/LAND COVER",
+        "variable_level_1": "LAND USE/LAND COVER CLASSIFICATION"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "VISIBLE WAVELENGTHS",
+        "variable_level_1": "VISIBLE RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "VISIBLE WAVELENGTHS",
+        "variable_level_1": "VISIBLE IMAGERY"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "INFRARED WAVELENGTHS",
+        "variable_level_1": "INFRARED RADIANCE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "SPECTRAL/ENGINEERING",
+        "term": "HYPERSPECTRAL IMAGERY",
+        "variable_level_1": ""
+      }
+    ],
+    "summary": "The Airborne Hyperspectral Reflectance image mosaic is of the Long-Term Ecological Research (LTER) site at Cedar Creek Ecosystem Science Reserve (CCESR), Minnesota (AEHYPCCMN300MM). The image is at approximate 1 meter and resampled to 300 millimeter (0.3 meter) spatial resolution during processing in the 400 to 970 nanometer (nm) spectral range. This image can be used to understand the optical diversity-biodiversity relationship and investigate the spatial sensitivity of the relationship at local scales. Airborne data for the LTER Cedar Creek site were collected on August 2, 2014, using an AisaEAGLE airborne hyperspectral system mounted on a fixed-wing Piper Saratoga aircraft. The images were collected from a height of 1,540 m and spectral binning (approximately 10 nm) increased the signal-to-noise ratio of the data. Fast Line-of-sight Atmospheric Analysis of Hypercubes (FLAASH) software was used for atmospheric correction in converting radiance to reflectance. Airborne data covered all the prairie grassland plots in the biodiversity (BioDIV) experiment and the Biodiversity and Climate experiment. The data were mosaicked as one image. Provided in the AEHYPCCMN300MM product are 64 hyperspectral bands in an Environment for Visualizing Images (ENVI) format.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/Community/Airborne/AEHYPCCMN300MM.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2826848340-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2826848340-LPCLOUD",
+      "earthdata_search_spain_peninsula": "",
+      "earthdata_search_spain_all": "",
+      "cmr_granules_api_spain_peninsula": "",
+      "cmr_granules_api_spain_all": "",
+      "appeears_ui": "",
+      "user_guide": "",
+      "documentation": [
+        {
+          "subtype": "READ-ME",
+          "url": "https://lpdaac.usgs.gov/documents/181/AEHYPCCMN300MM_Readme_V1.docx",
+          "description": "The technical information in the Read Me enables users to interpret and use the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

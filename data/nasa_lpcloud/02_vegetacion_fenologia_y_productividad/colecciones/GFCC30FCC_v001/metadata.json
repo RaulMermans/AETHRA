@@ -1,0 +1,83 @@
+{
+  "collection": {
+    "short_name": "GFCC30FCC",
+    "version": "001",
+    "title": "Global Forest Cover Change Forest Cover Change Multi-Year Global 30m V001",
+    "concept_id": "C2763259410-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "02_vegetacion_fenologia_y_productividad",
+    "thematic_group": "02_vegetacion_fenologia_y_productividad",
+    "has_granules": true,
+    "granule_count": 14779,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "LANDSAT-7",
+      "LANDSAT-5",
+      "Terra"
+    ],
+    "instruments": [
+      "ETM+",
+      "TM",
+      "ASTER",
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "5 Year",
+      "start_date": "1990-01-01",
+      "end_date": "2004-12-31",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "40.7 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "AGRICULTURE",
+        "term": "FOREST SCIENCE",
+        "variable_level_1": "FOREST HARVESTING AND ENGINEERING"
+      }
+    ],
+    "summary": "The Land Processes Distributed Active Archive Center (LP DAAC) archives and distributes Global Forest Cover Change (GFCC) data products through the NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Program. The GFCC Forest Cover Change Multi-Year Global dataset provides estimates of changes in forest cover from 1990 to 2000 and from 2000 to 2005 at 30 meter spatial resolution. The GFCC30FCC product represents a global record of fine-scale changes in forest dynamics between observation periods. The forest cover change product was generated from the GFCC Tree Cover ([GFCC30TC](https://doi.org/10.5067/MEaSUREs/GFCC/GFCC30TC.003)) product which is based on Global Land Survey (GLS) data acquired by the Landsat 5 Thematic Mapper (TM) and Landsat 7 Enhanced Thematic Mapper Plus (ETM+) sensors. Each forest cover product has two GeoTIFF files associated with it; a change map file and a change probability file. Data follow the Worldwide Reference System-2 tiling scheme. Additional details regarding the methodology used to create the data are available in the Algorithm Theoretical Basis Document (ATBD).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEASURES/GFCC/GFCC30FCC.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763259410-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763259410-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763259410-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763259410-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763259410-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763259410-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1371/GFCC_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1371/GFCC_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1370/GFCC_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

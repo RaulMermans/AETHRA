@@ -1,0 +1,99 @@
+{
+  "collection": {
+    "short_name": "VJ121",
+    "version": "002",
+    "title": "VIIRS/JPSS1 Land Surface Temperature and Emissivity 6-Min L2 Swath 750m V002",
+    "concept_id": "C2545310883-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "01_temperatura_superficie_y_emisividad",
+    "thematic_group": "01_temperatura_superficie_y_emisividad",
+    "has_granules": true,
+    "granule_count": 784916,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "2",
+    "platforms": [
+      "NOAA-20"
+    ],
+    "instruments": [
+      "VIIRS"
+    ],
+    "temporal_scope": {
+      "resolution": "1 Day",
+      "start_date": "2018-01-01",
+      "end_date": "Presente",
+      "ongoing": true
+    },
+    "distribution": {
+      "data_format": "netCDF-4",
+      "avg_file_size": "76.2 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE THERMAL PROPERTIES",
+        "variable_level_1": "LAND SURFACE TEMPERATURE"
+      },
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "LAND SURFACE",
+        "term": "SURFACE RADIATIVE PROPERTIES",
+        "variable_level_1": "EMISSIVITY"
+      }
+    ],
+    "summary": "The NOAA-20 Visible Infrared Imaging Radiometer Suite (VIIRS) Land Surface Temperature and Emissivity (LST&E) Version 2 swath product (VJ121) is produced daily in 6-minute temporal increments of satellite acquisition. The VJ121 product uses a physics-based algorithm to dynamically retrieve both the LST and emissivity simultaneously for VIIRS thermal infrared bands M14 (8.55 µm), M15 (10.76 µm), and M16 (12 µm) at a spatial resolution of 750 meters. The VJ121 product is developed developed synergistically with the Moderate Resolution Imaging Spectroradiometer (MODIS) LST&E Version 6.1 product ([MOD21](https://doi.org/10.5067/MODIS/MOD21.061)) using the same input atmospheric products and algorithmic approach based on the ASTER Temperature Emissivity Separation (TES) technique. The TES algorithm is combined with an improved Water Vapor Scaling (WVS) atmospheric correction scheme to stabilize the retrieval during very warm and humid conditions. The overall objective for NASA VIIRS products is to ensure the algorithms and products are compatible with the MODIS Terra and Aqua algorithms to promote the continuity of the Earth Observation System (EOS) mission. VIIRS LST&E products are available two months after acquisition due to latency of data inputs. Additional details regarding the method used to create this Level 2 (L2) product are available in the Algorithm Theoretical Basis Document (ATBD). Provided in the VJ121 product are layers for LST, quality control, emissivity for bands M14, M15, and M16, LST&E errors, view angle, ASTER Global Emissivity Dataset (GED), Precipitable Water Vapor (PWV), ocean-land mask, latitude, and longitude. A low-resolution browse image for LST is also available for each VJ121 granule. Known Issues * For complete information about known issues please refer to the [MODIS/VIIRS Land Quality Assessment website](https://landweb.modaps.eosdis.nasa.gov/knownissue?sensor=VIIRS) and the User Guide.",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/VIIRS/VJ121.002",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2545310883-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2545310883-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2545310883-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2545310883-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545310883-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2545310883-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1662/VNP21_User_Guide_V2.pdf",
+      "documentation": [
+        {
+          "subtype": "PRODUCT QUALITY ASSESSMENT",
+          "url": "https://landweb.modaps.eosdis.nasa.gov",
+          "description": "The LDOPE Land Product Quality Assessment website provides known issues, maneuvers, and product quality of the land products."
+        },
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1662/VNP21_User_Guide_V2.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1332/VNP21_ATBD_V1.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val/LST_Val.html",
+          "description": "Validation at stage 1 has been achieved for the VIIRS Land Surface Temperature and Emissivity product suite."
+        },
+        {
+          "subtype": "SCIENCE DATA PRODUCT VALIDATION",
+          "url": "https://viirsland.gsfc.nasa.gov/Val_overview.html",
+          "description": "Further details regarding VIIRS product validation and maturity status are available from VIIRS Land Product Quality Assessment site."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "collection": {
+    "short_name": "GFCC30WC",
+    "version": "001",
+    "title": "Global Forest Cover Change Water Cover 2000 Global 30m V001",
+    "concept_id": "C2763261619-LPCLOUD",
+    "provider": "LPCLOUD",
+    "folder": "03_agua_evapotranspiracion_y_humedad",
+    "thematic_group": "03_agua_evapotranspiracion_y_humedad",
+    "has_granules": true,
+    "granule_count": 8746,
+    "is_latest_in_directory": true,
+    "covers_spain": true,
+    "spatial_scope": "Global",
+    "processing_level": "3",
+    "platforms": [
+      "LANDSAT-7",
+      "LANDSAT-5",
+      "Terra"
+    ],
+    "instruments": [
+      "ETM+",
+      "TM",
+      "ASTER",
+      "MODIS"
+    ],
+    "temporal_scope": {
+      "resolution": "Varies",
+      "start_date": "1999-06-29",
+      "end_date": "2003-01-14",
+      "ongoing": false
+    },
+    "distribution": {
+      "data_format": "GeoTIFF",
+      "avg_file_size": "60.8 MB",
+      "supports_appeears": false,
+      "earthdata_login_required_for_data": true
+    },
+    "spatial_bounding_boxes": [
+      {
+        "west": -180,
+        "south": -90,
+        "east": 180,
+        "north": 90
+      }
+    ],
+    "science_keywords": [
+      {
+        "category": "EARTH SCIENCE",
+        "topic": "TERRESTRIAL HYDROSPHERE",
+        "term": "SURFACE WATER",
+        "variable_level_1": "SURFACE WATER PROCESSES/MEASUREMENTS"
+      }
+    ],
+    "summary": "The Land Processes Distributed Active Archive Center (LP DAAC) archives and distributes Global Forest Cover Change (GFCC) data products through the NASA Making Earth System Data Records for Use in Research Environments ([MEaSUREs](https://earthdata.nasa.gov/about/competitive-programs/measures)) Program. The GFCC Water Cover 2000 Global dataset provides surface-water information at 30 meter spatial resolution. This dataset was derived from waterbodies in the GFCC Tree Cover ([GFCC30TC](https://doi.org/10.5067/MEaSUREs/GFCC/GFCC30TC.003)) and Forest Cover Change ([GFCC30FCC](https://doi.org/10.5067/MEaSUREs/GFCC/GFCC30FCC.001)) products based on a classification-tree model. Data are available for selected dates between June 1999 and January 2003. GFCC30WC follows the Worldwide Reference System-2 tiling scheme. Additional details regarding the methodology used to create the data are available in the Algorithm Theoretical Basis Document (ATBD).",
+    "purpose": "Science Research",
+    "links": {
+      "doi_landing_page": "https://doi.org/10.5067/MEASURES/GFCC/GFCC30WC.001",
+      "cmr_virtual_directory": "https://cmr.earthdata.nasa.gov/virtual-directory/collections/C2763261619-LPCLOUD",
+      "earthdata_search_global": "https://search.earthdata.nasa.gov/search/granules?p=C2763261619-LPCLOUD",
+      "earthdata_search_spain_peninsula": "https://search.earthdata.nasa.gov/search/granules?p=C2763261619-LPCLOUD&sb%5B0%5D=-9.5%2C35.9%2C4.4%2C43.9",
+      "earthdata_search_spain_all": "https://search.earthdata.nasa.gov/search/granules?p=C2763261619-LPCLOUD&sb%5B0%5D=-18.3%2C27.6%2C4.4%2C43.9",
+      "cmr_granules_api_spain_peninsula": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763261619-LPCLOUD&bounding_box=-9.5,35.9,4.4,43.9",
+      "cmr_granules_api_spain_all": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C2763261619-LPCLOUD&bounding_box=-18.3,27.6,4.4,43.9",
+      "appeears_ui": "",
+      "user_guide": "https://lpdaac.usgs.gov/documents/1371/GFCC_User_Guide_V1.pdf",
+      "documentation": [
+        {
+          "subtype": "USER'S GUIDE",
+          "url": "https://lpdaac.usgs.gov/documents/1371/GFCC_User_Guide_V1.pdf",
+          "description": "The technical information in the User's Guide enables users to interpret and use the data products."
+        },
+        {
+          "subtype": "ALGORITHM THEORETICAL BASIS DOCUMENT (ATBD)",
+          "url": "https://lpdaac.usgs.gov/documents/1370/GFCC_ATBD.pdf",
+          "description": "The ATBD provides physical theory and mathematical procedures for the calculations used to produce the data products."
+        }
+      ],
+      "source_directory": "https://cmr.earthdata.nasa.gov/search/site/collections/directory/LPCLOUD/gov.nasa.eosdis"
+    },
+    "metadata_retrieved_date": "2026-11-14"
+  }
+}
