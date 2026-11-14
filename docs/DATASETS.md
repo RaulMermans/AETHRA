@@ -7,10 +7,33 @@ Classes: **VERIFIED / READY** (passed Gate 1 + Gate 2, recorded) · **INGESTED, 
 **PARTIAL / PILOT** · **SYNTHETIC / PLACEHOLDER** · **CANDIDATE** · **DEFERRED**.
 Only a recorded gate check moves an asset up a class (see `AGENTS.md`).
 
+The **readiness table below was written 14 Nov morning.** Several "What's missing" rows for
+MERRA-2 / GPM / GLDAS / 2030 UI were addressed later the same day by **D46–D47 and D51**
+(complete years only, area weighting, no partial-year scaling, 2030 off the default path).
+**Classes are not upgraded here** — Gate 2/3 still need a named human (`SCIENTIFIC_REVIEW.md`).
+Use the **temporal integrity table** (next section) and `climate-bundle.json` / AnalysisBundles
+for analysis windows. Spatial/3D layers: `docs/SPATIAL_EXPERIENCE.md` (D54, not implemented).
+
+## Temporal integrity (verified from files, 14 Nov evening)
+
+Do not conflate: native product span · files on disk · last complete calendar year · years
+approved for a named analysis.
+
+| Dataset | Native availability | Local coverage | Last complete year | Analysis window in force | QA status | Caveats |
+|---|---|---|---|---|---|---|
+| MERRA-2 `T2M` M2TMNXSLV 5.12.4 | 1980 → present | 2000-01 → 2026-09 | **2025** | Gate A **2000–2025** (n = 26). D37 1980 not done | INGESTED; trend EXPLORATORY pending review | Reanalysis ~50 km. Do not annualize 2026. Not energy evidence |
+| POWER `ALLSKY_SFC_SW_DWN` | SYN1deg **2001**→; SRB 1984–2000 (break); FLASHFlux NRT | Daily 2001–2025 | **2025** (SYN1DEG) | Gate B **2001–2025** (n = 25) | Gate 1 passed; results EXPLORATORY | No SRB mix, no 2026 FLASHFlux. Irradiance ≠ PV. Native 1° |
+| POWER `WS50M` | MERRA-2; GEOS-IT in NRT | Daily 2001–2025 | **2025** | Gate B **2001–2025** | Same | Not hub-height, not generation. 2026 GEOS-IT excluded |
+| GPM IMERG Final V07 monthly | ~2000 → metadata **2025-09-30** | 2000-01 → **2025-09** | **2024** | D46 **2000–2024** (n = 25) | INGESTED; EXPLORATORY. D53: 0/72 rain labels survive BH | **2025 is not a complete annual rainfall year** |
+| GLDAS Noah 0.25° v2.1 | 2000-01 → present | Grid → **2026-07** | **2025** | D46 **2000–2025** from the **grid** | INGESTED; EXPLORATORY | Modelled runoff ≠ discharge. No 2026 scaling |
+| NOAA GHCN-Daily Spain | Station-dependent, files → 2026-11 | ~175 stations | Station-years with **≥ 330** valid days; bundle last year **2025** | D52 pairs 2001–2025; incomplete years dropped | Partner observations | Not homogenized; not NASA |
+| MODIS MOD13Q1 v061 | 2000-02 → present | Years **2000, 2012, 2024** + pilot | n/a | **No NDVI trend series** | PARTIAL / PILOT (D29 hidden) | Snapshots ≠ a continuous trend |
+| CyL plant register (D49) | Administrative | 652 installations; info dates 2024-06-19 → 2025-11-18 | n/a | Context only | INGESTED, NOT VALIDATED | CyL only; MW ≠ MWh |
+
 | Asset | Type | Class | Shown in `/explore`? | What is missing |
 |---|---|---|---|---|
-| MERRA-2 M2TMNXSLV 5.12.4 `T2M` monthly, 2000-01 → 2026-09, 0.5° × 0.625° | Reanalysis | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (temperature) | Area weighting, extent rule (currently every cell touching Spain incl. Canarias), autocorrelation-aware test, window sensitivity, remove −0.85 °C partial-2026 adjustment. Gate A candidate (D36) |
-| GPM IMERG Final V07 monthly, 2000-01 → 2025-09, 0.1° | Satellite–gauge merged estimate | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (rain, drought SPI, rain extremes, "rivers" basin boxes) | Same gate work. Annual trend uses 2000–2024 (n = 25), currently not significant |
+| MERRA-2 M2TMNXSLV 5.12.4 `T2M` monthly, 2000-01 → 2026-09, 0.5° × 0.625° | Reanalysis | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (temperature) | **D46 implemented** area weighting, Peninsula+Balearics extent, complete years 2000–2025, no 2026 scaling. **Still missing:** named human Gate 2 / D36 approval (`SCIENTIFIC_REVIEW.md`) |
+| GPM IMERG Final V07 monthly, 2000-01 → 2025-09, 0.1° | Satellite–gauge merged estimate | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (rain, drought, rain extremes, basin boxes) | Annual trend **2000–2024** (n = 25). D53: rain "Supported" labels do not survive BH — not presentable. Human gate still open |
 | GLDAS Noah 0.25° monthly v2.1 (grid + Giovanni Spain-mean CSVs) | Land-surface **model** | INGESTED, NOT VALIDATED · trends EXPLORATORY | Yes (runoff, soil, SWE) | Runoff is modelled, **not** measured river discharge. v2.0/v2.1 mixing check (ET CSVs) |
 | NOAA GHCN-Daily Spain, 2001 → 2026-11, ~175 stations | Station observations (partner, not NASA) | INGESTED, NOT VALIDATED | Yes (stations, catalog) | Not homogenized. Station coverage changes over time. Completeness rules per metric. Independent check only |
 | MODIS MOD13Q1 v061 NDVI/EVI, years 2000, 2012, 2024 + pilot | Satellite observation | PARTIAL / PILOT | No (removed, D29) | Snapshots only; no continuous series |
@@ -18,7 +41,7 @@ Only a recorded gate check moves an asset up a class (see `AGENTS.md`).
 | SWOT Hydrocron WSE + SWORD/PLD, 2023 → | Satellite observation | EXPLORATORY | No | Record too short for trends |
 | Spain hydrography (Natural Earth + Wikidata) | Non-NASA context | DEFERRED | No (D27) | Schematic geometry |
 | Bundle `wind` grid and `modis` block in `climate-bundle.json` | Hand-built formula | **SYNTHETIC / PLACEHOLDER** | No (D29/D31; verify before demo) | Never present as NASA data. Remove from the bundle when convenient |
-| 2027–2030 values, cones, `anomaly2030`, Decision Matrix | Linear extrapolation + rules | **EXPLORATORY EXTRAPOLATION** (not data) | **Yes, today** | Hide from demo path (D38) |
+| 2027–2030 values, cones, `anomaly2030`, Decision Matrix | Linear extrapolation + rules | **EXPLORATORY EXTRAPOLATION** (not data) | **No on default / judge path** (D47, D51). Energy Tech Lab still has 2030 if `NEXT_PUBLIC_ENABLE_EXPLORATORY=1` | Keep off demo path (D38) |
 | NASA POWER `ALLSKY_SFC_SW_DWN`, `WS50M` daily, 2001–2025 (`data/raw/power`, manifest `data/metadata/power_manifest.json`) | Satellite-derived flux / reanalysis | **Gate 1 PASSED** (14 Nov); results EXPLORATORY pending 2nd review | Yes (Evidence cards tool) | Second-person review (Gate 3). 2026 data excluded (FLASHFlux/GEOS-IT) |
 | Castilla y León renewable installations (`energia_cyl_renov_instal_polig`, Junta de Castilla y León / IDECyL; data date per record, 2024-06-19 → 2025-11-18; raw `data/raw/energy_infrastructure/jcyl/`, manifest in `energy-infrastructure.json`) | Official administrative register + digitised perimeters (non-NASA context, not a measurement) | **INGESTED, NOT VALIDATED** (D49) | Opt-in only (Energy infrastructure tool) | Castilla y León only. PV < 500 kW perimeters digitised from orthophoto; many PV polygons lack register code/capacity and are excluded. Registered capacity can differ from the sum of digitised turbines. No generation data. Licence IGCYL (attribution «©Junta de Castilla y León», free at www.jcyl.es) |
 

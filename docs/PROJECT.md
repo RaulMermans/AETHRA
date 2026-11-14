@@ -27,6 +27,14 @@ globe without a reproducible trend analysis is not a solution.
 
 Event rules, deadlines and submission requirements: [DEMO_AND_SUBMISSION.md](DEMO_AND_SUBMISSION.md).
 
+### Product identity (visible UI)
+
+The challenge name stays **Be An Earth System Trend Detective!** (LOCKED, external). The visible
+product identity in `/explore` is **AETHRA** — Earth Intelligence Platform; first mission
+**MISSION 01 — SPAIN** (D56). GRIDSHIFT (D34) remains an internal energy-strategy working name.
+This is an independent Space Apps project, not an official NASA product. Art direction:
+[BRAND_ART_DIRECTION.md](BRAND_ART_DIRECTION.md). Final logo deferred.
+
 ## 2. Product thesis
 
 **Evidence-first Earth-system trend investigation for Spain.**
@@ -89,3 +97,7 @@ joint low-resource indicator (Gate 3). It becomes the primary demo only if it pa
 presented as the next research step.
 
 **Never:** present a generic result (e.g. warming) as evidence about renewable-energy potential.
+
+### Geographic context vs evidence (proposed, D54 — not in the MVP)
+
+The strategic vision may later connect **where the user is looking**, **what NASA measured at native support**, and **what infrastructure is registered nearby**. That is still not site selection. A research *case* (first candidate: Castilla y León, with Aragón as a descriptive comparison) would only narrate existing Gate B EvidenceCards. Landmark fly-tos (Mulhacén, Picos de Europa) are navigation demonstrations inside national parks, not development candidates. Spec: [SPATIAL_EXPERIENCE.md](SPATIAL_EXPERIENCE.md). **Not implemented while P0 and submission are open.**

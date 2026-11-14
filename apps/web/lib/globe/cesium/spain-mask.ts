@@ -1,5 +1,5 @@
 import type * as CesiumNS from "cesium";
-import { CAMERA_BOUNDS, SPAIN_IMAGERY_EXTENTS, SPAIN_RENDER_AREA_URL } from "../catalog";
+import { SPAIN_IMAGERY_EXTENTS, SPAIN_RENDER_AREA_URL } from "../catalog";
 
 type Cesium = typeof CesiumNS;
 type Ring = [number, number][];
@@ -47,34 +47,6 @@ export async function loadSpainBoundary(): Promise<SpainBoundary> {
       });
     },
   };
-}
-
-/**
- * While `active()`, keeps the camera position inside CAMERA_BOUNDS (lon/lat): when a move ends
- * outside, the camera glides back to the nearest point inside, keeping height and orientation.
- * Checked on move end (not per frame) so it never fights camera flights. Returns a remover.
- */
-export function constrainCameraToSpain(
-  Cesium: Cesium,
-  viewer: CesiumNS.Viewer,
-  active: () => boolean,
-): () => void {
-  const { camera } = viewer.scene;
-  const { west, south, east, north } = CAMERA_BOUNDS;
-  return camera.moveEnd.addEventListener(() => {
-    if (!active() || viewer.isDestroyed()) return;
-    const c = camera.positionCartographic;
-    const lon = Cesium.Math.toDegrees(c.longitude);
-    const lat = Cesium.Math.toDegrees(c.latitude);
-    const clampedLon = Math.min(east, Math.max(west, lon));
-    const clampedLat = Math.min(north, Math.max(south, lat));
-    if (clampedLon === lon && clampedLat === lat) return;
-    camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(clampedLon, clampedLat, c.height),
-      orientation: { heading: camera.heading, pitch: camera.pitch, roll: camera.roll },
-      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.8,
-    });
-  });
 }
 
 /**

@@ -1,14 +1,23 @@
 @import "tailwindcss";
 
-/* Design tokens — dark, restrained, scientific. */
+/*
+  AETHRA design tokens (D55). Brand chrome only.
+
+  Scientific maps, charts and outcome palettes live in lib/globe/climate.ts
+  and must not be restyled to match this identity.
+*/
+
 @theme {
   --color-space: #03050a;
-  --color-ink: #e8edf3;
-  --color-muted: #9aa8b8;
-  --color-faint: #64748b;
-  --color-line: rgb(255 255 255 / 0.09);
-  --color-accent: #7cc4ff;
-  --color-accent-ink: #04121f;
+  --color-atlantic: #101c2b;
+  --color-ink: #f5f1e9;
+  --color-muted: #c4cfd8;
+  --color-faint: #819db5;
+  --color-line: rgb(129 157 181 / 0.22);
+  --color-accent: #d6b47e;
+  --color-accent-ink: #1a140c;
+  --color-nav: #819db5;
+  --color-terracotta: #bd694e;
   --color-warn: #f5c26b;
   --color-danger: #ff8a80;
 }
@@ -19,17 +28,17 @@
 }
 
 @utility panel {
-  background-color: rgb(8 12 20 / 0.78);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 0.85rem;
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: 0 10px 40px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  background-color: rgb(16 28 43 / 0.86);
+  border: 1px solid rgb(129 157 181 / 0.22);
+  border-radius: 0.65rem;
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: 0 8px 28px rgb(3 5 10 / 0.45), inset 0 1px 0 rgb(245 241 233 / 0.04);
 }
 
 @utility focus-ring {
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-nav);
     outline-offset: 2px;
   }
 }
@@ -41,6 +50,11 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+.font-mono,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Cesium: fill container, quiet attribution styling (credits stay visible). */
 .cesium-viewer,
 .cesium-widget,
@@ -50,6 +64,10 @@ body {
 }
 .cesium-widget canvas:focus {
   outline: none;
+}
+.cesium-viewer-timelineContainer,
+.cesium-viewer-animationContainer {
+  display: none !important;
 }
 .globe-credits .cesium-widget-credits {
   position: static;

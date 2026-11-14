@@ -8,8 +8,8 @@ import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera"
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
+import { syncIllustrativeWindTurbine, type IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
 import { pickCoordinate, pickOverlayFeature } from "@/lib/globe/cesium/picking";
-import { constrainCameraToSpain } from "@/lib/globe/cesium/spain-mask";
 import {
   createBaseImagery,
   createFallbackImagery,
@@ -44,7 +44,7 @@ export interface GlobeProps {
   layerStates: LayerStateMap;
   selected: GeoCoordinate | null;
   qualityMode: QualityMode;
-  /** "spain": camera locked near Spain; "world": free camera. The whole globe is always rendered. */
+  /** Layer clip mode for overlays. The whole globe is always rendered; the camera is free. */
   viewMode: ViewMode;
   /** Active map tool (distance, offset…). While set, clicks go to `onToolClick`, not `onSelect`. */
   measure?: MeasureState | null;
@@ -56,10 +56,12 @@ export interface GlobeProps {
   onReady?: (controller: GlobeController | null) => void;
   /** Element that receives imagery/terrain attribution. */
   creditContainer?: HTMLElement | null;
+  /** One illustrative / conceptual 3D symbol; null hides it. Point markers stay. */
+  illustrativeAsset?: IllustrativeAssetView | null;
   className?: string;
 }
 
-const ACCENT = "#7cc4ff";
+const ACCENT = "#819DB5";
 
 function isContextLost(canvas: HTMLCanvasElement): boolean {
   const gl = (canvas.getContext("webgl2") ?? canvas.getContext("webgl")) as WebGLRenderingContext | null;
@@ -116,6 +118,7 @@ export default function Globe(props: GlobeProps) {
     setQuality: (mode: QualityMode) => void;
     setViewMode: (mode: ViewMode) => void;
     measureSource: CesiumNS.CustomDataSource;
+    illustrativeSource: CesiumNS.CustomDataSource;
   } | null>(null);
 
   // --- Viewer lifecycle -------------------------------------------------------------------
@@ -127,7 +130,6 @@ export default function Globe(props: GlobeProps) {
     let handler: CesiumNS.ScreenSpaceEventHandler | undefined;
     let layers: CesiumLayerManager | undefined;
     let stopFrameWatch: (() => void) | undefined;
-    let stopCameraConstraint: (() => void) | undefined;
     let frame = 0;
 
     const detected = detectQualityProfile();
@@ -325,17 +327,15 @@ export default function Globe(props: GlobeProps) {
       };
 
       // View mode. The whole Earth is always rendered (Spain's outline is drawn by the outline
-      // layer and the climate heatmaps are clipped to Spain). "spain" = camera locked near Spain
-      // (kept inside CAMERA_BOUNDS, zoom-out limited); "world" = free camera.
+      // layer and the climate heatmaps are clipped to Spain). The camera is free.
       const applyViewMode = () => {
-        const locked = viewMode === "spain";
         const is3D = scene.mode === Cesium.SceneMode.SCENE3D;
         showBase();
         scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b1424");
         scene.globe.showGroundAtmosphere = is3D;
         if (scene.skyAtmosphere) scene.skyAtmosphere.show = is3D;
         scene.fog.enabled = is3D;
-        ctrl.maximumZoomDistance = locked ? 9_000_000 : 40_000_000;
+        ctrl.maximumZoomDistance = 40_000_000;
         scene.requestRender();
       };
       const setViewMode = (mode: ViewMode) => {
@@ -345,7 +345,6 @@ export default function Globe(props: GlobeProps) {
         if (layers) void layers.sync(propsRef.current.layers, propsRef.current.layerStates, mode);
       };
       applyViewMode();
-      stopCameraConstraint = constrainCameraToSpain(Cesium, v, () => viewMode === "spain");
       const pickSpain = (p: CesiumNS.Cartesian2 | undefined) => pickCoordinate(Cesium, v, p, terrain);
 
       // Pointer interaction.
@@ -413,7 +412,9 @@ export default function Globe(props: GlobeProps) {
         console.warn(`[globe] layer "${id}" failed`, err),
       );
       const measureSource = new Cesium.CustomDataSource("measure");
+      const illustrativeSource = new Cesium.CustomDataSource("illustrative-infra");
       void v.dataSources.add(measureSource);
+      void v.dataSources.add(illustrativeSource);
       drawMeasure(Cesium, measureSource, propsRef.current.measure ?? null);
       const cameraCtl = createCameraController(Cesium, v);
       const controller: GlobeController = {
@@ -462,7 +463,18 @@ export default function Globe(props: GlobeProps) {
         },
         screenshot: () => captureScreenshot(scene, propsRef.current.creditContainer?.innerText ?? ""),
       };
-      engine.current = { Cesium, viewer: v, layers, controller, placeMarker, setQuality, setViewMode, measureSource };
+      engine.current = {
+        Cesium,
+        viewer: v,
+        layers,
+        controller,
+        placeMarker,
+        setQuality,
+        setViewMode,
+        measureSource,
+        illustrativeSource,
+      };
+      void syncIllustrativeWindTurbine(Cesium, v, illustrativeSource, propsRef.current.illustrativeAsset ?? null);
       placeMarker(propsRef.current.selected);
       if (process.env.NODE_ENV === "development") {
         // Debug hook for local testing only (stripped from production builds).
@@ -495,7 +507,6 @@ export default function Globe(props: GlobeProps) {
       propsRef.current.onReady?.(null);
       engine.current = null;
       stopFrameWatch?.();
-      stopCameraConstraint?.();
       layers?.destroy();
       if (handler && !handler.isDestroyed()) handler.destroy();
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
@@ -533,6 +544,13 @@ export default function Globe(props: GlobeProps) {
     if (!e) return;
     e.placeMarker(props.selected);
   }, [props.selected]);
+
+  // --- Illustrative / conceptual 3D plant (one entity set) --------------------------------
+  useEffect(() => {
+    const e = engine.current;
+    if (!e) return;
+    void syncIllustrativeWindTurbine(e.Cesium, e.viewer, e.illustrativeSource, props.illustrativeAsset ?? null);
+  }, [props.illustrativeAsset]);
 
   // --- Keyboard ---------------------------------------------------------------------------
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {

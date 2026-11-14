@@ -82,6 +82,7 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 **Immediate next action (updated 14 Nov, final sprint):** a second team member works through the
 PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and decides D53. Then P0-P1–P3 (submission
 checklist, slide 5 from the approved claims in `DEMO_AND_SUBMISSION.md`, rehearsal + fallback recording).
+**Do not implement spatial/3D enhancements (D54) while these boxes are open.** Spec only: `docs/SPATIAL_EXPERIENCE.md`.
 
 ## P1 — only after P0 is green
 
@@ -97,6 +98,9 @@ checklist, slide 5 from the approved claims in `DEMO_AND_SUBMISSION.md`, rehears
   operational constraints (curtailment, outages), never assign aggregate generation to single plants,
   never read correlation as causation. Not started.
 - **Energy infrastructure context (D49).** *Built 14 Nov at the human's request while P0 was open; hidden in judge mode (D51); not a sprint deliverable.* DoD: a user selects one verified installation (Castilla y León register layer), sees its metadata, source and data date, the MERRA-2 cell vs the province support, and the province's precomputed NASA result. Generation comparison: not done (needs a separately validated plant-level series). Not shown in the demo unless P0 is green and a second person reviews it.
+- **P1A Geographic destinations (D54, prototype 14 Nov).** `ExploreSpain` menu + `lib/globe/destinations.ts`. Mulhacén (IGN), Picos de Europa, Spain overview. Parks labelled not energy sites.
+- **P1B One territorial case (D54, prototype 14 Nov).** Castilla y León case panel quotes Gate B cards ES41/ES24. Difference not tested. No new statistics.
+- **P1C Illustrative 3D (D54, prototype 14 Nov).** One Cesium geometry turbine at registered Buniel (RE-114777), labelled not a reconstruction. Point markers kept. Ghost style = appearance toggle on the same point.
 
 ## P2 / DEFERRED
 
@@ -104,7 +108,9 @@ Plant-by-plant performance rankings · investment suitability scores · energy o
 optimisation · site recommendations · site selection or ranking · generation/production modelling · storage sizing · grid dispatch,
 outage or price prediction · investment/ROI recommendations · 2030–2040 projections or any
 extrapolation shown as a forecast · ML forecasting · causal attribution · universal dataset explorer
-· AI agent producing findings · new map tools, terrain or visual effects · branding work.
+· AI agent producing findings · new map tools, terrain or visual effects · **final logo / full brand system** (visible AETHRA chrome + tokens landed as D56; emblem still deferred)
+· nationwide 3D plant reconstruction · digital twins without surveyed geometry · **ghost / conceptual infrastructure in 3D** (D54 Feature D — prototype only after P1C, always off in judge mode)
+· construction feasibility simulation.
 
 ## Workstreams
 

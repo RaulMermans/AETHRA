@@ -94,3 +94,13 @@ Reviewer must not be the person who ran the analysis. Tick only after doing the 
 - [ ] **PENDING** Click through `/explore` once yourself (judge build)
 
 Reviewer: ________ Date/time: ________
+
+## 6. Spatial experience (D54) — no additional scientific sign-off yet
+
+A 14 Nov evening sprint specified destinations, a Castilla y León research case, and optional 3D
+(`docs/SPATIAL_EXPERIENCE.md`). **Nothing was implemented.** Do not treat landmark fly-tos, plant
+glTF models, or 2032–2040 planning copy as reviewed evidence.
+
+If P1B is later built, the reviewer only confirms that the case **quotes** `energy-gap-ES41` /
+`energy-gap-ES24` (and independence ratios) without new statistics or a CyL-vs-Aragón significance
+claim. 3D geometry is not a scientific product.

@@ -6,11 +6,10 @@ interface BrandLogoMarkProps {
 }
 
 /**
- * Vector emblem for "Earth System Trend Detective — Spain" (Energy & Climate):
- * - 3D Earth observation meridian grid + Detective magnifying lens rim
- * - Cyan hydro/wind wave (#7cc4ff) + Amber solar/2030 forecast cone (#f5c26b)
- * - Ascending Sen's slope trend trajectory + clean energy pulse spark
- * Complies with Space Apps rule: no NASA logos/insignia in generated content.
+ * Archival mark (not used on the judge-facing nav).
+ * Contains a 2030 forecast-cone motif that overstates product capability.
+ * Keep for history; primary chrome uses `BrandWordmark` (D55). Do not restore
+ * this mark on the default demo path until a dedicated logo sprint replaces it.
  */
 export function BrandLogoMark({ className = "", size = 36 }: BrandLogoMarkProps) {
   const uid = useId().replace(/:/g, "");

@@ -163,7 +163,7 @@ export function StationCatalogPanel({
                         <span className="flex items-center gap-1.5 text-[12px] text-ink">
                           <span className="truncate">{e.label}</span>
                           {e.reference && (
-                            <span className="shrink-0 rounded border border-accent/40 px-1 text-[9px] text-accent">REF</span>
+                            <span className="shrink-0 rounded border border-nav/40 px-1 text-[9px] text-nav">REF</span>
                           )}
                         </span>
                         <span className="block truncate text-[10px] text-faint">
@@ -176,7 +176,7 @@ export function StationCatalogPanel({
                         {formatTrend(e, meta.units)}
                         <span
                           aria-label={e.trend?.significant_fdr ? "supported trend" : "no robust trend detected"}
-                          className={`ml-1 ${e.trend?.significant_fdr ? "text-accent" : "text-faint"}`}
+                          className={`ml-1 ${e.trend?.significant_fdr ? "text-ink" : "text-faint"}`}
                         >
                           {e.trend?.significant_fdr ? "●" : "○"}
                         </span>

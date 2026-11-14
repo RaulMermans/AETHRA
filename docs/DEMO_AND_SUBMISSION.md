@@ -78,15 +78,15 @@ Regional rain or runoff "Supported" labels are not presentable (D53).
 
 ## One-sentence value proposition
 
-"GRIDSHIFT turns NASA Earth data into traceable evidence about how Spain's environment has actually
+"AETHRA turns NASA Earth data into traceable evidence about how Spain's environment has actually
 changed — region by region, with the uncertainty and the sources attached — starting with the
 conditions behind clean energy."
-*(Note: the app header still reads "Trend Detective"; GRIDSHIFT is a working name, D34. Pick one name
-for slides, page and app title before submitting.)*
+*(Visible product name is AETHRA, D56. GRIDSHIFT remains the internal energy-strategy working name,
+D34. Challenge title stays Be An Earth System Trend Detective!)*
 
 ## 30-second demo script (video or opening of the live demo)
 
-> (0–5 s, globe on Spain) "This is GRIDSHIFT: NASA Earth data for Spain, turned into evidence."
+> (0–5 s, globe on Spain) "This is AETHRA: NASA Earth data for Spain, turned into evidence."
 > (5–15 s, Temperature → Trend) "Air temperature from NASA MERRA-2, 2000 to 2025: up about 0.6 °C per
 > decade, confidence interval shown, supported — and 64 NOAA stations agree on the direction."
 > (15–25 s, Evidence cards → Solar + wind) "For clean energy we asked whether days with both low sun

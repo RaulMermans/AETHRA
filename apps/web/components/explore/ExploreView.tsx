@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
 import {
   DEFAULT_ADMIN_SCOPE,
@@ -12,19 +12,26 @@ import {
 } from "@/lib/globe/admin-scope";
 import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
+import type { IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
+import { DESTINATIONS, destinationById, HOME_DESTINATION_VIEW, type GeographicDestination } from "@/lib/globe/destinations";
+import { caseById } from "@/lib/globe/energy-research-cases";
 import {
   buildDimensionOverlayGeoJson,
   DIMENSIONS,
   dimensionHasSpatialGrid,
+  FIRST_OBSERVED_YEAR,
   getEffectiveMeta,
   getMapLegendMeta,
   HEATMAP_BOUNDS,
+  LAST_COMPLETE_YEAR,
   loadClimateBundle,
+  periodColorDomain,
   renderDimensionHeatmapDataUrl,
   type ActiveClimateConfig,
   type ClimateBundle,
   type PaletteId,
 } from "@/lib/globe/climate";
+import { MS_PER_OBSERVED_YEAR, prefersReducedMotion, smoothstep01 } from "@/lib/globe/climate-timeline";
 // EXPLORATORY: Energy Tech Lab (D44). Opt-in tab, not on the demo path; scores are not validated results.
 import {
   buildEnergyConceptOverlayGeoJson,
@@ -61,6 +68,9 @@ import type {
 } from "@/lib/globe/types";
 import { AdminScopeBar } from "./AdminScopeBar";
 import { CameraControls } from "./CameraControls";
+import { EnergyCasePanel } from "./EnergyCasePanel";
+import { ExploreSpain } from "./ExploreSpain";
+import { MapMarkerLegend } from "./MapMarkerLegend";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
 import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
@@ -76,12 +86,12 @@ import { ViewModeToggle } from "./ViewModeToggle";
 
 const QUALITY_KEY = "globe-quality-mode";
 
-/** Shareable view in the URL hash: #cam=lat,lon,height,heading,pitch&mode=spain */
-function encodeView(c: CameraState, mode: ViewMode, dim: SceneDim): string {
+/** Shareable view in the URL hash: #cam=lat,lon,height,heading,pitch */
+function encodeView(c: CameraState, dim: SceneDim): string {
   const cam = [c.latitude.toFixed(5), c.longitude.toFixed(5), Math.round(c.height), c.heading.toFixed(1), c.pitch.toFixed(1)].join(",");
-  return `#cam=${cam}&mode=${mode}${dim === "2d" ? "&dim=2d" : ""}`;
+  return `#cam=${cam}&mode=world${dim === "2d" ? "&dim=2d" : ""}`;
 }
-function decodeView(hash: string): { camera: CameraState; mode: ViewMode; dim: SceneDim } | null {
+function decodeView(hash: string): { camera: CameraState; dim: SceneDim } | null {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   const nums = (params.get("cam") ?? "").split(",").map(Number);
   if (nums.length !== 5 || nums.some((n) => !Number.isFinite(n))) return null;
@@ -89,7 +99,6 @@ function decodeView(hash: string): { camera: CameraState; mode: ViewMode; dim: S
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || height <= 0) return null;
   return {
     camera: { latitude, longitude, height, heading, pitch },
-    mode: params.get("mode") === "spain" ? "spain" : "world",
     dim: params.get("dim") === "2d" ? "2d" : "3d",
   };
 }
@@ -109,9 +118,9 @@ export function ExploreView() {
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
-  const [viewMode, setViewMode] = useState<ViewMode>("world");
+  const viewMode: ViewMode = "world";
   const [dim, setDim] = useState<SceneDim>("3d");
-  // The whole Earth is always rendered; home always frames Spain. "spain" mode only locks the camera.
+  // The whole Earth is always rendered; home always frames Spain. The camera is free.
   const homeView = HOME_VIEW;
 
   // --- Workspace Mode: "climate" (validated demo path, default) vs "energy" (EXPLORATORY Energy Tech Lab, opt-in) ---
@@ -150,12 +159,32 @@ export function ExploreView() {
   });
   const [heatmapUrl, setHeatmapUrl] = useState<string>("");
   const [playing, setPlaying] = useState(false);
+  const [heatmapByYear, setHeatmapByYear] = useState<ReadonlyMap<number, string>>(new Map());
+  const [heatSlotA, setHeatSlotA] = useState("");
+  const [heatSlotB, setHeatSlotB] = useState("");
+  const [frontIsA, setFrontIsA] = useState(true);
+  const [blendT, setBlendT] = useState(0);
+  const [timelineReady, setTimelineReady] = useState(true);
+  const playbackRef = useRef({
+    frontIsA: true,
+    yearA: FIRST_OBSERVED_YEAR,
+    yearB: FIRST_OBSERVED_YEAR + 1,
+    mix: 0,
+  });
+  const heatmapByYearRef = useRef(heatmapByYear);
+  heatmapByYearRef.current = heatmapByYear;
 
   const resolvedScope = useMemo(
     () => resolveAdminScope(adminBundle, adminScope),
     [adminBundle, adminScope],
   );
-  const scaleMeta = getMapLegendMeta(climateConfig, bundle);
+  const scaleMeta = useMemo(() => {
+    const base = getMapLegendMeta(climateConfig, bundle);
+    if (playing && bundle && climateConfig.mode === "value") {
+      return { ...base, domain: periodColorDomain(bundle, climateConfig) };
+    }
+    return base;
+  }, [bundle, climateConfig, playing]);
 
   const evaluatedEnergySites = useMemo<EvaluatedEnergySite[]>(() => {
     if (!bundle) return [];
@@ -215,15 +244,160 @@ export function ExploreView() {
       return;
     }
     let active = true;
-    renderDimensionHeatmapDataUrl(bundle, climateConfig, resolvedScope)
+    const locked = playing ? periodColorDomain(bundle, climateConfig) : undefined;
+    renderDimensionHeatmapDataUrl(bundle, climateConfig, resolvedScope, locked)
       .then((url) => {
         if (active) setHeatmapUrl(url);
       })
-      .catch((err) => console.error("[climate] failed to render heatmap", err));
+      .catch((err: unknown) => console.error("[climate] failed to render heatmap", err));
     return () => {
       active = false;
     };
-  }, [bundle, climateConfig, resolvedScope]);
+  }, [bundle, climateConfig, resolvedScope, playing]);
+
+  useEffect(() => {
+    if (!playing || !bundle || climateConfig.mode !== "value") {
+      setTimelineReady(true);
+      return;
+    }
+    if (!dimensionHasSpatialGrid(climateConfig.dimension)) {
+      setPlaying(false);
+      return;
+    }
+    let cancelled = false;
+    setTimelineReady(false);
+    const frameCfg = {
+      dimension: climateConfig.dimension,
+      mode: climateConfig.mode,
+      scenario: climateConfig.scenario,
+      heatMetric: climateConfig.heatMetric,
+      rainMetric: climateConfig.rainMetric,
+      vegMetric: climateConfig.vegMetric,
+    };
+    const domain = periodColorDomain(bundle, { ...frameCfg, year: LAST_COMPLETE_YEAR });
+    const years: number[] = [];
+    for (let year = FIRST_OBSERVED_YEAR; year <= LAST_COMPLETE_YEAR; year++) years.push(year);
+    void Promise.all(
+      years.map((year) => renderDimensionHeatmapDataUrl(bundle, { ...frameCfg, year }, resolvedScope, domain)),
+    )
+      .then((urls) => {
+        if (cancelled) return;
+        const next = new Map<number, string>();
+        years.forEach((year, i) => {
+          const url = urls[i];
+          if (url) next.set(year, url);
+        });
+        setHeatmapByYear(next);
+        const startYear = Math.min(
+          LAST_COMPLETE_YEAR - 1,
+          Math.max(FIRST_OBSERVED_YEAR, climateConfig.year >= LAST_COMPLETE_YEAR ? FIRST_OBSERVED_YEAR : climateConfig.year),
+        );
+        const urlStart = next.get(startYear) ?? "";
+        const urlNext = next.get(startYear + 1) ?? "";
+        setHeatSlotA(urlStart);
+        setHeatSlotB(urlNext);
+        setFrontIsA(true);
+        setBlendT(0);
+        playbackRef.current = {
+          frontIsA: true,
+          yearA: startYear,
+          yearB: startYear + 1,
+          mix: 0,
+        };
+        setClimateConfig((prev) => (prev.year === startYear ? prev : { ...prev, year: startYear }));
+        setTimelineReady(true);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("[climate] timeline prefetch failed", err);
+          setTimelineReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Year is read once when play starts; listing it would rebuild textures every annual tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start year is snapshotted in this effect
+  }, [
+    playing,
+    bundle,
+    resolvedScope,
+    climateConfig.dimension,
+    climateConfig.mode,
+    climateConfig.heatMetric,
+    climateConfig.rainMetric,
+    climateConfig.vegMetric,
+    climateConfig.scenario,
+  ]);
+
+  useEffect(() => {
+    if (!playing || climateConfig.mode !== "value") return;
+    if (prefersReducedMotion()) {
+      const timer = window.setInterval(() => {
+        setClimateConfig((prev) => {
+          if (prev.year >= LAST_COMPLETE_YEAR) {
+            setPlaying(false);
+            setBlendT(0);
+            return prev;
+          }
+          return { ...prev, year: prev.year + 1 };
+        });
+      }, 700);
+      return () => window.clearInterval(timer);
+    }
+    if (!timelineReady) return;
+    let raf = 0;
+    let last = 0;
+    let linear = 0;
+    let sent = -1;
+    const tick = (now: number) => {
+      const dt = now - last;
+      last = now;
+      linear += dt / MS_PER_OBSERVED_YEAR;
+      if (linear >= 1) {
+        const pb = playbackRef.current;
+        const shownYear = pb.frontIsA ? pb.yearB : pb.yearA;
+        if (shownYear >= LAST_COMPLETE_YEAR) {
+          playbackRef.current.mix = 1;
+          setBlendT(1);
+          setPlaying(false);
+          setClimateConfig((prev) => ({ ...prev, year: LAST_COMPLETE_YEAR }));
+          return;
+        }
+        const incomingYear = shownYear + 1;
+        const incomingUrl = heatmapByYearRef.current.get(incomingYear) ?? "";
+        const nextFrontIsA = !pb.frontIsA;
+        if (nextFrontIsA) {
+          setHeatSlotB(incomingUrl);
+          playbackRef.current = { frontIsA: true, yearA: shownYear, yearB: incomingYear, mix: 0 };
+        } else {
+          setHeatSlotA(incomingUrl);
+          playbackRef.current = { frontIsA: false, yearA: incomingYear, yearB: shownYear, mix: 0 };
+        }
+        setFrontIsA(nextFrontIsA);
+        setClimateConfig((prev) => ({ ...prev, year: shownYear }));
+        linear = 0;
+        sent = 0;
+        setBlendT(0);
+      } else {
+        playbackRef.current.mix = linear;
+        const eased = smoothstep01(linear);
+        if (Math.abs(eased - sent) >= 0.016) {
+          sent = eased;
+          setBlendT(eased);
+        }
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    const start = window.setTimeout(() => {
+      last = performance.now();
+      raf = window.requestAnimationFrame(tick);
+    }, 200);
+    return () => {
+      window.clearTimeout(start);
+      window.cancelAnimationFrame(raf);
+    };
+  }, [playing, timelineReady, climateConfig.mode]);
 
   useEffect(() => {
     if (!bundle || workspaceMode !== "energy") return;
@@ -239,6 +413,16 @@ export function ExploreView() {
   }, [bundle, workspaceMode, energyConcept, energyScope, energyLens, resolvedScope]);
 
   const updateClimateConfig = useCallback((patch: Partial<ActiveClimateConfig>) => {
+    if (
+      patch.year !== undefined ||
+      patch.dimension !== undefined ||
+      patch.mode !== undefined ||
+      patch.heatMetric !== undefined ||
+      patch.rainMetric !== undefined
+    ) {
+      setPlaying(false);
+      setBlendT(0);
+    }
     setClimateConfig((prev) => ({ ...prev, ...patch }));
   }, []);
 
@@ -298,6 +482,9 @@ export function ExploreView() {
     [controller],
   );
 
+  const urlA = playing && heatSlotA ? heatSlotA : heatmapUrl;
+  const urlB = playing ? heatSlotB : "";
+
   const allLayers = useMemo<LayerDescriptor[]>(() => {
     const dimMeta = DIMENSIONS.find((d) => d.id === climateConfig.dimension) ?? DIMENSIONS[0];
     const eff = getEffectiveMeta(climateConfig, bundle);
@@ -319,72 +506,87 @@ export function ExploreView() {
 
     const conceptDatasetsLabel = conceptMeta.variablesCrossed.map((v) => v.dataset).join(" · ");
 
-    const analysisLayers: LayerDescriptor[] = [
-      {
-        id: "climate-heatmap",
-        kind: "raster-field",
-        group: "analysis",
-        title: isEnergyMode ? `${conceptMeta.shortTitle} Surface` : `${dimMeta.label} Heatmap`,
-        description: isEnergyMode ? conceptMeta.lensLabels[energyLens] : eff.subtitle,
-        source: { name: isEnergyMode ? conceptDatasetsLabel : dimMeta.datasets },
-        resolution: isEnergyMode ? "0.25° GLDAS / 0.1° GPM / 0.5° MERRA-2" : dimMeta.spatialNote,
-        synthetic: isEnergyMode ? !conceptMeta.coverageBadge.startsWith("100%") : dimMeta.synthetic,
-        url: isEnergyMode ? energyHeatmap.url : heatmapUrl,
-        science: {
-          variable: isEnergyMode ? energyConcept : dimMeta.id,
-          units: isEnergyMode ? energyHeatmap.units : eff.units,
-          bounds: HEATMAP_BOUNDS,
-          spatialResolution: isEnergyMode ? "0.25°–0.5° gridded reanalysis" : dimMeta.spatialNote,
-          timeCoverage: { start: "2000-01-01", end: "2025-12-31", step: "P1Y" },
-          encoding: "color",
-          colorScale: {
-            domain: isEnergyMode ? energyHeatmap.domain : eff.domain,
-            palette: isEnergyMode ? energyHeatmap.palette : eff.palette,
-            kind: isEnergyMode ? "diverging" : climateConfig.mode === "value" ? "sequential" : "diverging",
-          },
-          missingData: { policy: "hide" },
+    const heatmapDomain =
+      isEnergyMode
+        ? energyHeatmap.domain
+        : playing && bundle
+          ? periodColorDomain(bundle, climateConfig)
+          : eff.domain;
+    const heatmapBase: LayerDescriptor = {
+      id: "climate-heatmap",
+      kind: "raster-field",
+      group: "analysis",
+      title: isEnergyMode ? `${conceptMeta.shortTitle} Surface` : `${dimMeta.label} Heatmap`,
+      description: isEnergyMode ? conceptMeta.lensLabels[energyLens] : eff.subtitle,
+      source: { name: isEnergyMode ? conceptDatasetsLabel : dimMeta.datasets },
+      resolution: isEnergyMode ? "0.25° GLDAS / 0.1° GPM / 0.5° MERRA-2" : dimMeta.spatialNote,
+      synthetic: isEnergyMode ? !conceptMeta.coverageBadge.startsWith("100%") : dimMeta.synthetic,
+      url: isEnergyMode ? energyHeatmap.url : urlA,
+      science: {
+        variable: isEnergyMode ? energyConcept : dimMeta.id,
+        units: isEnergyMode ? energyHeatmap.units : eff.units,
+        bounds: HEATMAP_BOUNDS,
+        spatialResolution: isEnergyMode ? "0.25°–0.5° gridded reanalysis" : dimMeta.spatialNote,
+        timeCoverage: { start: "2000-01-01", end: "2025-12-31", step: "P1Y" },
+        encoding: "color",
+        colorScale: {
+          domain: heatmapDomain,
+          palette: isEnergyMode ? energyHeatmap.palette : eff.palette,
+          kind: isEnergyMode ? "diverging" : climateConfig.mode === "value" ? "sequential" : "diverging",
         },
+        missingData: { policy: "hide" },
       },
-      {
-        id: "climate-overlay",
-        kind: "point-values",
-        group: "analysis",
-        title: isEnergyMode
-          ? `Evaluated ${energyScope} sites (${evaluatedEnergySites.length}) · EXPLORATORY`
-          : climateConfig.dimension === "water_rivers"
-            ? "Basin hubs"
-            : "NOAA weather stations",
-        description: isEnergyMode
-          ? "EXPLORATORY ranking of provinces, CCAA, basins or SWOT reservoirs for the selected concept. Not a validated result."
-          : climateConfig.dimension === "water_rivers"
-            ? "GPM rainfall averaged inside each basin box — not river gauges."
-            : resolvedScope.level === "age"
-              ? "NOAA GHCN-Daily reference stations: one per province (longest record). Full list in the station catalog."
-              : "Every NOAA GHCN-Daily station inside the selected region.",
-        source: { name: isEnergyMode ? conceptDatasetsLabel : "NOAA GHCN-Daily" },
-        resolution: isEnergyMode
-          ? `${evaluatedEnergySites.length} evaluated sites`
+    };
+    const analysisLayers: LayerDescriptor[] = [heatmapBase];
+    if (!isEnergyMode && urlB && heatmapBase.kind === "raster-field") {
+      analysisLayers.push({
+        ...heatmapBase,
+        id: "climate-heatmap-blend",
+        title: `${dimMeta.label} Heatmap (next observed year)`,
+        url: urlB,
+      });
+    }
+    analysisLayers.push({
+      id: "climate-overlay",
+      kind: "point-values",
+      group: "analysis",
+      title: isEnergyMode
+        ? `Evaluated ${energyScope} sites (${evaluatedEnergySites.length}) · EXPLORATORY`
+        : climateConfig.dimension === "water_rivers"
+          ? "Basin hubs"
+          : "NOAA weather stations",
+      description: isEnergyMode
+        ? "EXPLORATORY ranking of provinces, CCAA, basins or SWOT reservoirs for the selected concept. Not a validated result."
+        : climateConfig.dimension === "water_rivers"
+          ? "GPM rainfall averaged inside each basin box — not river gauges."
           : resolvedScope.level === "age"
-            ? "1 reference station per province"
-            : "All stations in scope",
-        data: overlayData,
-        science: {
-          variable: isEnergyMode ? energyConcept : dimMeta.id,
-          units: isEnergyMode ? energyHeatmap.units : eff.units,
-          bounds: HEATMAP_BOUNDS,
-          spatialResolution: "Point stations & centroids",
-          timeCoverage: { start: "2001-01-01", end: "2025-12-31", step: "P1Y" },
-          encoding: "color",
-          missingData: { policy: "hide" },
-        },
+            ? "NOAA GHCN-Daily reference stations: one per province (longest record). Full list in the station catalog."
+            : "Every NOAA GHCN-Daily station inside the selected region.",
+      source: { name: isEnergyMode ? conceptDatasetsLabel : "NOAA GHCN-Daily" },
+      resolution: isEnergyMode
+        ? `${evaluatedEnergySites.length} evaluated sites`
+        : resolvedScope.level === "age"
+          ? "1 reference station per province"
+          : "All stations in scope",
+      data: overlayData,
+      science: {
+        variable: isEnergyMode ? energyConcept : dimMeta.id,
+        units: isEnergyMode ? energyHeatmap.units : eff.units,
+        bounds: HEATMAP_BOUNDS,
+        spatialResolution: "Point stations & centroids",
+        timeCoverage: { start: "2001-01-01", end: "2025-12-31", step: "P1Y" },
+        encoding: "color",
+        missingData: { policy: "hide" },
       },
-    ];
+    });
     return [...analysisLayers, ...baseLayers];
   }, [
     baseLayers,
     bundle,
     climateConfig,
-    heatmapUrl,
+    urlA,
+    urlB,
+    playing,
     resolvedScope,
     adminBundle,
     workspaceMode,
@@ -410,9 +612,23 @@ export function ExploreView() {
   const [infraFile, setInfraFile] = useState<InfrastructureFile | null>(null);
   const [infraError, setInfraError] = useState<string | null>(null);
   const [selectedInstallationId, setSelectedInstallationId] = useState<string | null>(null);
+  const [destinationId, setDestinationId] = useState<string | null>(null);
+  const [casePanelOpen, setCasePanelOpen] = useState(false);
+  const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
+  const [showPlantRegister, setShowPlantRegister] = useState(false);
+  const [showIllustrativeModel, setShowIllustrativeModel] = useState(false);
+  const [modelAppearance, setModelAppearance] = useState<"existing" | "conceptual">("existing");
+  const [conceptualOpacity, setConceptualOpacity] = useState(0.35);
   const infraOpen = activeTool === "infrastructure";
+  const bunielId = "RE-114777";
+  const energyLayerOn =
+    infraOpen ||
+    showIllustrativeModel ||
+    showPlantRegister ||
+    destinationId === "installation-buniel";
+  const needInfra = energyLayerOn;
   useEffect(() => {
-    if (!infraOpen || infraFile || infraError) return;
+    if (!needInfra || infraFile || infraError) return;
     let active = true;
     loadInfrastructureFile()
       .then((f) => {
@@ -424,13 +640,13 @@ export function ExploreView() {
     return () => {
       active = false;
     };
-  }, [infraOpen, infraFile, infraError]);
+  }, [needInfra, infraFile, infraError]);
   const selectedInstallation = useMemo(
     () => infraFile?.installations.find((i) => i.id === selectedInstallationId) ?? null,
     [infraFile, selectedInstallationId],
   );
   const globeLayers = useMemo<LayerDescriptor[]>(() => {
-    if (!infraFile || !infraOpen) return allLayers;
+    if (!infraFile || !energyLayerOn) return allLayers;
     const infraLayer: LayerDescriptor = {
       id: "energy-infrastructure",
       kind: "point-values",
@@ -455,20 +671,36 @@ export function ExploreView() {
       },
     };
     return [...allLayers, infraLayer];
-  }, [allLayers, infraFile, infraOpen, selectedInstallation]);
-  const globeLayerStates = useMemo<LayerStateMap>(
-    () => ({ ...layerStates, "energy-infrastructure": { visible: infraOpen, opacity: 1 } }),
-    [layerStates, infraOpen],
-  );
+  }, [allLayers, infraFile, energyLayerOn, selectedInstallation]);
+  const globeLayerStates = useMemo<LayerStateMap>(() => {
+    const heat = layerStates["climate-heatmap"] ?? { visible: true, opacity: 0.62 };
+    const blending = Boolean(urlB) && playing;
+    const opacityA = blending ? heat.opacity * (frontIsA ? 1 - blendT : blendT) : heat.opacity;
+    const opacityB = blending ? heat.opacity * (frontIsA ? blendT : 1 - blendT) : 0;
+    return {
+      ...layerStates,
+      "climate-heatmap": {
+        visible: heat.visible,
+        opacity: opacityA,
+      },
+      "climate-heatmap-blend": {
+        visible: heat.visible && blending,
+        opacity: opacityB,
+      },
+      "energy-infrastructure": { visible: energyLayerOn, opacity: 1 },
+    };
+  }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA]);
   const toggleTool = useCallback((tool: ToolId) => setActiveTool((t) => (t === tool ? null : tool)), []);
   useEffect(() => {
-    if (!activeTool) return;
+    if (!activeTool && !casePanelOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeTool();
+      if (e.key !== "Escape") return;
+      if (activeTool) closeTool();
+      else setCasePanelOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeTool, closeTool]);
+  }, [activeTool, casePanelOpen, closeTool]);
 
   const selectInstallation = useCallback(
     (inst: Installation | null) => {
@@ -485,6 +717,75 @@ export function ExploreView() {
     },
     [controller],
   );
+
+  const illustrativeAsset = useMemo<IllustrativeAssetView | null>(() => {
+    if (!showIllustrativeModel) return null;
+    const dest = destinationById("installation-buniel");
+    if (!dest) return null;
+    return {
+      installationId: bunielId,
+      latitude: dest.latitude,
+      longitude: dest.longitude,
+      technology: "wind_onshore",
+      appearance: modelAppearance,
+      conceptualOpacity,
+    };
+  }, [showIllustrativeModel, modelAppearance, conceptualOpacity]);
+
+  const handleSelectDestination = useCallback(
+    (dest: GeographicDestination) => {
+      setDestinationId(dest.id);
+      setWorkspaceMode("climate");
+      controller?.flyTo(dest.view);
+
+      if (dest.id === "spain") {
+        setCasePanelOpen(false);
+        setActiveCaseId(null);
+        setShowIllustrativeModel(false);
+        setShowPlantRegister(false);
+        handleChangeAdminScope({ ...adminScope, level: "age" }, false);
+        return;
+      }
+      if (dest.caseStudyId) {
+        const study = caseById(dest.caseStudyId);
+        setCasePanelOpen(true);
+        setActiveCaseId(dest.caseStudyId);
+        if (study?.adminCcaaId) {
+          handleChangeAdminScope(
+            { ...adminScope, level: "ccaa", ccaaId: study.adminCcaaId, clipToScope: true },
+            false,
+          );
+        } else {
+          handleChangeAdminScope({ ...adminScope, level: "age", clipToScope: true }, false);
+        }
+        if (!study?.hasPlantRegister) {
+          setShowPlantRegister(false);
+          if (dest.installationId !== bunielId) setShowIllustrativeModel(false);
+        }
+        setEvidenceOpen(false);
+      } else {
+        setCasePanelOpen(false);
+        setActiveCaseId(null);
+      }
+      if (dest.installationId === bunielId) {
+        setShowIllustrativeModel(true);
+        setSelectedInstallationId(bunielId);
+        setSelected({ latitude: dest.latitude, longitude: dest.longitude });
+      } else if (dest.protectedLandscape) {
+        setShowIllustrativeModel(false);
+      }
+    },
+    [adminScope, controller, handleChangeAdminScope],
+  );
+
+  const returnToSpain = useCallback(() => {
+    const spain = DESTINATIONS.find((d) => d.id === "spain");
+    if (spain) handleSelectDestination(spain);
+    else controller?.flyTo(HOME_DESTINATION_VIEW);
+  }, [controller, handleSelectDestination]);
+
+  const activeCase = casePanelOpen && activeCaseId ? caseById(activeCaseId) : undefined;
+  const activeDestination = destinationId ? destinationById(destinationId) : undefined;
 
   // "Open in Trend panel": the province scope whose precomputed MERRA-2 result the panel shows.
   const openInstallationRegion = useCallback(
@@ -566,7 +867,7 @@ export function ExploreView() {
         setTimeout(() => URL.revokeObjectURL(url), 5_000);
         flash("Screenshot saved");
       } else {
-        const hash = encodeView(controller.getCamera(), viewMode, dim);
+        const hash = encodeView(controller.getCamera(), dim);
         history.replaceState(null, "", hash);
         try {
           await navigator.clipboard.writeText(window.location.href);
@@ -576,7 +877,7 @@ export function ExploreView() {
         }
       }
     },
-    [controller, viewMode, dim, flash],
+    [controller, dim, flash],
   );
 
   // Restore a shared view (#cam=…) once the globe is ready.
@@ -586,7 +887,6 @@ export function ExploreView() {
     setRestored(true);
     const shared = decodeView(window.location.hash);
     if (!shared) return;
-    setViewMode(shared.mode);
     setDim(shared.dim);
     controller.setDimension(shared.dim, 0);
     controller.setCamera(shared.camera, 0);
@@ -597,14 +897,6 @@ export function ExploreView() {
     (d: SceneDim) => {
       setDim(d);
       controller?.setDimension(d);
-    },
-    [controller],
-  );
-
-  const changeViewMode = useCallback(
-    (mode: ViewMode) => {
-      setViewMode(mode);
-      if (mode === "spain") controller?.flyTo(HOME_VIEW);
     },
     [controller],
   );
@@ -642,6 +934,7 @@ export function ExploreView() {
           onStatus={setStatus}
           onReady={setController}
           creditContainer={creditEl}
+          illustrativeAsset={illustrativeAsset}
         />
       )}
 
@@ -651,16 +944,13 @@ export function ExploreView() {
       />
 
       {/* Loading and error states */}
-      {status?.phase !== "error" && (
+      {status?.phase !== "error" && !ready && (
         <div
-          className={`pointer-events-none absolute inset-0 z-[2] grid place-items-center bg-space/55 transition-opacity duration-700 ${
-            ready ? "opacity-0" : "opacity-100"
-          }`}
-          aria-hidden={ready}
+          className="pointer-events-none absolute inset-0 z-[2] grid place-items-center bg-space/55"
         >
           <div className="flex flex-col items-center gap-3" role="status">
-            <span className="size-10 animate-pulse rounded-full border border-accent/40 bg-accent/10 shadow-[0_0_28px_rgb(124_196_255/0.35)]" />
-            <p className="text-xs tracking-[0.22em] text-muted uppercase">Preparing Spain…</p>
+            <span className="size-10 animate-pulse rounded-full border border-nav/40 bg-atlantic/80" />
+            <p className="text-xs tracking-[0.22em] text-faint uppercase">Preparing Spain…</p>
           </div>
         </div>
       )}
@@ -680,10 +970,15 @@ export function ExploreView() {
         </div>
       )}
 
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/60 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-atlantic/80 to-transparent" />
       <TopNav
         center={
-          <ViewModeToggle mode={viewMode} onChange={changeViewMode} dim={dim} onDimChange={changeDim} disabled={!controller} />
+          <ViewModeToggle
+            onRecenterSpain={() => controller?.flyTo(homeView)}
+            dim={dim}
+            onDimChange={changeDim}
+            disabled={!controller}
+          />
         }
       />
 
@@ -701,7 +996,7 @@ export function ExploreView() {
             onClick={() => setWorkspaceMode("climate")}
             className={`focus-ring rounded-md px-2.5 py-1.5 font-medium transition-colors ${
               workspaceMode === "climate"
-                ? "bg-accent/20 text-accent shadow-[inset_0_0_0_1px_rgb(124_196_255/0.35)]"
+                ? "bg-accent/20 text-accent shadow-[inset_0_0_0_1px_rgb(214_180_126/0.4)]"
                 : "text-muted hover:text-ink"
             }`}
           >
@@ -713,6 +1008,8 @@ export function ExploreView() {
             aria-selected={workspaceMode === "energy"}
             title="Exploratory: suitability scores are not validated results"
             onClick={() => {
+              setPlaying(false);
+              setBlendT(0);
               setWorkspaceMode("energy");
               setEvidenceOpen(true);
             }}
@@ -727,6 +1024,10 @@ export function ExploreView() {
         </div>
         )}
 
+        <MapMarkerLegend
+          stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
+          energyVisible={energyLayerOn && infraFile !== null}
+        />
         <AdminScopeBar
           admin={adminBundle}
           scope={adminScope}
@@ -761,6 +1062,7 @@ export function ExploreView() {
               heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
               stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
               playing={playing}
+              timelineReady={timelineReady}
               onChange={updateClimateConfig}
               onToggleHeatmap={() =>
                 updateLayer("climate-heatmap", { visible: !(layerStates["climate-heatmap"]?.visible ?? true) })
@@ -768,7 +1070,17 @@ export function ExploreView() {
               onToggleStations={() =>
                 updateLayer("climate-overlay", { visible: !(layerStates["climate-overlay"]?.visible ?? true) })
               }
-              onTogglePlay={() => setPlaying((p) => !p)}
+              onTogglePlay={() => {
+                setPlaying((p) => {
+                  if (!p) {
+                    setClimateConfig((cfg) =>
+                      cfg.year >= LAST_COMPLETE_YEAR ? { ...cfg, year: FIRST_OBSERVED_YEAR } : cfg,
+                    );
+                  }
+                  setBlendT(0);
+                  return !p;
+                });
+              }}
             />
             {(layerStates["climate-heatmap"]?.visible ?? true) && dimensionHasSpatialGrid(climateConfig.dimension) && (
               <aside className="pointer-events-none mt-1 pl-1" aria-label="Map color scale">
@@ -786,7 +1098,7 @@ export function ExploreView() {
       </div>
 
       <div className="pointer-events-none absolute top-28 right-3 bottom-28 z-20 flex items-stretch justify-end gap-2 sm:top-16 sm:right-6 sm:bottom-32">
-        {activeTool && (
+        {(activeTool || activeCase) && (
           <div className="pointer-events-none flex items-end pb-1">
             {activeTool === "stations" && (
               <StationCatalogPanel
@@ -801,6 +1113,33 @@ export function ExploreView() {
             )}
             {activeTool === "evidence" && (
               <EvidenceCardPanel scope={resolvedScope} onOpenTrend={() => setEvidenceOpen(true)} onClose={closeTool} />
+            )}
+            {activeCase && (
+              <EnergyCasePanel
+                study={activeCase}
+                showModel={showIllustrativeModel}
+                showPlantRegister={showPlantRegister}
+                appearance={modelAppearance}
+                conceptualOpacity={conceptualOpacity}
+                onSelectCase={(id) => {
+                  const dest = DESTINATIONS.find((d) => d.id === id && d.caseStudyId === id);
+                  if (dest) handleSelectDestination(dest);
+                }}
+                onShowModel={setShowIllustrativeModel}
+                onShowPlantRegister={setShowPlantRegister}
+                onAppearance={setModelAppearance}
+                onOpacity={setConceptualOpacity}
+                onOpenEvidence={() => {
+                  setActiveTool("evidence");
+                  setEvidenceOpen(true);
+                }}
+                onReturnOverview={returnToSpain}
+                onClose={() => {
+                  setCasePanelOpen(false);
+                  setActiveCaseId(null);
+                  setShowPlantRegister(false);
+                }}
+              />
             )}
             {EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure" && (
               <EnergyInfrastructurePanel
@@ -884,7 +1223,19 @@ export function ExploreView() {
               />
             )}
           </div>
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-wrap items-end justify-end gap-2">
+            {activeDestination && activeDestination.id !== "spain" && (
+              <p className="pointer-events-none mb-1 max-w-[16rem] text-[10px] leading-snug text-muted">
+                {activeDestination.protectedLandscape
+                  ? `${activeDestination.name}: navigation only — not an energy development candidate.`
+                  : `${activeDestination.name}. ${activeDestination.source.name}.`}
+              </p>
+            )}
+            <ExploreSpain
+              selectedId={destinationId}
+              onSelect={handleSelectDestination}
+              disabled={!controller}
+            />
             <button
               type="button"
               onClick={() => setEvidenceOpen((o) => !o)}

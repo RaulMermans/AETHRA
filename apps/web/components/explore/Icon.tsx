@@ -1,8 +1,6 @@
 const PATHS = {
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
-  lock: "M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4",
-  unlock: "M6 11h12v10H6zM8 11V7a4 4 0 0 1 7.5-2",
   tiltUp: "M4 17l8-8 8 8M4 12l8-8 8 8",
   tiltDown: "M4 7l8 8 8-8M4 12l8 8 8-8",
   rotateLeft: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
