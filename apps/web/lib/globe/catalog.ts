@@ -196,6 +196,22 @@ export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
       credit: "VIIRS Black Marble 2016 · NASA GIBS",
     },
     {
+      id: "modis-ndvi-gibs",
+      kind: "imagery",
+      group: "imagery",
+      title: "Vegetation NDVI (MODIS 8-day)",
+      description: "NASA Terra MODIS 8-day Normalized Difference Vegetation Index (GIBS WMTS).",
+      source: {
+        name: "NASA GIBS",
+        product: "MODIS_Terra_NDVI_8Day",
+        url: "https://nasa-gibs.github.io/gibs-api-docs/",
+      },
+      resolution: "250 m",
+      urlTemplate: `${GIBS}/MODIS_Terra_NDVI_8Day/default/2000-02-18/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`,
+      maximumLevel: 9,
+      credit: "MODIS Terra NDVI 8-Day · NASA GIBS",
+    },
+    {
       id: "spain-boundary",
       kind: "geojson",
       group: "reference",
@@ -209,6 +225,19 @@ export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
       },
       data: SPAIN_OUTLINE_URL,
       style: { stroke: "#7cc4ff", strokeWidth: 1.5 },
+    },
+    {
+      id: "spain-rivers",
+      kind: "geojson",
+      group: "reference",
+      title: "Major rivers (8 basins)",
+      description: "Ebro, Duero, Tajo, Guadiana, Guadalquivir, Miño-Sil, Júcar and Segura main courses.",
+      source: {
+        name: "Hydrographic Demarcations",
+        product: "Spain 8 primary river courses",
+      },
+      data: "/data/spain-rivers.geojson",
+      style: { stroke: "#38bdf8", strokeWidth: 2.5 },
     },
     {
       id: "spain-extent",

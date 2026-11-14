@@ -3,12 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
 import { buildLayerCatalog, CAMERA_BOUNDS, HOME_VIEW, initialLayerStates, WORLD_VIEW } from "@/lib/globe/catalog";
+import {
+  buildDimensionOverlayGeoJson,
+  DIMENSIONS,
+  getEffectiveMeta,
+  HEATMAP_BOUNDS,
+  loadClimateBundle,
+  renderDimensionHeatmapDataUrl,
+  type ActiveClimateConfig,
+  type ClimateBundle,
+} from "@/lib/globe/climate";
 import type {
   CameraState,
   ClickToolId,
   GeoCoordinate,
   GlobeController,
   GlobeStatus,
+  LayerDescriptor,
   LayerState,
   LayerStateMap,
   MeasureState,
@@ -19,11 +30,12 @@ import type {
 } from "@/lib/globe/types";
 import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
+import { DimensionDock } from "./DimensionDock";
 import { EvidencePanel } from "./EvidencePanel";
 import { ExploreSpain } from "./ExploreSpain";
+import { GoToPanel } from "./GoToPanel";
 import { Icon } from "./Icon";
 import { LayerPanel } from "./LayerPanel";
-import { GoToPanel } from "./GoToPanel";
 import { MeasurePanel } from "./MeasurePanel";
 import { ReliefPanel } from "./ReliefPanel";
 import { CLICK_TOOLS, ToolsBar, type ToolAction } from "./ToolsBar";
@@ -55,23 +67,127 @@ function decodeView(hash: string): { camera: CameraState; mode: ViewMode; ex: nu
 }
 
 export function ExploreView() {
-  const [layers] = useState(() => buildLayerCatalog());
-  const [layerStates, setLayerStates] = useState<LayerStateMap>(() => initialLayerStates(layers));
+  const [baseLayers] = useState(() => buildLayerCatalog());
+  const [layerStates, setLayerStates] = useState<LayerStateMap>(() => ({
+    ...initialLayerStates(baseLayers),
+    "climate-heatmap": { visible: true, opacity: 0.78 },
+    "climate-overlay": { visible: true, opacity: 0.95 },
+  }));
   const [hover, setHover] = useState<GeoCoordinate | null>(null);
   const [selected, setSelected] = useState<GeoCoordinate | null>(null);
   const [status, setStatus] = useState<GlobeStatus | null>(null);
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(true);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const [viewMode, setViewMode] = useState<ViewMode>("spain");
   const [dim, setDim] = useState<SceneDim>("3d");
   const homeView = viewMode === "spain" ? HOME_VIEW : WORLD_VIEW;
 
+  // --- Climate bundle + 9 Dimensions & 2030 Extrapolation state --------------------------
+  const [bundle, setBundle] = useState<ClimateBundle | null>(null);
+  const [climateConfig, setClimateConfig] = useState<ActiveClimateConfig>({
+    dimension: "temperature",
+    year: 2025,
+    mode: "value",
+    scenario: "central",
+    heatMetric: "tropical_nights",
+    rainMetric: "max_dry_spell",
+    vegMetric: "ndvi",
+  });
+  const [heatmapUrl, setHeatmapUrl] = useState<string>("");
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    loadClimateBundle()
+      .then((b) => {
+        if (active) setBundle(b);
+      })
+      .catch((err) => console.error("[climate] failed to load climate bundle", err));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!bundle) return;
+    let active = true;
+    renderDimensionHeatmapDataUrl(bundle, climateConfig)
+      .then((url) => {
+        if (active) setHeatmapUrl(url);
+      })
+      .catch((err) => console.error("[climate] failed to render heatmap", err));
+    return () => {
+      active = false;
+    };
+  }, [bundle, climateConfig]);
+
+  const updateClimateConfig = useCallback((patch: Partial<ActiveClimateConfig>) => {
+    setClimateConfig((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const allLayers = useMemo<LayerDescriptor[]>(() => {
+    const dimMeta = DIMENSIONS.find((d) => d.id === climateConfig.dimension) ?? DIMENSIONS[0];
+    const eff = getEffectiveMeta(climateConfig);
+    const overlayData = bundle
+      ? buildDimensionOverlayGeoJson(bundle, climateConfig)
+      : { type: "FeatureCollection", features: [] };
+
+    const analysisLayers: LayerDescriptor[] = [
+      {
+        id: "climate-heatmap",
+        kind: "raster-field",
+        group: "analysis",
+        title: `${dimMeta.label} Heatmap`,
+        description: eff.subtitle,
+        source: { name: dimMeta.datasets },
+        resolution: dimMeta.spatialNote,
+        synthetic: dimMeta.synthetic,
+        url: heatmapUrl,
+        science: {
+          variable: dimMeta.id,
+          units: eff.units,
+          bounds: HEATMAP_BOUNDS,
+          spatialResolution: dimMeta.spatialNote,
+          timeCoverage: { start: "2000-01-01", end: "2030-12-31", step: "P1Y" },
+          encoding: "color",
+          colorScale: {
+            domain: eff.domain,
+            palette: eff.palette,
+            kind: climateConfig.mode === "value" ? "sequential" : "diverging",
+          },
+          missingData: { policy: "hide" },
+        },
+      },
+      {
+        id: "climate-overlay",
+        kind: "point-values",
+        group: "analysis",
+        title:
+          climateConfig.dimension === "water_rivers"
+            ? "Major Rivers & Basin Hubs"
+            : "NOAA Weather Stations & Rivers",
+        description: "Ground-truth station observations (NOAA GHCN-Daily) and major Spanish river courses.",
+        source: { name: "NOAA GHCN-Daily + Hydrographic Demarcations" },
+        resolution: "175 stations + 8 basins",
+        data: overlayData,
+        science: {
+          variable: dimMeta.id,
+          units: eff.units,
+          bounds: HEATMAP_BOUNDS,
+          spatialResolution: "Point stations",
+          timeCoverage: { start: "2001-01-01", end: "2030-12-31", step: "P1Y" },
+          encoding: "color",
+          missingData: { policy: "hide" },
+        },
+      },
+    ];
+    return [...analysisLayers, ...baseLayers];
+  }, [baseLayers, bundle, climateConfig, heatmapUrl]);
+
   // --- Map tools -------------------------------------------------------------------------
-  // Click tools collect points (2 per measurement, or N for a polygon); panel tools only show a
-  // panel. One tool at a time.
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [measure, setMeasure] = useState<MeasureState | null>(null);
   const [exaggeration, setExaggeration] = useState(1);
@@ -132,12 +248,17 @@ export function ExploreView() {
     [controller],
   );
 
+  const handleSelectLocation = useCallback((coord: GeoCoordinate | null) => {
+    setSelected(coord);
+    if (coord) setEvidenceOpen(true);
+  }, []);
+
   const goTo = useCallback(
     (t: GeoCoordinate & { kind?: "city" | "peak" }) => {
       if (!controller) return;
       const { west, south, east, north } = CAMERA_BOUNDS;
       const outside = t.longitude < west || t.longitude > east || t.latitude < south || t.latitude > north;
-      if (outside && viewMode === "spain") setViewMode("world"); // otherwise the camera would bounce back
+      if (outside && viewMode === "spain") setViewMode("world");
       const peak = t.kind === "peak";
       controller.flyTo({
         target: { latitude: t.latitude, longitude: t.longitude },
@@ -147,10 +268,10 @@ export function ExploreView() {
         durationSeconds: 2.5,
         terrainAware: true,
       });
-      setSelected({ latitude: t.latitude, longitude: t.longitude });
+      handleSelectLocation({ latitude: t.latitude, longitude: t.longitude });
       closeTool();
     },
-    [controller, viewMode, closeTool],
+    [controller, viewMode, closeTool, handleSelectLocation],
   );
 
   const runAction = useCallback(
@@ -215,9 +336,7 @@ export function ExploreView() {
     [controller],
   );
 
-  // Layer panel starts open on wider screens only; rendering override is remembered per browser.
   useEffect(() => {
-    setLayersOpen(window.matchMedia("(min-width: 640px)").matches);
     try {
       const saved = localStorage.getItem(QUALITY_KEY);
       if (saved && ["auto", "high", "balanced", "performance"].includes(saved)) setQualityMode(saved as QualityMode);
@@ -243,12 +362,12 @@ export function ExploreView() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-space">
-      <h1 className="sr-only">Explore Spain on a 3D globe</h1>
+      <h1 className="sr-only">Explore Spain environmental trends and 2030 projections on a 3D globe</h1>
 
       {creditEl && (
         <GlobeClient
           className="absolute inset-0 focus-ring"
-          layers={layers}
+          layers={allLayers}
           layerStates={layerStates}
           selected={selected}
           qualityMode={qualityMode}
@@ -256,7 +375,7 @@ export function ExploreView() {
           measure={measureWithPreview}
           onToolClick={addToolPoint}
           onHover={setHover}
-          onSelect={setSelected}
+          onSelect={handleSelectLocation}
           onStatus={setStatus}
           onReady={setController}
           creditContainer={creditEl}
@@ -304,16 +423,32 @@ export function ExploreView() {
         )}
       </div>
 
-      <div className="pointer-events-none absolute top-14 left-4 z-10 sm:left-6">
+      {/* Left column: Layers panel + Dimension Dock */}
+      <div className="pointer-events-none absolute top-14 left-4 z-10 flex max-w-[calc(100vw-2rem)] flex-col gap-2.5 sm:left-6">
         <LayerPanel
           open={layersOpen}
           onToggle={() => setLayersOpen((o) => !o)}
-          layers={layers}
+          layers={allLayers}
           states={layerStates}
           onChange={updateLayer}
           status={status}
           qualityMode={qualityMode}
           onQualityChange={changeQuality}
+        />
+        <DimensionDock
+          config={climateConfig}
+          heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
+          stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
+          playing={playing}
+          onChange={updateClimateConfig}
+          onToggleHeatmap={() =>
+            updateLayer("climate-heatmap", { visible: !(layerStates["climate-heatmap"]?.visible ?? true) })
+          }
+          onToggleStations={() =>
+            updateLayer("climate-overlay", { visible: !(layerStates["climate-overlay"]?.visible ?? true) })
+          }
+          onTogglePlay={() => setPlaying((p) => !p)}
+          onOpenEvidence={() => setEvidenceOpen(true)}
         />
       </div>
 
@@ -364,7 +499,15 @@ export function ExploreView() {
       {/* Bottom bar: coordinates · primary action · evidence */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 px-4 pb-8 sm:px-6">
         <div className="flex justify-end sm:pr-14">
-          <EvidencePanel open={evidenceOpen} onClose={() => setEvidenceOpen(false)} selected={selected} />
+          <EvidencePanel
+            open={evidenceOpen}
+            onClose={() => setEvidenceOpen(false)}
+            selected={selected}
+            bundle={bundle}
+            config={climateConfig}
+            onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
+            onSelectLocation={handleSelectLocation}
+          />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="sm:w-[22rem]">
@@ -380,8 +523,8 @@ export function ExploreView() {
               className="focus-ring panel pointer-events-auto relative inline-flex items-center gap-2 !rounded-full px-4 py-2.5 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
             >
               <Icon name="chart" className="size-4 text-muted" />
-              Evidence
-              {selected && <span className="absolute top-1.5 right-2 size-1.5 rounded-full bg-accent" aria-hidden />}
+              2030 Evidence & Decisions
+              <span className="size-1.5 rounded-full bg-accent" aria-hidden />
             </button>
           </div>
         </div>
