@@ -29,6 +29,11 @@ Other sources are welcome too, e.g. [NOAA CDO](https://www.ncei.noaa.gov/cdo-web
   merges exports into one schema. **Not NASA**: ground truth/validation. ~26 years is borderline for a
   climate trend (older years being added); check quality flags in `*_ATTRIBUTES`.
 
+- [`data/nasa_gldas_spain_monthly/`](../data/nasa_gldas_spain_monthly/README.md) — NASA GLDAS Noah
+  0.25° monthly v2.1 via Giovanni (area-averaged over the Spain bbox), 2000-01 → 2026-07:
+  evapotranspiration, surface + groundwater runoff, snow water equivalent, soil moisture 0-10 cm.
+  Tidy mm/month table: `gldas_spain_monthly_water_balance_mm_2000-2026.csv`.
+
 ## Candidate NASA datasets for Spain
 
 Coverage for LP DAAC rows comes from the local catalog metadata; other rows come from provider
