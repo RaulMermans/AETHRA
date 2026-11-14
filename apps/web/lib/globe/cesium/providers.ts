@@ -1,5 +1,5 @@
 import type * as CesiumNS from "cesium";
-import { DETAIL_BASE_IMAGERY, FALLBACK_BASE_IMAGERY, TERRAIN_FALLBACK } from "../catalog";
+import { DETAIL_BASE_IMAGERY, FALLBACK_BASE_IMAGERY, SPAIN_IMAGERY_EXTENTS, TERRAIN_FALLBACK } from "../catalog";
 import type { GlobeStatus } from "../types";
 
 type Cesium = typeof CesiumNS;
@@ -28,8 +28,13 @@ function countFailures(
   });
 }
 
+/** Spain imagery extents as Cesium rectangles (one ImageryLayer per extent). */
+export function spainRectangles(Cesium: Cesium): CesiumNS.Rectangle[] {
+  return SPAIN_IMAGERY_EXTENTS.map((b) => Cesium.Rectangle.fromDegrees(b.west, b.south, b.east, b.north));
+}
+
 /**
- * Base imagery. With an ion token: Cesium World Imagery (Bing Maps Aerial, sub-metre in many
+ * Base imagery, requested only inside the Spain extents (one layer per extent). With an ion token: Cesium World Imagery (Bing Maps Aerial, sub-metre in many
  * areas) only — no low-resolution layers underneath. Without: NASA Blue Marble for the global
  * view plus Sentinel-2 cloudless (10 m) from regional zoom.
  */
@@ -39,12 +44,15 @@ export function createBaseImagery(
   onFailedTiles: (n: number) => void,
 ): { layers: CesiumNS.ImageryLayer[]; label: string; finestDetail: string; tier: "ion" | "fallback" } {
   if (token) {
-    const layer = Cesium.ImageryLayer.fromWorldImagery({}); // default style: AERIAL
-    layer.readyEvent.addEventListener((provider: CesiumNS.ImageryProvider) =>
-      countFailures(provider.errorEvent, onFailedTiles),
-    );
+    const layers = spainRectangles(Cesium).map((rectangle) => {
+      const layer = Cesium.ImageryLayer.fromWorldImagery({ rectangle }); // default style: AERIAL
+      layer.readyEvent.addEventListener((provider: CesiumNS.ImageryProvider) =>
+        countFailures(provider.errorEvent, onFailedTiles),
+      );
+      return layer;
+    });
     return {
-      layers: [layer],
+      layers,
       label: "Cesium World Imagery (Bing Maps Aerial)",
       finestDetail: "< 1 m in many areas (varies)",
       tier: "ion",
@@ -54,17 +62,18 @@ export function createBaseImagery(
 }
 
 export function createFallbackImagery(Cesium: Cesium, onFailedTiles: (n: number) => void) {
-  const make = (cfg: typeof FALLBACK_BASE_IMAGERY | typeof DETAIL_BASE_IMAGERY, minimumTerrainLevel?: number) => {
-    const provider = new Cesium.UrlTemplateImageryProvider({
-      url: cfg.urlTemplate,
-      maximumLevel: cfg.maximumLevel,
-      credit: new Cesium.Credit(cfg.credit, true),
+  const make = (cfg: typeof FALLBACK_BASE_IMAGERY | typeof DETAIL_BASE_IMAGERY, minimumTerrainLevel?: number) =>
+    spainRectangles(Cesium).map((rectangle) => {
+      const provider = new Cesium.UrlTemplateImageryProvider({
+        url: cfg.urlTemplate,
+        maximumLevel: cfg.maximumLevel,
+        credit: new Cesium.Credit(cfg.credit, true),
+      });
+      countFailures(provider.errorEvent, onFailedTiles);
+      return new Cesium.ImageryLayer(provider, { minimumTerrainLevel, rectangle });
     });
-    countFailures(provider.errorEvent, onFailedTiles);
-    return new Cesium.ImageryLayer(provider, { minimumTerrainLevel });
-  };
   return {
-    layers: [make(FALLBACK_BASE_IMAGERY), make(DETAIL_BASE_IMAGERY, DETAIL_BASE_IMAGERY.minimumTerrainLevel)],
+    layers: [...make(FALLBACK_BASE_IMAGERY), ...make(DETAIL_BASE_IMAGERY, DETAIL_BASE_IMAGERY.minimumTerrainLevel)],
     label: `${FALLBACK_BASE_IMAGERY.title} → ${DETAIL_BASE_IMAGERY.title}`,
     finestDetail: DETAIL_BASE_IMAGERY.finestDetail,
   };

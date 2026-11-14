@@ -1,4 +1,5 @@
 import type * as CesiumNS from "cesium";
+import { spainRectangles } from "./providers";
 import type {
   GeoJsonLayerDescriptor,
   ImageryLayerDescriptor,
@@ -13,8 +14,8 @@ type Cesium = typeof CesiumNS;
 interface LayerHandle {
   /** Value of the state that requires re-creating the layer (e.g. the date). */
   key: string;
-  /** Present for imagery layers, used to keep stacking order. */
-  imagery?: CesiumNS.ImageryLayer;
+  /** Present for imagery layers (one per Spain extent), used to keep stacking order. */
+  imagery?: CesiumNS.ImageryLayer[];
   apply(state: LayerState): void;
   destroy(): void;
 }
@@ -32,25 +33,33 @@ type Adapter<D extends LayerDescriptor> = (
 
 const imageryAdapter: Adapter<ImageryLayerDescriptor> = async ({ Cesium, viewer }, d, state) => {
   const time = state.time ?? d.time?.default ?? "";
-  const provider = new Cesium.UrlTemplateImageryProvider({
-    url: d.urlTemplate.replace("{Time}", time),
-    maximumLevel: d.maximumLevel,
-    credit: new Cesium.Credit(time && d.time ? `${d.credit} (${time})` : d.credit, true),
+  // Only Spain is rendered (D21): request tiles only inside the Spain extents.
+  const layers = spainRectangles(Cesium).map((rectangle) => {
+    const provider = new Cesium.UrlTemplateImageryProvider({
+      url: d.urlTemplate.replace("{Time}", time),
+      maximumLevel: d.maximumLevel,
+      credit: new Cesium.Credit(time && d.time ? `${d.credit} (${time})` : d.credit, true),
+    });
+    // Missing tiles (e.g. a date without data) are expected: render nothing for them.
+    provider.errorEvent.addEventListener((err: CesiumNS.TileProviderError) => {
+      err.retry = false;
+    });
+    const layer = new Cesium.ImageryLayer(provider, { rectangle });
+    viewer.imageryLayers.add(layer);
+    return layer;
   });
-  // Missing tiles (e.g. a date without data) are expected: render nothing for them.
-  provider.errorEvent.addEventListener((err: CesiumNS.TileProviderError) => {
-    err.retry = false;
-  });
-  const layer = viewer.imageryLayers.addImageryProvider(provider);
   return {
     key: time,
-    imagery: layer,
+    imagery: layers,
     apply(s) {
-      layer.show = s.visible;
-      layer.alpha = s.opacity;
+      for (const layer of layers) {
+        layer.show = s.visible;
+        layer.alpha = s.opacity;
+      }
     },
     destroy() {
-      if (!viewer.isDestroyed()) viewer.imageryLayers.remove(layer, true);
+      if (viewer.isDestroyed()) return;
+      for (const layer of layers) viewer.imageryLayers.remove(layer, true);
     },
   };
 };
@@ -143,8 +152,7 @@ export class CesiumLayerManager {
   /** Keep imagery stacking order equal to catalog order (first = lowest, above base map). */
   private orderImagery(layers: LayerDescriptor[]) {
     for (const d of layers) {
-      const layer = this.handles.get(d.id)?.imagery;
-      if (layer) this.viewer.imageryLayers.raiseToTop(layer);
+      for (const layer of this.handles.get(d.id)?.imagery ?? []) this.viewer.imageryLayers.raiseToTop(layer);
     }
   }
 

@@ -2,13 +2,40 @@ import type { LayerDescriptor, LayerStateMap, OrbitView, Place } from "./types";
 
 // --- Camera views ------------------------------------------------------------------------
 
+/** Top-down view framing all of Spain: Peninsula, Balearics, Canarias, Ceuta and Melilla. */
 export const HOME_VIEW: OrbitView = {
-  target: { latitude: 30, longitude: -5 },
+  target: { latitude: 35.6, longitude: -10.0 },
   heading: 0,
   pitch: -90,
-  range: 21_000_000,
+  range: 3_300_000,
   durationSeconds: 2.4,
 };
+
+/**
+ * Only Spain is rendered on the globe (everything outside this outline is clipped). Simplified
+ * from Eurostat GISCO NUTS 2021 1:1M by scripts/build_web_boundary.py.
+ */
+export const SPAIN_BOUNDARY_URL = "/data/spain-boundary.geojson";
+/** Same outline as lines, for the outline layer (polygon outlines are not drawn on terrain). */
+export const SPAIN_OUTLINE_URL = "/data/spain-outline.geojson";
+
+type Box = { west: number; south: number; east: number; north: number };
+
+/**
+ * Boxes around everything that is rendered (D21): Peninsula + Balearics + Ceuta/Melilla, and
+ * Canarias. Imagery is only requested inside them, so no tiles are fetched for the open sea,
+ * Portugal, France or Morocco between them. ~0.1° margin around the outline.
+ */
+export const SPAIN_IMAGERY_EXTENTS: readonly Box[] = [
+  { west: -9.4, south: 35.1, east: 4.4, north: 43.9 },
+  { west: -18.3, south: 27.5, east: -13.3, north: 29.5 },
+];
+
+/**
+ * The camera position is kept inside this box (lon/lat, degrees), generous enough for oblique
+ * views from the south and for the home view, so panning can't drift away from Spain.
+ */
+export const CAMERA_BOUNDS: Box = { west: -24, south: 18, east: 10, north: 48 };
 
 /** Default analysis extent (DECISIONS D5): Peninsula + Balearics, lon/lat WGS84. */
 export const SPAIN_BBOX = { west: -9.5, south: 35.9, east: 4.4, north: 43.9 } as const;
@@ -155,6 +182,21 @@ export function buildLayerCatalog(now = new Date()): LayerDescriptor[] {
       credit: "VIIRS Black Marble 2016 · NASA GIBS",
     },
     {
+      id: "spain-boundary",
+      kind: "geojson",
+      group: "reference",
+      title: "Spain outline",
+      description:
+        "Mainland, Balearic and Canary Islands, Ceuta and Melilla. Simplified (~300 m) from the official EU boundary.",
+      source: {
+        name: "Eurostat GISCO",
+        product: "NUTS 2021, 1:1 million (country ES)",
+        url: "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units",
+      },
+      data: SPAIN_OUTLINE_URL,
+      style: { stroke: "#7cc4ff", strokeWidth: 1.5 },
+    },
+    {
       id: "spain-extent",
       kind: "geojson",
       group: "reference",
@@ -181,7 +223,7 @@ export function initialLayerStates(layers: LayerDescriptor[]): LayerStateMap {
     layers.map((l) => [
       l.id,
       {
-        visible: l.id === "spain-extent",
+        visible: l.id === "spain-boundary",
         opacity: l.kind === "imagery" ? 0.9 : 1,
         time: l.kind === "imagery" ? l.time?.default : undefined,
       },

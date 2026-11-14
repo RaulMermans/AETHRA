@@ -9,6 +9,12 @@ import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { loadCesium } from "@/lib/globe/cesium/load";
 import { pickCoordinate } from "@/lib/globe/cesium/picking";
 import {
+  clipGlobeToSpain,
+  constrainCameraToSpain,
+  loadSpainBoundary,
+  type SpainBoundary,
+} from "@/lib/globe/cesium/spain-mask";
+import {
   createBaseImagery,
   createFallbackImagery,
   loadTerrain,
@@ -81,6 +87,7 @@ export default function Globe(props: GlobeProps) {
     let handler: CesiumNS.ScreenSpaceEventHandler | undefined;
     let layers: CesiumLayerManager | undefined;
     let stopFrameWatch: (() => void) | undefined;
+    let stopCameraConstraint: (() => void) | undefined;
     let frame = 0;
 
     const detected = detectQualityProfile();
@@ -155,16 +162,19 @@ export default function Globe(props: GlobeProps) {
       ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE[base.tier];
       emit({ imagery: { label: base.label, finestDetail: base.finestDetail, failedTiles: 0 } });
       if (base.tier === "ion") {
-        base.layers[0].errorEvent.addEventListener(() => {
-          if (v.isDestroyed()) return;
-          v.imageryLayers.remove(base.layers[0], true);
+        let fellBack = false;
+        const fallBack = () => {
+          if (fellBack || v.isDestroyed()) return;
+          fellBack = true;
+          base.layers.forEach((l) => v.imageryLayers.remove(l, true));
           const fb = createFallbackImagery(Cesium, onImageryFailures);
           fb.layers.forEach((l, i) => v.imageryLayers.add(l, i));
           ctrl.minimumZoomDistance = MIN_ZOOM_DISTANCE.fallback;
           emit({
             imagery: { label: `${fb.label} (ion imagery failed)`, finestDetail: fb.finestDetail, failedTiles: 0 },
           });
-        });
+        };
+        base.layers.forEach((l) => l.errorEvent.addEventListener(fallBack));
       }
 
       // Rendering quality (adaptive) and atmosphere.
@@ -198,7 +208,8 @@ export default function Globe(props: GlobeProps) {
       v.clock.currentTime = Cesium.JulianDate.fromDate(noon);
       v.clock.shouldAnimate = false;
 
-      ctrl.maximumZoomDistance = 40_000_000;
+      // Only Spain is rendered (see spain-mask.ts): no need to zoom out to a whole-Earth view.
+      ctrl.maximumZoomDistance = 9_000_000;
       ctrl.enableCollisionDetection = true;
       v.cesiumWidget.screenSpaceEventHandler.removeInputAction(
         Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK,
@@ -237,6 +248,23 @@ export default function Globe(props: GlobeProps) {
         },
       });
 
+      // Render only Spain. Until the outline loads, the full globe is shown; if it fails to load
+      // the full globe stays (logged) rather than showing nothing.
+      let spain: SpainBoundary | null = null;
+      stopCameraConstraint = constrainCameraToSpain(Cesium, v);
+      void loadSpainBoundary()
+        .then((b) => {
+          if (disposed || v.isDestroyed()) return;
+          spain = b;
+          clipGlobeToSpain(Cesium, v, b);
+        })
+        .catch((err) => console.warn("[globe] Spain boundary failed; showing the full globe", err));
+      // Hover/click outside Spain (clipped area) yields no coordinate.
+      const pickSpain = (p: CesiumNS.Cartesian2 | undefined) => {
+        const c = pickCoordinate(Cesium, v, p, terrain);
+        return c && spain && !spain.contains(c.longitude, c.latitude) ? null : c;
+      };
+
       // Pointer interaction.
       let terrain: TerrainResult | null = null;
       handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
@@ -247,13 +275,13 @@ export default function Globe(props: GlobeProps) {
         frame = requestAnimationFrame(() => {
           frame = 0;
           if (v.isDestroyed()) return;
-          propsRef.current.onHover?.(pickCoordinate(Cesium, v, pending, terrain));
+          propsRef.current.onHover?.(pickSpain(pending));
         });
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
       let selectionId = 0;
       handler.setInputAction((c: CesiumNS.ScreenSpaceEventHandler.PositionedEvent) => {
-        const coord = pickCoordinate(Cesium, v, c.position, terrain);
-        if (!coord) return; // sky / off-globe click: keep the current selection
+        const coord = pickSpain(c.position);
+        if (!coord) return; // sky / outside Spain: keep the current selection
         const id = ++selectionId;
         propsRef.current.onSelect?.(coord);
         if (!terrain) return;
@@ -313,6 +341,7 @@ export default function Globe(props: GlobeProps) {
       propsRef.current.onReady?.(null);
       engine.current = null;
       stopFrameWatch?.();
+      stopCameraConstraint?.();
       layers?.destroy();
       if (handler && !handler.isDestroyed()) handler.destroy();
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
