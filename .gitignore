@@ -38,3 +38,6 @@ data/cache/
 *.tif
 *.tiff
 *.zarr/
+
+# Processed scientific subsets (regenerate with scripts/download_nasa_data.py)
+data/processed/

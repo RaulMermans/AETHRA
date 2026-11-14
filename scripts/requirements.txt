@@ -1,0 +1,10 @@
+# Data acquisition only (scripts/download_nasa_data.py). Python >= 3.10.
+earthaccess>=0.17
+harmony-py>=1.8
+xarray>=2025.1
+rioxarray>=0.19
+geopandas>=1.0
+netCDF4>=1.7
+h5netcdf>=1.4
+requests>=2.32
+python-dotenv>=1.0

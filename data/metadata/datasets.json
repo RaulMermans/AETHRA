@@ -1,0 +1,158 @@
+{
+  "datasets": {
+    "gpm": {
+      "short_name": "GPM_3IMERGM",
+      "version": "07",
+      "doi": "10.5067/GPM/IMERG/3B-MONTH/07",
+      "source_url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGM_07/summary",
+      "data_type": "Satellite-gauge merged precipitation estimate (IMERG Final Run)",
+      "frequency": "monthly",
+      "resolution": "0.1 deg x 0.1 deg",
+      "variables": [
+        "Grid/precipitation",
+        "Grid/randomError",
+        "Grid/gaugeRelativeWeighting",
+        "Grid/probabilityLiquidPrecipitation",
+        "Grid/precipitationQualityIndex"
+      ],
+      "service": "harmony",
+      "concept_id": "C2723754851-GES_DISC",
+      "collection_temporal_extent": [
+        {
+          "RangeDateTimes": [
+            {
+              "BeginningDateTime": "1998-01-01T00:00:00.000Z",
+              "EndingDateTime": "2025-09-30T23:59:59.999Z"
+            }
+          ],
+          "EndsAtPresentFlag": false
+        }
+      ],
+      "latest_granule": "2025-09-01",
+      "variable_units": {
+        "Grid/gaugeRelativeWeighting": "percent",
+        "Grid/precipitation": "mm/hr",
+        "Grid/precipitationQualityIndex": "Equivalent gauges per 2.5 deg box",
+        "Grid/probabilityLiquidPrecipitation": "percent",
+        "Grid/randomError": "mm/hr"
+      },
+      "license": "NASA Earth science data: open, no use restrictions; cite the DOI",
+      "verified_at": "2026-11-14T12:10:30+00:00"
+    },
+    "merra2": {
+      "short_name": "M2TMNXSLV",
+      "version": "5.12.4",
+      "doi": "10.5067/AP1B0BA5PD2K",
+      "source_url": "https://disc.gsfc.nasa.gov/datasets/M2TMNXSLV_5.12.4/summary",
+      "data_type": "Reanalysis (model with data assimilation), NOT a direct satellite observation",
+      "frequency": "monthly",
+      "resolution": "0.5 deg lat x 0.625 deg lon",
+      "variables": [
+        "T2M"
+      ],
+      "service": "harmony",
+      "concept_id": "C1276812859-GES_DISC",
+      "collection_temporal_extent": [
+        {
+          "RangeDateTimes": [
+            {
+              "BeginningDateTime": "1980-01-01T00:00:00.000Z"
+            }
+          ],
+          "EndsAtPresentFlag": true
+        }
+      ],
+      "latest_granule": "2026-09-01",
+      "variable_units": {
+        "T2M": "K"
+      },
+      "license": "NASA Earth science data: open, no use restrictions; cite the DOI",
+      "verified_at": "2026-11-14T12:10:30+00:00"
+    },
+    "modis": {
+      "short_name": "MOD13Q1",
+      "version": "061",
+      "doi": "10.5067/MODIS/MOD13Q1.061",
+      "source_url": "https://doi.org/10.5067/MODIS/MOD13Q1.061",
+      "data_type": "Satellite observation (Terra MODIS 16-day vegetation index composite)",
+      "frequency": "16-day composite",
+      "resolution": "250 m (231.656 m), MODIS sinusoidal",
+      "variables": [
+        "_250m_16_days_NDVI",
+        "_250m_16_days_EVI",
+        "_250m_16_days_VI_Quality",
+        "_250m_16_days_pixel_reliability",
+        "_250m_16_days_composite_day_of_the_year"
+      ],
+      "service": "appeears",
+      "concept_id": "C1748066515-LPCLOUD",
+      "collection_temporal_extent": [
+        {
+          "EndsAtPresentFlag": true,
+          "PrecisionOfSeconds": 4,
+          "TemporalResolution": {
+            "Value": 16,
+            "Unit": "Day"
+          },
+          "RangeDateTimes": [
+            {
+              "BeginningDateTime": "2000-02-18T00:00:00.000Z"
+            }
+          ]
+        }
+      ],
+      "latest_granule": "2026-10-16",
+      "variable_units": {
+        "_250m_16_days_NDVI": {
+          "Units": "NDVI",
+          "ScaleFactor": 0.0001,
+          "FillValue": -3000,
+          "ValidMin": -0.200000003,
+          "ValidMax": 1.0,
+          "DataType": "float32"
+        },
+        "_250m_16_days_EVI": {
+          "Units": "EVI",
+          "ScaleFactor": 0.0001,
+          "FillValue": -3000,
+          "ValidMin": -0.200000003,
+          "ValidMax": 1.0,
+          "DataType": "float32"
+        },
+        "_250m_16_days_VI_Quality": {
+          "Units": "",
+          "ScaleFactor": "",
+          "FillValue": 65535,
+          "ValidMin": 0.0,
+          "ValidMax": 65534.0,
+          "DataType": "uint16"
+        },
+        "_250m_16_days_pixel_reliability": {
+          "Units": "",
+          "ScaleFactor": "",
+          "FillValue": -1,
+          "ValidMin": 0.0,
+          "ValidMax": 3.0,
+          "DataType": "int32"
+        },
+        "_250m_16_days_composite_day_of_the_year": {
+          "Units": "",
+          "ScaleFactor": "",
+          "FillValue": -1,
+          "ValidMin": 1.0,
+          "ValidMax": 366.0,
+          "DataType": "int16"
+        }
+      },
+      "license": "NASA Earth science data: open, no use restrictions; cite the DOI",
+      "verified_at": "2026-11-14T12:10:30+00:00"
+    }
+  },
+  "boundary": {
+    "name": "Eurostat GISCO NUTS 2021, level 2, scale 1:1 million, EPSG:4326 (country code ES)",
+    "url": "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_01M_2021_4326_LEVL_2.geojson",
+    "attribution": "(c) EuroGeographics for the administrative boundaries",
+    "terms": "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units",
+    "includes": "Mainland, Illes Balears (ES53), Canarias (ES70), Ceuta (ES63), Melilla (ES64)"
+  }
+}
