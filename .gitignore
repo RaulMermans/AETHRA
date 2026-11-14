@@ -39,5 +39,15 @@ data/cache/
 *.tiff
 *.zarr/
 
-# Processed scientific subsets (regenerate with scripts/download_nasa_data.py)
-data/processed/
+# Processed scientific subsets (regenerate with scripts/download_nasa_data.py).
+# Spain GPM/MERRA-2 yearly NetCDFs (~20 MB total) and the boundary are committed; the rest is not.
+data/processed/*
+!data/processed/spain/
+data/processed/spain/*
+!data/processed/spain/README.md
+!data/processed/spain/spain_boundary_nuts2021_01m.geojson
+!data/processed/spain/gpm/
+!data/processed/spain/merra2/
+!data/processed/spain/gpm/*.nc
+!data/processed/spain/merra2/*.nc
+data/processed/spain/**/*_pilot.nc
