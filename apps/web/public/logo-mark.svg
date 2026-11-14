@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Earth System Trend Detective — Spain Energy &amp; Climate Logo Mark">
+  <defs>
+    <linearGradient id="td-bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b1528" />
+      <stop offset="100%" stop-color="#03050a" />
+    </linearGradient>
+    <linearGradient id="td-ring" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7cc4ff" />
+      <stop offset="55%" stop-color="#38bdf8" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#f5c26b" />
+    </linearGradient>
+    <linearGradient id="td-energy" x1="16" y1="44" x2="48" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7cc4ff" />
+      <stop offset="55%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#ff8a80" />
+    </linearGradient>
+    <linearGradient id="td-cone" x1="34" y1="28" x2="49" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f5c26b" stop-opacity="0.32" />
+      <stop offset="100%" stop-color="#f5c26b" stop-opacity="0.04" />
+    </linearGradient>
+    <radialGradient id="td-solar-glow" cx="72%" cy="26%" r="36%">
+      <stop offset="0%" stop-color="#f5c26b" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#f5c26b" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Rounded hexagonal / squircle scientific badge base -->
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#td-bg)" />
+  <rect x="4.75" y="4.75" width="54.5" height="54.5" rx="15.25" stroke="url(#td-ring)" stroke-opacity="0.45" stroke-width="1.5" />
+
+  <!-- Ambient solar/forecast glow in top-right (2030 horizon) -->
+  <circle cx="32" cy="32" r="24" fill="url(#td-solar-glow)" />
+
+  <!-- Globe meridian & parallel grid (Earth Observation) -->
+  <circle cx="30" cy="31" r="18.5" stroke="#7cc4ff" stroke-opacity="0.22" stroke-width="1.2" />
+  <ellipse cx="30" cy="31" rx="10" ry="18.5" stroke="#7cc4ff" stroke-opacity="0.16" stroke-width="1.1" />
+  <path d="M12.5 25.5H47.5M12.5 36.5H47.5" stroke="#7cc4ff" stroke-opacity="0.14" stroke-width="1.1" stroke-linecap="round" />
+
+  <!-- Hydro & Wind clean-energy wave across the lower hemisphere -->
+  <path
+    d="M14.5 37.5C19 34.2 23.5 34.2 28 37.5C32.5 40.8 37 40.8 42.5 36.8"
+    stroke="#7cc4ff"
+    stroke-opacity="0.65"
+    stroke-width="1.75"
+    stroke-linecap="round"
+  />
+
+  <!-- 2030 Sen's Slope Confidence Cone (shaded fan) -->
+  <path d="M33.5 27.5L46.5 15.5L46.5 25.5Z" fill="url(#td-cone)" />
+
+  <!-- Energy & Climate Trend Trajectory + Lightning/Pulse Vector -->
+  <path
+    d="M15.5 39.5L23.5 33.5L28.5 35.5L35.5 25.5L45.5 18.5"
+    stroke="url(#td-energy)"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Energy / Solar Core Spark at 2030 projection apex -->
+  <circle cx="45.5" cy="18.5" r="3.2" fill="#f5c26b" />
+  <circle cx="45.5" cy="18.5" r="5.5" stroke="#f5c26b" stroke-opacity="0.4" stroke-width="1.2" />
+  <circle cx="23.5" cy="33.5" r="2" fill="#7cc4ff" />
+  <circle cx="35.5" cy="25.5" r="2.2" fill="#e8edf3" />
+
+  <!-- Detective Lens Rim + Handle (bottom-right orbital tangent) -->
+  <circle cx="30" cy="31" r="18.5" stroke="url(#td-ring)" stroke-width="2.2" />
+  <path
+    d="M43.8 44.8L52.5 53.5"
+    stroke="url(#td-ring)"
+    stroke-width="3.6"
+    stroke-linecap="round"
+  />
+</svg>
