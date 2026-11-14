@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDegrees } from "@/lib/format";
+import { SCOPE_LEVEL_META, type ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import {
   queryClimateAtLocation,
   type ActiveClimateConfig,
@@ -19,8 +20,10 @@ interface EvidencePanelProps {
   selected: GeoCoordinate | null;
   bundle: ClimateBundle | null;
   config: ActiveClimateConfig;
+  resolvedScope?: ResolvedAdminScope | null;
   onSelectYear: (year: number) => void;
   onSelectLocation: (coord: GeoCoordinate | null) => void;
+  onResetToNational?: () => void;
 }
 
 const LEVEL_BADGE: Record<DecisionAlert["level"], string> = {
@@ -264,14 +267,17 @@ export function EvidencePanel({
   selected,
   bundle,
   config,
+  resolvedScope,
   onSelectYear,
   onSelectLocation,
+  onResetToNational,
 }: EvidencePanelProps) {
   const [tab, setTab] = useState<"evidence" | "decisions">("evidence");
 
   if (!open) return null;
 
-  const evidence = bundle ? queryClimateAtLocation(bundle, config, selected) : null;
+  const evidence = bundle ? queryClimateAtLocation(bundle, config, selected, resolvedScope) : null;
+  const scopeLevelMeta = resolvedScope ? SCOPE_LEVEL_META[resolvedScope.level] : SCOPE_LEVEL_META.age;
 
   return (
     <aside
@@ -282,21 +288,34 @@ export function EvidencePanel({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
         <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span className="rounded bg-amber-400/20 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-amber-200 uppercase">
+              {scopeLevelMeta.shortLabel}
+            </span>
+            {evidence?.stationsInScopeCount !== undefined && (
+              <span className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[9.5px] text-muted">
+                {evidence.stationsInScopeCount} estaciones NOAA
+              </span>
+            )}
+            {(selected || (resolvedScope && resolvedScope.level !== "age")) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectLocation(null);
+                  onResetToNational?.();
+                }}
+                className="focus-ring rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-muted hover:text-ink"
+              >
+                Restablecer a AGE (España)
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <h2 className="truncate text-sm font-semibold text-ink">
               {evidence ? evidence.locationLabel : "Evidence & 2030 Forecast"}
             </h2>
-            {selected && (
-              <button
-                type="button"
-                onClick={() => onSelectLocation(null)}
-                className="focus-ring rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-muted hover:text-ink"
-              >
-                Reset to Spain
-              </button>
-            )}
           </div>
-          <p className="mt-0.5 truncate font-mono text-[11px] text-muted">
+          <p className="mt-0.5 truncate font-mono text-[11px] text-muted" title={evidence?.subLabel}>
             {evidence
               ? evidence.subLabel
               : selected
@@ -442,6 +461,17 @@ export function EvidencePanel({
           ) : (
             /* 2030 Decision Support Matrix */
             <div className="space-y-2.5">
+              {resolvedScope && (
+                <div className="rounded-lg border border-amber-400/30 bg-amber-400/8 p-2.5 text-[10.5px]">
+                  <p className="font-semibold text-amber-200">
+                    🏛️ Administración Destinataria: {resolvedScope.institution}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-muted">{resolvedScope.hierarchyLabel}</p>
+                  <p className="mt-1 text-[10px] leading-snug text-ink/85">
+                    <strong>Competencias clave:</strong> {resolvedScope.competencies}
+                  </p>
+                </div>
+              )}
               <p className="text-[11px] leading-snug text-muted">
                 Operational recommendations for <strong>{evidence.locationLabel}</strong> based on extrapolated{" "}
                 <strong>2030</strong> indicators:

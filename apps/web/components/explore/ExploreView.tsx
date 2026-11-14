@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
+import {
+  DEFAULT_ADMIN_SCOPE,
+  loadAdminBundle,
+  resolveAdminScope,
+  type AdminBundle,
+  type AdminScopeLevel,
+  type AdminScopeSelection,
+} from "@/lib/globe/admin-scope";
 import { buildLayerCatalog, CAMERA_BOUNDS, HOME_VIEW, initialLayerStates, WORLD_VIEW } from "@/lib/globe/catalog";
 import {
   buildDimensionOverlayGeoJson,
@@ -28,6 +36,7 @@ import type {
   ToolId,
   ViewMode,
 } from "@/lib/globe/types";
+import { AdminScopeBar } from "./AdminScopeBar";
 import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
@@ -85,8 +94,10 @@ export function ExploreView() {
   const [dim, setDim] = useState<SceneDim>("3d");
   const homeView = viewMode === "spain" ? HOME_VIEW : WORLD_VIEW;
 
-  // --- Climate bundle + 9 Dimensions & 2030 Extrapolation state --------------------------
+  // --- Climate bundle + Administrative Scope + 9 Dimensions & 2030 Extrapolation state ---
   const [bundle, setBundle] = useState<ClimateBundle | null>(null);
+  const [adminBundle, setAdminBundle] = useState<AdminBundle | null>(null);
+  const [adminScope, setAdminScope] = useState<AdminScopeSelection>(DEFAULT_ADMIN_SCOPE);
   const [climateConfig, setClimateConfig] = useState<ActiveClimateConfig>({
     dimension: "temperature",
     year: 2025,
@@ -99,6 +110,11 @@ export function ExploreView() {
   const [heatmapUrl, setHeatmapUrl] = useState<string>("");
   const [playing, setPlaying] = useState(false);
 
+  const resolvedScope = useMemo(
+    () => resolveAdminScope(adminBundle, adminScope),
+    [adminBundle, adminScope],
+  );
+
   useEffect(() => {
     let active = true;
     loadClimateBundle()
@@ -106,6 +122,29 @@ export function ExploreView() {
         if (active) setBundle(b);
       })
       .catch((err) => console.error("[climate] failed to load climate bundle", err));
+    loadAdminBundle()
+      .then((ab) => {
+        if (!active) return;
+        setAdminBundle(ab);
+        // Check URL query params for initial scope (?scope=age|ccaa|provincia&id=...)
+        const params = new URLSearchParams(window.location.search);
+        const scopeParam = params.get("scope") as AdminScopeLevel | null;
+        const idParam = params.get("id");
+        if (scopeParam && ["age", "ccaa", "provincia"].includes(scopeParam)) {
+          setAdminScope((prev) => {
+            const next = { ...prev, level: scopeParam };
+            if (scopeParam === "ccaa" && idParam && ab.ccaa.some((c) => c.id === idParam)) {
+              next.ccaaId = idParam;
+            } else if (scopeParam === "provincia" && idParam && ab.provinces.some((p) => p.id === idParam)) {
+              const prov = ab.provinces.find((p) => p.id === idParam);
+              next.provinceId = idParam;
+              if (prov) next.ccaaId = prov.ccaaId;
+            }
+            return next;
+          });
+        }
+      })
+      .catch((err) => console.error("[admin] failed to load spain-admin.json", err));
     return () => {
       active = false;
     };
@@ -114,7 +153,7 @@ export function ExploreView() {
   useEffect(() => {
     if (!bundle) return;
     let active = true;
-    renderDimensionHeatmapDataUrl(bundle, climateConfig)
+    renderDimensionHeatmapDataUrl(bundle, climateConfig, resolvedScope)
       .then((url) => {
         if (active) setHeatmapUrl(url);
       })
@@ -122,17 +161,35 @@ export function ExploreView() {
     return () => {
       active = false;
     };
-  }, [bundle, climateConfig]);
+  }, [bundle, climateConfig, resolvedScope]);
 
   const updateClimateConfig = useCallback((patch: Partial<ActiveClimateConfig>) => {
     setClimateConfig((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const handleChangeAdminScope = useCallback(
+    (next: AdminScopeSelection, fly = true) => {
+      setAdminScope(next);
+      setSelected(null);
+      setEvidenceOpen(true);
+      if (fly && controller) {
+        const nextResolved = resolveAdminScope(adminBundle, next);
+        controller.flyTo(nextResolved.orbitView);
+      }
+    },
+    [controller, adminBundle],
+  );
+
+  const handleFocusActiveScope = useCallback(() => {
+    if (!controller) return;
+    controller.flyTo(resolvedScope.orbitView);
+  }, [controller, resolvedScope]);
+
   const allLayers = useMemo<LayerDescriptor[]>(() => {
     const dimMeta = DIMENSIONS.find((d) => d.id === climateConfig.dimension) ?? DIMENSIONS[0];
     const eff = getEffectiveMeta(climateConfig);
     const overlayData = bundle
-      ? buildDimensionOverlayGeoJson(bundle, climateConfig)
+      ? buildDimensionOverlayGeoJson(bundle, climateConfig, resolvedScope, adminBundle)
       : { type: "FeatureCollection", features: [] };
 
     const analysisLayers: LayerDescriptor[] = [
@@ -185,7 +242,7 @@ export function ExploreView() {
       },
     ];
     return [...analysisLayers, ...baseLayers];
-  }, [baseLayers, bundle, climateConfig, heatmapUrl]);
+  }, [baseLayers, bundle, climateConfig, heatmapUrl, resolvedScope, adminBundle]);
 
   // --- Map tools -------------------------------------------------------------------------
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
@@ -423,8 +480,15 @@ export function ExploreView() {
         )}
       </div>
 
-      {/* Left column: Layers panel + Dimension Dock (narrow so the globe stays visible) */}
-      <div className="pointer-events-none absolute top-14 left-4 z-10 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 sm:left-6">
+      {/* Left column: Administrative Scope Filter + Layers panel + Dimension Dock */}
+      <div className="pointer-events-none absolute top-14 left-4 z-10 flex max-h-[calc(100dvh-7.5rem)] w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+        <AdminScopeBar
+          admin={adminBundle}
+          scope={adminScope}
+          resolved={resolvedScope}
+          onChange={handleChangeAdminScope}
+          onFocusCamera={handleFocusActiveScope}
+        />
         <LayerPanel
           open={layersOpen}
           onToggle={() => setLayersOpen((o) => !o)}
@@ -505,8 +569,12 @@ export function ExploreView() {
             selected={selected}
             bundle={bundle}
             config={climateConfig}
+            resolvedScope={resolvedScope}
             onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
             onSelectLocation={handleSelectLocation}
+            onResetToNational={() =>
+              handleChangeAdminScope({ ...adminScope, level: "age" }, true)
+            }
           />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

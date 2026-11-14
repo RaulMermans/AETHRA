@@ -140,13 +140,15 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
       for (const [lon, lat] of f.geometry.coordinates) {
         flatCoords.push(lon, lat);
       }
+      const isAdminActive = props.kind === "admin-active-outline";
+      const isAdminParent = props.kind === "admin-parent-outline" || props.kind === "admin-province-outline";
       ds.entities.add({
         polyline: {
           positions: Cesium.Cartesian3.fromDegreesArray(flatCoords),
-          width: 3.5,
+          width: isAdminActive ? 4.5 : isAdminParent ? 2.0 : 3.5,
           material: new Cesium.PolylineGlowMaterialProperty({
-            glowPower: 0.25,
-            color: color.withAlpha(state.opacity),
+            glowPower: isAdminActive ? 0.32 : 0.2,
+            color: color.withAlpha(isAdminParent ? state.opacity * 0.55 : state.opacity),
           }),
           clampToGround: true,
         },
@@ -156,7 +158,10 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
 
   ds.show = state.visible;
   await viewer.dataSources.add(ds);
-  const dataKey = JSON.stringify(d.time ?? "") + `|${(fc.features ?? []).length}|${(fc.features?.[0]?.properties as Record<string, unknown> | undefined)?.value ?? ""}`;
+  const lastProps = fc.features?.[fc.features.length - 1]?.properties as Record<string, unknown> | undefined;
+  const dataKey =
+    JSON.stringify(d.time ?? "") +
+    `|${(fc.features ?? []).length}|${(fc.features?.[0]?.properties as Record<string, unknown> | undefined)?.value ?? ""}|${lastProps?.name ?? ""}`;
 
   return {
     key: dataKey,
@@ -208,7 +213,8 @@ function computeLayerKey(d: LayerDescriptor, state: LayerState, mode: ViewMode):
     const fc = d.data as { features?: Array<{ properties?: Record<string, unknown> }> };
     const firstVal = fc?.features?.[0]?.properties?.value ?? "";
     const firstColor = fc?.features?.[0]?.properties?.color ?? "";
-    return `${fc?.features?.length ?? 0}|${firstVal}|${firstColor}`;
+    const lastName = fc?.features?.[fc.features.length - 1]?.properties?.name ?? "";
+    return `${fc?.features?.length ?? 0}|${firstVal}|${firstColor}|${lastName}`;
   }
   return "";
 }

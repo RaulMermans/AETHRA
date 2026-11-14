@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   // Used to cache-bust /cesium/Cesium.js when the package is upgraded.
   env: { NEXT_PUBLIC_CESIUM_VERSION: cesiumVersion },
+  reactStrictMode: true,
 };
 
 export default nextConfig;
