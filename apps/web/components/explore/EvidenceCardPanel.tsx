@@ -293,7 +293,7 @@ export function EvidenceCardPanel({
       )}
       {cards && exact && (
         <>
-          <p className="mt-3 rounded-md border border-accent/30 bg-accent/8 px-2 py-1 text-[11px] text-ink">
+          <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[11px] text-ink">
             Result for <strong className="font-medium">{exact.region.name}</strong>
             {key === "age" && " (Canarias reported separately)"}
           </p>

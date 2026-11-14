@@ -227,7 +227,7 @@ export interface CameraState {
   pitch: number;
 }
 
-/** "spain": only Spain + surrounding sea is rendered (D21). "world": the whole globe. */
+/** Overlay clip: "spain" limits some layers to Spain extents; "world" is the whole globe (D32). */
 export type ViewMode = "spain" | "world";
 
 /** Flat map (2D, Web-Mercator-like projection seen from above) or the 3D globe. */

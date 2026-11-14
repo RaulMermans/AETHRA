@@ -37,9 +37,14 @@ The globe is CesiumJS (ADR-001). Don't change engines and don't add map tools wh
 
 ## Design guidelines
 
+Visual identity: [BRAND_ART_DIRECTION.md](BRAND_ART_DIRECTION.md) (D56). Tokens live in
+`apps/web/app/globals.css`. **Brand colours are not data colours** — do not restyle quantitative
+palettes, outcome semantics, missing/invalid states or zero-centred diverging scales to match AETHRA.
+
 1. **Minimal, precise, premium scientific interface.** Data first; chrome second.
 2. **Clear visual hierarchy and consistent spacing** (Tailwind defaults work well).
-3. **Shared typography, colors and components** where practical.
+3. **Shared typography, colors and components** where practical. Geist Sans + Geist Mono; tabular
+   numerals on comparisons. Header wordmark: AETHRA (typographic placeholder, no final logo).
 4. **Avoid clutter**; decorations and effects are fine when they add to the experience.
 5. **Components should have a purpose** — ideally helping answer *what / where / when / how much*.
 6. **Accessibility:** aim for good contrast, keyboard navigation, visible focus and labelled controls.
@@ -53,9 +58,24 @@ The globe is CesiumJS (ADR-001). Don't change engines and don't add map tools wh
 14. **Computation:** ~~can happen in the API or in the browser~~. Replaced by scientific rule 1
     (render, don't compute; ADR-002 proposed 14 Nov 2026).
 15. **Primary flow:** open Spain → pick variable/question → pick region → see series → see trend and
-    outcome state → read meaning and limits → open EvidenceCard → optionally compare a region. The user
-    should grasp what is measured, whether the change is supported, and what *not* to conclude within
-    seconds.
+   outcome state → read meaning and limits → open EvidenceCard → optionally compare a region. The user
+   should grasp what is measured, whether the change is supported, and what *not* to conclude within
+   seconds.
+
+## Geographic navigation and 3D (proposed, D54 — not on the demo path)
+
+Full spec: [SPATIAL_EXPERIENCE.md](SPATIAL_EXPERIENCE.md). Until D54 is approved and P0 is green,
+do not add destination chrome or 3D models to `/explore`.
+
+- **Reuse** `GlobeController.flyTo`. Do not add a second camera stack. Honour `prefers-reduced-motion`.
+- Landmark fly-tos (Mulhacén, Picos de Europa) are **navigation**, including inside national parks.
+  Never present them as energy development candidates.
+- A research case opens the **existing EvidenceCard** for that CCAA. Regional NASA support (1° solar,
+  0.5° × 0.625° wind, ~50 km MERRA-2) must stay visible beside any plant point.
+- **Existing plants:** solid markers + register metadata (D49). **Illustrative 3D:** labelled
+  "not an exact reconstruction". **Conceptual/ghost 3D:** translucent, "Conceptual / Not a real
+  project", off in judge mode.
+- Do not restore D45 GIS tools. The globe must not outrank the EvidenceCard.
 
 ## Measurement units (Spain) — required, see D20
 

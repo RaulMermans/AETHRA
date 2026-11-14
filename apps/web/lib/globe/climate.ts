@@ -598,6 +598,7 @@ export const HEATMAP_BOUNDS: GeoBounds = {
 };
 
 /** Last full calendar year in the compiled bundle (2026 files are partial: MERRA-2 Jan–Sep, GLDAS through Jul, GHCN through Nov). */
+export const FIRST_OBSERVED_YEAR = 2000;
 export const LAST_COMPLETE_YEAR = 2025;
 
 export function dimensionHasSpatialGrid(_id: DimensionId): boolean {
@@ -717,6 +718,23 @@ export function getEffectiveMeta(cfg: ActiveClimateConfig, bundle?: ClimateBundl
     palette: base.palette,
     subtitle: `${base.datasets.split("+")[0]?.trim() ?? "Observed"} (${cfg.year}). Blank = no complete-year data`,
   };
+}
+
+const periodDomainCache = new Map<string, [number, number]>();
+
+/** Colour-scale domain over 2000–2025 for playback. Visual only — not a new statistic. */
+export function periodColorDomain(bundle: ClimateBundle, cfg: ActiveClimateConfig): [number, number] {
+  const key = `${cfg.dimension}|${cfg.mode}|${cfg.heatMetric}|${cfg.rainMetric}|${cfg.vegMetric}`;
+  const cached = periodDomainCache.get(key);
+  if (cached) return cached;
+  const fallback = getEffectiveMeta({ ...cfg, year: LAST_COMPLETE_YEAR }, null).domain;
+  const vals: number[] = [];
+  for (let year = FIRST_OBSERVED_YEAR; year <= LAST_COMPLETE_YEAR; year++) {
+    vals.push(...collectSampleValues(buildDimensionSamples(bundle, { ...cfg, year })));
+  }
+  const domain = domainFromValues(vals, cfg.mode !== "value", fallback);
+  periodDomainCache.set(key, domain);
+  return domain;
 }
 
 export function getMapLegendMeta(cfg: ActiveClimateConfig, bundle?: ClimateBundle | null) {
@@ -895,17 +913,20 @@ export async function renderDimensionHeatmapDataUrl(
   bundle: ClimateBundle,
   cfg: ActiveClimateConfig,
   resolvedScope?: ResolvedAdminScope | null,
+  colorDomain?: readonly [number, number],
 ): Promise<string> {
   const scopeKey =
     resolvedScope && resolvedScope.level !== "age" && resolvedScope.clipToScope
       ? `${resolvedScope.level}:${resolvedScope.id}`
       : "all-spain";
-  const cacheKey = `${cfg.dimension}|${cfg.year}|${cfg.mode}|${cfg.scenario}|${cfg.heatMetric}|${cfg.rainMetric}|${cfg.vegMetric}|${scopeKey}`;
+  const domainKey = colorDomain ? `${colorDomain[0]}:${colorDomain[1]}` : "year";
+  const cacheKey = `${cfg.dimension}|${cfg.year}|${cfg.mode}|${cfg.scenario}|${cfg.heatMetric}|${cfg.rainMetric}|${cfg.vegMetric}|${scopeKey}|${domainKey}`;
   const cached = heatmapCache.get(cacheKey);
   if (cached) return cached;
 
   const multiPoly = await loadSpainMultiPolygon();
   const meta = getMapLegendMeta(cfg, bundle);
+  const [dMin, dMax] = colorDomain ?? meta.domain;
   const samples = buildDimensionSamples(bundle, cfg);
 
   const width = 460;
@@ -923,7 +944,6 @@ export async function renderDimensionHeatmapDataUrl(
   // 1. Paint raw heatmap pixels
   const img = ctx.createImageData(width, height);
   const data = img.data;
-  const [dMin, dMax] = meta.domain;
   const dSpan = dMax - dMin || 1;
 
   for (let py = 0; py < height; py++) {
@@ -1033,7 +1053,7 @@ export async function renderDimensionHeatmapDataUrl(
   ctx.globalCompositeOperation = "source-over";
 
   const url = canvas.toDataURL("image/png");
-  if (heatmapCache.size > 40) {
+  if (heatmapCache.size > 90) {
     const firstKey = heatmapCache.keys().next().value;
     if (firstKey) heatmapCache.delete(firstKey);
   }

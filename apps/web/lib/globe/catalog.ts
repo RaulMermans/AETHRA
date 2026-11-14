@@ -45,12 +45,6 @@ export const SPAIN_IMAGERY_EXTENTS: readonly Box[] = [
   { west: -22.1, south: 24.1, east: -9.5, north: 33.0 },
 ];
 
-/**
- * The camera position is kept inside this box (lon/lat, degrees), generous enough for oblique
- * views from the south and for the home view, so panning can't drift away from Spain.
- */
-export const CAMERA_BOUNDS: Box = { west: -30, south: 14, east: 16, north: 52 };
-
 /** Default analysis extent (DECISIONS D5): Peninsula + Balearics, lon/lat WGS84. */
 export const SPAIN_BBOX = { west: -9.5, south: 35.9, east: 4.4, north: 43.9 } as const;
 
@@ -73,7 +67,7 @@ export const PLACES: Place[] = [
     id: "sierra-nevada",
     name: "Sierra Nevada",
     hint: "Mulhacén, 3,479 m",
-    view: { target: { latitude: 37.05, longitude: -3.31 }, heading: 345, pitch: -20, range: 42_000, durationSeconds: 3.4, terrainAware: true },
+    view: { target: { latitude: 37.053396, longitude: -3.311535 }, heading: 345, pitch: -20, range: 42_000, durationSeconds: 3.4, terrainAware: true },
   },
   {
     id: "pyrenees",
@@ -85,7 +79,7 @@ export const PLACES: Place[] = [
     id: "picos-de-europa",
     name: "Picos de Europa",
     hint: "Cantabrian Mountains",
-    view: { target: { latitude: 43.19, longitude: -4.85 }, heading: 0, pitch: -22, range: 34_000, durationSeconds: 3.4, terrainAware: true },
+    view: { target: { latitude: 43.1975, longitude: -4.8525 }, heading: 0, pitch: -22, range: 34_000, durationSeconds: 3.4, terrainAware: true },
   },
   {
     id: "canary-islands",
@@ -153,7 +147,7 @@ export function buildLayerCatalog(): LayerDescriptor[] {
         url: "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units",
       },
       data: SPAIN_OUTLINE_URL,
-      style: { stroke: "#7cc4ff", strokeWidth: 1.5 },
+      style: { stroke: "#819DB5", strokeWidth: 1.5 },
     },
   ];
 }

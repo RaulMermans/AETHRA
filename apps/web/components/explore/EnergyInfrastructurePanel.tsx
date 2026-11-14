@@ -151,8 +151,8 @@ function InstallationDetail({
         </p>
       </section>
 
-      <section aria-label="NASA evidence for this region" className="mt-3 rounded-md border border-accent/25 bg-accent/5 p-2">
-        <h4 className="text-[10px] tracking-[0.12em] text-accent uppercase">NASA evidence · {scope?.name ?? inst.provinceName}</h4>
+      <section aria-label="NASA evidence for this region" className="mt-3 rounded-md border border-nav/30 bg-nav/8 p-2">
+        <h4 className="text-[10px] tracking-[0.12em] text-nav uppercase">NASA evidence · {scope?.name ?? inst.provinceName}</h4>
         <p className="mt-1 text-[11px] text-muted">
           Annual mean 2 m air temperature (°C), trend per decade
         </p>

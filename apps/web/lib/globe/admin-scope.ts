@@ -282,7 +282,7 @@ export function buildAdminScopeOverlayGeoJson(
           type: "Feature",
           properties: {
             kind: "admin-parent-outline",
-            color: "#7cc4ff",
+            color: "#819DB5",
           },
           geometry: {
             type: "LineString",

@@ -18,8 +18,8 @@ function overlayKindLabel(kind: OverlayFeature["kind"]): string {
 function OverlayCard({ feature }: { feature: OverlayFeature }) {
   const title = feature.name.replace(/, SP$/i, "");
   return (
-    <div className="rounded-md border border-accent/25 bg-accent/8 px-2 py-1.5">
-      <p className="text-[10px] uppercase tracking-[0.12em] text-accent">{overlayKindLabel(feature.kind)}</p>
+    <div className="rounded-md border border-nav/30 bg-nav/10 px-2 py-1.5">
+      <p className="text-[10px] uppercase tracking-[0.12em] text-nav">{overlayKindLabel(feature.kind)}</p>
       <p className="mt-0.5 text-xs font-medium text-ink">{title}</p>
       <p className="mt-0.5 font-mono text-[11px] text-muted">
         {feature.kind === "station" ? feature.id : feature.detail ?? feature.basin ?? feature.id}

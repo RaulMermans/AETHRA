@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   DIMENSIONS,
   dimensionHasSpatialGrid,
+  FIRST_OBSERVED_YEAR,
   getEffectiveMeta,
   LAST_COMPLETE_YEAR,
   type ActiveClimateConfig,
@@ -18,6 +18,7 @@ interface DimensionDockProps {
   heatmapVisible: boolean;
   stationsVisible: boolean;
   playing: boolean;
+  timelineReady: boolean;
   onChange: (patch: Partial<ActiveClimateConfig>) => void;
   onToggleHeatmap: () => void;
   onToggleStations: () => void;
@@ -34,6 +35,7 @@ export function DimensionDock({
   heatmapVisible,
   stationsVisible,
   playing,
+  timelineReady,
   onChange,
   onToggleHeatmap,
   onToggleStations,
@@ -42,19 +44,17 @@ export function DimensionDock({
   const activeDim = DIMENSIONS.find((d) => d.id === config.dimension) ?? DIMENSIONS[0];
   const eff = getEffectiveMeta(config);
   const hasGrid = dimensionHasSpatialGrid(config.dimension);
+  const canPlay = config.mode === "value" && hasGrid;
 
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(() => {
-      onChange({ year: config.year >= LAST_COMPLETE_YEAR ? 2000 : config.year + 1 });
-    }, 650);
-    return () => clearInterval(timer);
-  }, [playing, config.year, onChange]);
+  const stepYear = (delta: number) => {
+    const next = Math.min(LAST_COMPLETE_YEAR, Math.max(FIRST_OBSERVED_YEAR, config.year + delta));
+    onChange({ year: next });
+  };
 
   return (
     <section
       aria-label="Climate dimensions"
-      className="panel pointer-events-auto w-[min(18rem,calc(100vw-2rem))] overflow-hidden px-2 py-1.5 shadow-2xl"
+      className="panel pointer-events-auto w-[min(20rem,calc(100vw-2rem))] overflow-hidden px-2 py-1.5 shadow-2xl"
     >
       <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Environmental dimensions">
         {DIMENSIONS.map((d) => {
@@ -81,18 +81,18 @@ export function DimensionDock({
 
       <div className="mt-1.5 flex gap-1">
         {hasGrid && (
-        <button
-          type="button"
-          onClick={onToggleHeatmap}
-          aria-pressed={heatmapVisible}
-          className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
-            heatmapVisible
-              ? "border-accent/50 bg-accent/15 text-ink"
-              : "border-line bg-white/5 text-faint hover:text-muted"
-          }`}
-        >
-          Map
-        </button>
+          <button
+            type="button"
+            onClick={onToggleHeatmap}
+            aria-pressed={heatmapVisible}
+            className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+              heatmapVisible
+                ? "border-accent/50 bg-accent/15 text-ink"
+                : "border-line bg-white/5 text-faint hover:text-muted"
+            }`}
+          >
+            Map
+          </button>
         )}
         <button
           type="button"
@@ -169,30 +169,50 @@ export function DimensionDock({
       </div>
 
       {config.mode === "value" ? (
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={onTogglePlay}
-            aria-label={playing ? "Pause timeline" : `Play timeline 2000 to ${LAST_COMPLETE_YEAR}`}
-            className="focus-ring flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-ink hover:bg-white/20"
-          >
-            {playing ? "❚❚" : "▶"}
-          </button>
-          <span className="font-mono text-[9px] text-faint">2000</span>
-          <input
-            type="range"
-            min={2000}
-            max={LAST_COMPLETE_YEAR}
-            step={1}
-            value={config.year}
-            onChange={(e) => onChange({ year: Number(e.target.value) })}
-            aria-label={`Year selector (2000 to ${LAST_COMPLETE_YEAR}, observed years only)`}
-            className="focus-ring h-1.5 min-w-0 flex-1 accent-accent"
-          />
-          <span className="font-mono text-[9px] text-faint">{LAST_COMPLETE_YEAR}</span>
-          <span className="min-w-[3.4rem] rounded bg-white/10 px-1 py-0.5 text-center font-mono text-[10px] font-semibold text-ink tabular-nums">
-            {config.year}
-          </span>
+        <div className="mt-1.5 space-y-1">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => stepYear(-1)}
+              disabled={config.year <= FIRST_OBSERVED_YEAR || playing}
+              aria-label="Previous observed year"
+              className="focus-ring size-6 shrink-0 rounded-md bg-white/10 text-[11px] text-ink hover:bg-white/20 disabled:opacity-35"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={onTogglePlay}
+              disabled={!canPlay}
+              aria-label={playing ? "Pause timeline" : `Play timeline ${FIRST_OBSERVED_YEAR} to ${LAST_COMPLETE_YEAR}`}
+              className="focus-ring flex size-7 shrink-0 items-center justify-center rounded-full bg-accent/90 text-[11px] text-accent-ink hover:bg-accent disabled:opacity-35"
+            >
+              {playing ? "❚❚" : "▶"}
+            </button>
+            <button
+              type="button"
+              onClick={() => stepYear(1)}
+              disabled={config.year >= LAST_COMPLETE_YEAR || playing}
+              aria-label="Next observed year"
+              className="focus-ring size-6 shrink-0 rounded-md bg-white/10 text-[11px] text-ink hover:bg-white/20 disabled:opacity-35"
+            >
+              ›
+            </button>
+            <span className="min-w-[3.4rem] rounded bg-white/10 px-1 py-0.5 text-center font-mono text-[10px] font-semibold text-ink tabular-nums">
+              {config.year}
+            </span>
+            <span className="font-mono text-[9px] text-faint">
+              {FIRST_OBSERVED_YEAR}–{LAST_COMPLETE_YEAR}
+            </span>
+          </div>
+          {playing && !timelineReady && (
+            <p className="text-[10px] text-faint">Preparing observed frames…</p>
+          )}
+          {playing && timelineReady && (
+            <p className="text-[10px] leading-snug text-faint">
+              Visual blend between consecutive observed years — not a new year, not a forecast.
+            </p>
+          )}
         </div>
       ) : (
         <p className="mt-1.5 text-[10px] leading-snug text-muted">

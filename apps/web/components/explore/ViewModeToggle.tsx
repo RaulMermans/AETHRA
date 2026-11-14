@@ -1,19 +1,17 @@
 "use client";
 
-import type { SceneDim, ViewMode } from "@/lib/globe/types";
+import type { SceneDim } from "@/lib/globe/types";
 import { Icon } from "./Icon";
 import { Segmented } from "./Segmented";
 
-/** Top-centre view switches: Lock camera on Spain (D32) and 2D / 3D. */
+/** Top-centre: fly the camera back to Spain (D32) and 2D / 3D. */
 export function ViewModeToggle({
-  mode,
-  onChange,
+  onRecenterSpain,
   dim,
   onDimChange,
   disabled,
 }: {
-  mode: ViewMode;
-  onChange: (mode: ViewMode) => void;
+  onRecenterSpain: () => void;
   dim: SceneDim;
   onDimChange: (dim: SceneDim) => void;
   disabled?: boolean;
@@ -22,16 +20,14 @@ export function ViewModeToggle({
     <div className="flex items-center gap-2">
       <button
         type="button"
-        aria-pressed={mode === "spain"}
         disabled={disabled}
-        onClick={() => onChange(mode === "spain" ? "world" : "spain")}
-        title={mode === "spain" ? "Unlock the camera (move freely around the Earth)" : "Lock the camera on Spain"}
-        className={`focus-ring flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs backdrop-blur-md transition disabled:opacity-50 ${
-          mode === "spain" ? "bg-amber-400/20 text-amber-200" : "bg-black/35 text-muted hover:text-ink"
-        }`}
+        onClick={onRecenterSpain}
+        title="Return the camera to Spain"
+        aria-label="Return the camera to Spain"
+        className="focus-ring flex items-center gap-1.5 rounded-md border border-line bg-atlantic/70 px-2.5 py-1.5 text-xs text-muted backdrop-blur-md transition hover:border-nav/50 hover:text-ink disabled:opacity-50"
       >
-        <Icon name={mode === "spain" ? "lock" : "unlock"} className="size-3.5" />
-        Lock Spain
+        <Icon name="home" className="size-3.5" />
+        Spain
       </button>
       <Segmented
         label="Map type"

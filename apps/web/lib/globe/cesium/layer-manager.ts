@@ -1,4 +1,5 @@
 import type * as CesiumNS from "cesium";
+import { plantMarkerImage } from "./marker-icons";
 import { spainRectangles } from "./providers";
 import type {
   GeoJsonLayerDescriptor,
@@ -158,7 +159,7 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
 
   for (const f of fc.features ?? []) {
     const props = f.properties ?? {};
-    const cssColor = typeof props.color === "string" ? props.color : "#7cc4ff";
+    const cssColor = typeof props.color === "string" ? props.color : "#819DB5";
     const color = Cesium.Color.fromCssColorString(cssColor);
 
     if (f.geometry.type === "Point") {
@@ -166,18 +167,32 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
       const isBasinHub = props.kind === "basin-hub";
       const px = typeof props.pixelSize === "number" ? props.pixelSize : 7.5;
       const overlay = overlayFromProps(props, lon, lat);
+      const plantMarker = props.marker === "wind" || props.marker === "solar" ? props.marker : null;
       const entity = ds.entities.add({
         name: overlay?.name,
         position: Cesium.Cartesian3.fromDegrees(lon, lat, 120),
-        point: {
-          pixelSize: isBasinHub ? px + 1.5 : px + 0.8,
-          color: color.withAlpha(Math.min(1, state.opacity + 0.08)),
-          outlineColor: isBasinHub ? Cesium.Color.fromCssColorString("#e0f2fe") : Cesium.Color.fromCssColorString("#f8fafc"),
-          outlineWidth: isBasinHub ? 2.2 : 1.6,
-          scaleByDistance: new Cesium.NearFarScalar(4.0e4, 1.4, 1.8e6, 0.55),
-          heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        },
+        point: plantMarker
+          ? undefined
+          : {
+              pixelSize: isBasinHub ? px + 1.5 : px + 0.8,
+              color: color.withAlpha(Math.min(1, state.opacity + 0.08)),
+              outlineColor: isBasinHub ? Cesium.Color.fromCssColorString("#e0f2fe") : Cesium.Color.fromCssColorString("#f8fafc"),
+              outlineWidth: isBasinHub ? 2.2 : 1.6,
+              scaleByDistance: new Cesium.NearFarScalar(4.0e4, 1.4, 1.8e6, 0.55),
+              heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            },
+        billboard: plantMarker
+          ? {
+              image: plantMarkerImage(plantMarker, cssColor),
+              width: typeof props.pixelSize === "number" && props.pixelSize > 8 ? 22 : 16,
+              height: typeof props.pixelSize === "number" && props.pixelSize > 8 ? 22 : 16,
+              heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+              verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+              scaleByDistance: new Cesium.NearFarScalar(4.0e4, 1.35, 1.8e6, 0.55),
+            }
+          : undefined,
         label: overlay && props.hideLabel !== 1
           ? {
               text: shortLabel(overlay.name),
@@ -307,6 +322,12 @@ export class CesiumLayerManager {
 
   private async reconcile(layers: LayerDescriptor[], states: LayerStateMap, mode: ViewMode) {
     const rectangles = mode === "spain" ? spainRectangles(this.Cesium) : undefined;
+    const keep = new Set(layers.map((d) => d.id));
+    for (const [id, handle] of this.handles) {
+      if (keep.has(id)) continue;
+      handle.destroy();
+      this.handles.delete(id);
+    }
     for (const d of layers) {
       if (this.destroyed) return;
       const state = states[d.id];
