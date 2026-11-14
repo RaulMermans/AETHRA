@@ -1,8 +1,21 @@
 "use client";
 
 import { useId } from "react";
-import type { GlobeStatus, LayerDescriptor, LayerState, LayerStateMap } from "@/lib/globe/types";
+import type {
+  GlobeStatus,
+  LayerDescriptor,
+  LayerState,
+  LayerStateMap,
+  QualityMode,
+  QualityProfile,
+} from "@/lib/globe/types";
 import { Icon } from "./Icon";
+
+const QUALITY_LABEL: Record<QualityProfile, string> = {
+  high: "High",
+  balanced: "Balanced",
+  performance: "Performance",
+};
 
 const GROUP_LABEL: Record<LayerDescriptor["group"], string> = {
   imagery: "NASA imagery",
@@ -103,6 +116,8 @@ export function LayerPanel({
   states,
   onChange,
   status,
+  qualityMode,
+  onQualityChange,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -110,6 +125,8 @@ export function LayerPanel({
   states: LayerStateMap;
   onChange: (id: string, patch: Partial<LayerState>) => void;
   status: GlobeStatus | null;
+  qualityMode: QualityMode;
+  onQualityChange: (mode: QualityMode) => void;
 }) {
   const groups = (Object.keys(GROUP_LABEL) as LayerDescriptor["group"][])
     .map((g) => [g, layers.filter((l) => l.group === g)] as const)
@@ -144,16 +161,55 @@ export function LayerPanel({
         <div className="mt-2 border-t border-line pt-2.5">
           <h3 className="text-[10px] uppercase tracking-[0.12em] text-faint">Globe</h3>
           <dl className="mt-1.5 grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1 text-[11px]">
-            <dt className="text-faint">Base map</dt>
-            <dd className="text-muted">{status?.baseImagery ?? "—"}</dd>
+            <dt className="text-faint">Imagery</dt>
+            <dd className="text-muted">
+              {status?.imagery.label ?? "—"}
+              {status && status.imagery.finestDetail !== "—" && (
+                <span className="block text-faint">Finest detail: {status.imagery.finestDetail}</span>
+              )}
+              {!!status?.imagery.failedTiles && (
+                <span className="block text-warn">{status.imagery.failedTiles} imagery tiles failed to load</span>
+              )}
+            </dd>
             <dt className="text-faint">Terrain</dt>
             <dd className={status?.terrain.available ? "text-muted" : "text-warn"}>
               {status?.terrain.label ?? "—"}
+              {status?.terrain.datum && (
+                <span className="block text-faint">
+                  Heights: {status.terrain.datum === "orthometric" ? "above sea level" : "WGS84 ellipsoidal"} · no
+                  exaggeration
+                </span>
+              )}
+              {!!status?.terrain.failedTiles && (
+                <span className="block text-warn">{status.terrain.failedTiles} terrain tiles failed to load</span>
+              )}
+            </dd>
+            <dt className="text-faint">
+              <label htmlFor="quality-mode">Rendering</label>
+            </dt>
+            <dd>
+              <select
+                id="quality-mode"
+                value={qualityMode}
+                onChange={(e) => onQualityChange(e.target.value as QualityMode)}
+                className="focus-ring w-full rounded border border-line bg-white/5 px-1.5 py-0.5 text-[11px] text-ink [color-scheme:dark]"
+              >
+                <option value="auto">
+                  Auto{status && qualityMode === "auto" ? ` — ${QUALITY_LABEL[status.quality.profile]}` : ""}
+                </option>
+                <option value="high">High quality</option>
+                <option value="balanced">Balanced</option>
+                <option value="performance">Performance</option>
+              </select>
+              {status && qualityMode === "auto" && (
+                <span className="mt-0.5 block text-[10px] text-faint">{status.quality.reason}</span>
+              )}
             </dd>
           </dl>
-          {status && !status.terrain.available && status.phase === "ready" && (
-            <p className="mt-1.5 text-[10px] leading-snug text-faint">
-              3D topography and high-resolution imagery need <code className="font-mono">NEXT_PUBLIC_CESIUM_ION_TOKEN</code>.
+          {status && status.phase === "ready" && !status.terrain.label.startsWith("Cesium") && (
+            <p className="mt-2 text-[10px] leading-snug text-faint">
+              Set <code className="font-mono">NEXT_PUBLIC_CESIUM_ION_TOKEN</code> for Cesium World Terrain and
+              sub-metre aerial imagery. Zoom is limited to what the current imagery resolves.
             </p>
           )}
         </div>

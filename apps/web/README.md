@@ -17,14 +17,21 @@ npm run dev                  # http://localhost:3000/explore
 
 Checks: `npm run lint` · `npm run typecheck` · `npm run build`.
 
-## Cesium ion token (optional)
+## Imagery, terrain and quality
 
-| Token | Base imagery | Terrain |
+| `NEXT_PUBLIC_CESIUM_ION_TOKEN` | Imagery | Terrain (heights) |
 |---|---|---|
-| none | NASA GIBS Blue Marble (500 m) | off (smooth ellipsoid) |
-| `NEXT_PUBLIC_CESIUM_ION_TOKEN` set | Cesium World Imagery | Cesium World Terrain |
+| not set | NASA Blue Marble (global) → Sentinel-2 cloudless 2024 by EOX, 10 m (CC BY-NC-SA 4.0) | Esri World Elevation 3D (above sea level) |
+| set | Cesium World Imagery (Bing Maps Aerial) | Cesium World Terrain (WGS84 ellipsoidal) |
 
-The token is public by design (it ships to the browser); restrict it to your domains in Cesium ion.
+Get a free token at https://ion.cesium.com/tokens and put it in `.env.local`. It ships to the
+browser by design; restrict it to your domains in Cesium ion. Without a token, zoom stops 2.5 km
+from the ground so the 10 m imagery is not shown stretched.
+
+Rendering quality: **Layers → Globe → Rendering** (Auto / High / Balanced / Performance). Details
+and rationale: [ADR-001](../../docs/adr/001-cesium-globe.md).
+
+In development, `window.__globe` exposes `{ controller, viewer, Cesium }` for debugging.
 
 ## Structure
 
@@ -34,13 +41,14 @@ components/explore/            UI overlays: nav, layer panel, coordinates, camer
 components/globe/Globe.tsx     Cesium viewer lifecycle (client-only, via GlobeClient)
 lib/globe/types.ts             engine-agnostic types (layers, views, controller)
 lib/globe/catalog.ts           layer catalog + camera views (Spain, home)
-lib/globe/cesium/              Cesium adapters: loader, layer manager, picking, camera
+lib/globe/cesium/              loader, providers (imagery/terrain), quality, layer manager, picking, camera
 ```
 
 ## Adding a layer
 
 1. Add a descriptor to `buildLayerCatalog()` in `lib/globe/catalog.ts` (`kind: "imagery"` for
    XYZ/WMTS tiles — use `{Time}` for dated layers — or `kind: "geojson"`).
-2. New kinds (raster, heatmap, columns): extend `LayerDescriptor` in `types.ts` and add one adapter
-   in `lib/globe/cesium/layer-manager.ts`.
+2. Data-bearing layers (`raster-field`, `point-values`) must carry `science` metadata (units,
+   bounds, native resolution, time coverage, colour scale, missing-data policy). Their Cesium
+   adapters are added in `lib/globe/cesium/layer-manager.ts` with the first real dataset.
 3. Mark placeholder data with `synthetic: true` — the panel labels it.

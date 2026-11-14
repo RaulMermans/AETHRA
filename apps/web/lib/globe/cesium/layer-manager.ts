@@ -80,7 +80,8 @@ const geoJsonAdapter: Adapter<GeoJsonLayerDescriptor> = async ({ Cesium, viewer 
   };
 };
 
-const adapters: { [K in LayerDescriptor["kind"]]: Adapter<Extract<LayerDescriptor, { kind: K }>> } = {
+// Kinds without an adapter yet (raster-field, point-values) are reported via onError and skipped.
+const adapters: { [K in LayerDescriptor["kind"]]?: Adapter<Extract<LayerDescriptor, { kind: K }>> } = {
   imagery: imageryAdapter,
   geojson: geoJsonAdapter,
 };
@@ -120,7 +121,8 @@ export class CesiumLayerManager {
       }
       if (!handle && state.visible) {
         try {
-          const adapter = adapters[d.kind] as Adapter<LayerDescriptor>;
+          const adapter = adapters[d.kind] as Adapter<LayerDescriptor> | undefined;
+          if (!adapter) throw new Error(`No Cesium adapter for layer kind "${d.kind}" yet`);
           handle = await adapter({ Cesium: this.Cesium, viewer: this.viewer }, d, state);
         } catch (err) {
           this.onError(d.id, err);
