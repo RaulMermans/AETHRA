@@ -17,7 +17,7 @@ Add new decisions at the bottom. Never delete one; mark it superseded.
 | D8 | Primary NASA dataset | Must meet criteria in `DATASETS.md` | OPEN |
 | D9 | Trend method (e.g. Mann-Kendall + Sen's slope, seasonal variant, autocorrelation handling) | Must be validated before use | OPEN |
 | D10 | "Insufficient evidence" is a valid, displayed result | Scientific honesty | LOCKED |
-| D11 | NOAA GHCN-Daily (`data/dataset1`) used only for validation, never as the primary source | Event rule: NASA resource required | MVP DEFAULT |
+| D11 | NOAA GHCN-Daily (`data/noaa_ghcnd_spain_daily`) used only for validation, never as the primary source | Event rule: NASA resource required | MVP DEFAULT |
 | D12 | Raw downloaded data is not committed; only small curated subsets and provenance metadata | Repo size; reproducibility | MVP DEFAULT |
 | D13 | App scaffolding (`create-next-app`, FastAPI app, `pyproject.toml`) created only when implementation is authorized | Event rule: no solution development before 14 Nov 09:00 | LOCKED |
 | D14 | PostGIS usage | Only if the MVP needs spatial queries; precomputed files may suffice | OPEN |

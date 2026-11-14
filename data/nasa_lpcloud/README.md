@@ -47,6 +47,6 @@
 
 ## Cómo descargar datos reales para España sin bajar el planeta entero
 
-1. **Vía [AppEEARS](https://appeears.earthdatacloud.nasa.gov/):** recomendada para MODIS, VIIRS, ECOSTRESS, ASTER, NASADEM y HLS. Permite subir un polígono de España (o puntos de estaciones como los de `../dataset1/`) y descargar directamente un CSV o GeoTIFF recortado (requiere cuenta gratuita de NASA Earthdata Login).
+1. **Vía [AppEEARS](https://appeears.earthdatacloud.nasa.gov/):** recomendada para MODIS, VIIRS, ECOSTRESS, ASTER, NASADEM y HLS. Permite subir un polígono de España (o puntos de estaciones como los de `../noaa_ghcnd_spain_daily/`) y descargar directamente un CSV o GeoTIFF recortado (requiere cuenta gratuita de NASA Earthdata Login).
 2. **Vía Earthdata Search (enlace ya prefiltrado en cada colección):** abre el enlace `España` de cualquier fila (`bounding_box` Península + Baleares `-9.5,35.9,4.4,43.9`, o España completa incl. Canarias `-18.3,27.6,4.4,43.9` dentro de cada `metadata.json`), elige el rango de fechas (ej. `2022-01-01` a `2026-11-14`) y descarga solo los gránulos que intersectan España.
 3. **Vía API CMR + script Python:** cada `metadata.json` incluye el `cmr_granules_api_spain_peninsula` y `cmr_granules_api_spain_all` listos para consultar URLs exactas de descarga mediante autenticación con NASA Earthdata Login (`~/.netrc` o Bearer Token).

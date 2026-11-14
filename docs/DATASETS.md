@@ -24,10 +24,10 @@ Non-NASA references collected earlier (complementary only): [NOAA CDO](https://w
 - [`data/nasa_lpcloud/`](../data/nasa_lpcloud/README.md) — 1,084 LP DAAC (LPCLOUD) collections,
   classified by theme, 714 with coverage over Spain. Each has a `metadata.json` with concept ID,
   temporal scope and pre-filtered Spain search/API links.
-- [`data/dataset1/`](../data/dataset1/) — NOAA GHCN-Daily station data for Spain, 2022-01-01 →
-  2026-11-07 (PRCP, SNWD, TAVG, TMAX, TMIN). **Not NASA**: usable only as ground-truth/validation.
-  Limitations: < 5 years (too short for a climate trend); exported in CDO "Standard" units
-  (°F, inches — verify before use); sparse TAVG/SNWD; check quality flags in `*_ATTRIBUTES`.
+- [`data/noaa_ghcnd_spain_daily/`](../data/noaa_ghcnd_spain_daily/) — NOAA GHCN-Daily station data for Spain, 2018-01-01 →
+  2026-11-07, one CSV per period (PRCP, SNWD, TAVG, TMAX, TMIN), ~173 stations. **Not NASA**: usable
+  only as ground-truth/validation. Metric units (°C, mm). Limitations: ~9 years (short for a climate
+  trend; older years being added); sparse TAVG/SNWD; check quality flags in `*_ATTRIBUTES`.
 
 ## Candidate NASA datasets for Spain
 
