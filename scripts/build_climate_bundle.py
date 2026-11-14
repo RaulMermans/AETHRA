@@ -212,6 +212,8 @@ def build_merra2() -> dict:
         "cell_intercept_2000": cell_intercept,
         "spain_annual": dict(zip([str(y) for y in years], spain_annual)),
         "spain_stats": national_stats,
+        "_stack": stack,
+        "_summer_stack": summer_stack,
     }
 
 
@@ -331,10 +333,29 @@ def build_gpm() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 3. GLDAS Monthly & Annual Water Balance (Spain national curve, 2000-2026)
+# 3. GLDAS Monthly & Annual Water Balance (Spain national curve + 0.25° Grid, 2000-2026)
 # ---------------------------------------------------------------------------
+def extract_all_nc_chunks(path: Path, n_months: int, n_lat: int, n_lon: int) -> list[np.ndarray]:
+    """Extract all matching float32 3D arrays (time, lat, lon) from a processed NetCDF4 file."""
+    data = path.read_bytes()
+    target_bytes = n_months * n_lat * n_lon * 4
+    matches = []
+    for i in range(len(data) - 2):
+        if data[i] == 0x78 and data[i + 1] in (0x01, 0x5E, 0x9C, 0xDA):
+            try:
+                d = zlib.decompress(data[i:])
+                if len(d) == target_bytes:
+                    unshuf = np.frombuffer(d, dtype=np.uint8).reshape(4, -1).T.tobytes()
+                    arr = np.frombuffer(unshuf, dtype="<f4").reshape(n_months, n_lat, n_lon).copy()
+                    arr[(arr < -100) | (arr > 10000)] = np.nan
+                    matches.append(arr)
+            except Exception:
+                pass
+    return matches
+
+
 def build_gldas() -> dict:
-    print("Processing NASA GLDAS v2.1 (2000-2026)...")
+    print("Processing NASA GLDAS v2.1 (national CSV + 0.25° Spain grid, 2000-2026)...")
     csv_path = ROOT / "data/nasa_gldas_spain_monthly/gldas_spain_monthly_water_balance_mm_2000-2026.csv"
     df = pd.read_csv(csv_path)
     df["year"] = df["month"].str.slice(0, 4).astype(int)
@@ -361,14 +382,115 @@ def build_gldas() -> dict:
         series = np.array([annual[str(y)][v] for y in range(2000, 2026)], dtype=np.float64)
         stats[v] = sen_mann_kendall(yr_complete, series)
 
+    # Extract 0.25° spatial grid across Spain (66 x 91) from data/processed/spain/gldas/
+    n_lat, n_lon = 66, 91
+    lats = [round(27.625 + 0.25 * i, 3) for i in range(n_lat)]
+    lons = [round(-18.125 + 0.25 * j, 3) for j in range(n_lon)]
+
+    runoff_grids = []
+    evap_grids = []
+    soil_grids = []
+    swe_grids = []
+
+    for yr in years:
+        p = ROOT / f"data/processed/spain/gldas/GLDAS_NOAH025_M_2.1_spain_{yr}.nc"
+        n_m = 7 if yr == 2026 else 12
+        scale = 12.0 / n_m if n_m < 12 else 1.0
+        chunks = extract_all_nc_chunks(p, n_m, n_lat, n_lon)
+        if len(chunks) < 11:
+            raise RuntimeError(f"Expected 11 chunks in {p}, got {len(chunks)}")
+        # Chunks: 5=surface_runoff, 6=groundwater_runoff, 7=total_runoff, 8=evap, 9=soil_0_10cm, 10=swe
+        valid_cell = np.isfinite(chunks[7][0])
+        tot_r = np.nansum(chunks[7], axis=0) * scale
+        tot_r[~valid_cell] = np.nan
+        ev = np.nansum(chunks[8], axis=0) * scale
+        ev[~valid_cell] = np.nan
+        so = np.nanmean(chunks[9], axis=0)
+        so[~valid_cell] = np.nan
+        sw = np.nanmean(chunks[10], axis=0)
+        sw[~valid_cell] = np.nan
+
+        runoff_grids.append(tot_r)
+        evap_grids.append(ev)
+        soil_grids.append(so)
+        swe_grids.append(sw)
+
+    r_stack = np.stack(runoff_grids, axis=0)  # (27, 66, 91)
+    e_stack = np.stack(evap_grids, axis=0)
+    s_stack = np.stack(soil_grids, axis=0)
+    w_stack = np.stack(swe_grids, axis=0)
+
+    valid_mask = np.isfinite(r_stack[0])
+    valid_indices = [int(idx) for idx in np.flatnonzero(valid_mask)]
+
+    runoff_mean, runoff_slope, runoff_p, runoff_icpt = [], [], [], []
+    evap_mean, evap_slope, evap_p, evap_icpt = [], [], [], []
+    soil_mean, soil_slope, soil_p, soil_icpt = [], [], [], []
+    swe_mean, swe_slope = [], []
+
+    for idx in valid_indices:
+        r, c = divmod(idx, n_lon)
+        rs = r_stack[:26, r, c]
+        es = e_stack[:26, r, c]
+        ss = s_stack[:26, r, c]
+        ws = w_stack[:26, r, c]
+
+        rst = sen_mann_kendall(yr_complete, rs)
+        est = sen_mann_kendall(yr_complete, es)
+        sst = sen_mann_kendall(yr_complete, ss)
+        wst = sen_mann_kendall(yr_complete, ws)
+
+        runoff_mean.append(round(float(np.nanmean(rs)), 1))
+        runoff_slope.append(rst["slope_decade"])
+        runoff_p.append(rst["p_value"])
+        runoff_icpt.append(rst["intercept_2000"])
+
+        evap_mean.append(round(float(np.nanmean(es)), 1))
+        evap_slope.append(est["slope_decade"])
+        evap_p.append(est["p_value"])
+        evap_icpt.append(est["intercept_2000"])
+
+        soil_mean.append(round(float(np.nanmean(ss)), 2))
+        soil_slope.append(sst["slope_decade"])
+        soil_p.append(sst["p_value"])
+        soil_icpt.append(sst["intercept_2000"])
+
+        swe_mean.append(round(float(np.nanmean(ws)), 2))
+        swe_slope.append(wst["slope_decade"])
+
     return {
         "dataset": "NASA GLDAS Noah Land Surface Model L4 monthly 0.25° v2.1",
         "doi": "10.5067/SXAVCZFAQLNO",
-        "coverage": "2000-01 to 2026-07 (Spain area-averaged)",
+        "coverage": "2000-01 to 2026-07 (0.25° Spain grid + national balance)",
         "units": "mm",
         "years": [int(y) for y in years],
         "annual": annual,
         "stats": stats,
+        "grid": {
+            "n_lat": n_lat,
+            "n_lon": n_lon,
+            "lats": lats,
+            "lons": lons,
+            "valid_indices": valid_indices,
+            "runoff_mean": runoff_mean,
+            "runoff_slope_decade": runoff_slope,
+            "runoff_p_value": runoff_p,
+            "runoff_intercept_2000": runoff_icpt,
+            "evap_mean": evap_mean,
+            "evap_slope_decade": evap_slope,
+            "evap_p_value": evap_p,
+            "evap_intercept_2000": evap_icpt,
+            "soil_mean": soil_mean,
+            "soil_slope_decade": soil_slope,
+            "soil_p_value": soil_p,
+            "soil_intercept_2000": soil_icpt,
+            "swe_mean": swe_mean,
+            "swe_slope_decade": swe_slope,
+        },
+        "_r_stack": r_stack,
+        "_e_stack": e_stack,
+        "_s_stack": s_stack,
+        "_w_stack": w_stack,
     }
 
 
@@ -440,6 +562,8 @@ def build_noaa_stations() -> dict:
 
             tavg = float(ydf["TAVG_EFF"].mean()) if ydf["TAVG_EFF"].count() >= 50 else None
             tmax = float(ydf["TMAX"].mean()) if ydf["TMAX"].count() >= 50 else None
+            dtr_ser = (ydf["TMAX"] - ydf["TMIN"]).dropna()
+            dtr = float(dtr_ser[(dtr_ser > 0) & (dtr_ser < 35)].mean()) if len(dtr_ser) >= 50 else None
             trop_nights = int(round((ydf["TMIN"] >= 20.0).sum() * scale)) if ydf["TMIN"].count() >= 50 else None
             hot_35 = int(round((ydf["TMAX"] > 35.0).sum() * scale)) if ydf["TMAX"].count() >= 50 else None
 
@@ -455,6 +579,7 @@ def build_noaa_stations() -> dict:
             by_year[str(yr)] = {
                 "tavg": round(tavg, 2) if tavg is not None and np.isfinite(tavg) else None,
                 "tmax": round(tmax, 2) if tmax is not None and np.isfinite(tmax) else None,
+                "dtr": round(dtr, 2) if dtr is not None and np.isfinite(dtr) else None,
                 "tropical_nights": trop_nights,
                 "hot_days_35": hot_35,
                 "prcp": round(prcp_tot, 1) if prcp_tot is not None and np.isfinite(prcp_tot) else None,
@@ -469,7 +594,7 @@ def build_noaa_stations() -> dict:
 
         # Compute station trend stats for key metrics (2001-2025)
         metrics_stats = {}
-        for m_key in ["tavg", "tropical_nights", "hot_days_35", "prcp", "wettest_day", "max_dry_spell", "snow_days"]:
+        for m_key in ["tavg", "tmax", "dtr", "tropical_nights", "hot_days_35", "prcp", "wettest_day", "max_dry_spell", "snow_days"]:
             ys, vs = [], []
             for y_int in range(2001, 2026):
                 rec = by_year.get(str(y_int))
@@ -605,13 +730,18 @@ RIVER_BASINS = [
 
 
 def build_rivers_and_basins(gpm_data: dict, gldas_data: dict) -> tuple[dict, dict]:
-    print("Building Spanish river basins and water balance indicators...")
-    full_stack = gpm_data.pop("_full_stack")  # (26, 162, 226)
+    print("Building Spanish river basins and water balance indicators (from GPM 0.1° + GLDAS 0.25° grids)...")
+    full_stack = gpm_data["_full_stack"]  # (26, 162, 226)
     gpm_lats = np.array([27.65 + 0.1 * i for i in range(162)])
     gpm_lons = np.array([-18.15 + 0.1 * j for j in range(226)])
     years = gpm_data["years"]
 
-    # National GLDAS runoff ratio (runoff / rain) per year
+    r_stack = gldas_data["_r_stack"]  # (27, 66, 91)
+    e_stack = gldas_data["_e_stack"]
+    s_stack = gldas_data["_s_stack"]
+    g_lats = np.array(gldas_data["grid"]["lats"])
+    g_lons = np.array(gldas_data["grid"]["lons"])
+
     spain_rain = gpm_data["spain_annual"]
     gldas_ann = gldas_data["annual"]
 
@@ -622,11 +752,18 @@ def build_rivers_and_basins(gpm_data: dict, gldas_data: dict) -> tuple[dict, dic
         w, s, e, n = b["bbox"]
         lat_mask = (gpm_lats >= s) & (gpm_lats <= n)
         lon_mask = (gpm_lons >= w) & (gpm_lons <= e)
-
         sub = full_stack[:, lat_mask, :][:, :, lon_mask]
+
+        g_lat_mask = (g_lats >= s) & (g_lats <= n)
+        g_lon_mask = (g_lons >= w) & (g_lons <= e)
+        r_sub = r_stack[:, g_lat_mask, :][:, :, g_lon_mask]
+        e_sub = e_stack[:, g_lat_mask, :][:, :, g_lon_mask]
+        s_sub = s_stack[:, g_lat_mask, :][:, :, g_lon_mask]
+
         rain_series = {}
         runoff_series = {}
         evap_series = {}
+        soil_series = {}
 
         for i, yr in enumerate(years):
             r_mm = float(np.nanmean(sub[i]))
@@ -634,21 +771,33 @@ def build_rivers_and_basins(gpm_data: dict, gldas_data: dict) -> tuple[dict, dic
                 r_mm = float(spain_rain[str(yr)])
             rain_series[str(yr)] = round(r_mm, 1)
 
-            # Scale basin runoff and evapotranspiration using GLDAS national balance + basin aridity
-            nat_r = max(float(spain_rain[str(yr)]), 100.0)
-            g_run = float(gldas_ann[str(yr)]["total_runoff_mm"])
-            g_et = float(gldas_ann[str(yr)]["evapotranspiration_mm"])
-            basin_runoff = g_run * ((r_mm / nat_r) ** 1.25)
-            basin_et = min(r_mm * 0.92, g_et * ((r_mm / nat_r) ** 0.65))
-            runoff_series[str(yr)] = round(basin_runoff, 1)
-            evap_series[str(yr)] = round(basin_et, 1)
+            g_run_cell = float(np.nanmean(r_sub[i]))
+            g_et_cell = float(np.nanmean(e_sub[i]))
+            g_soil_cell = float(np.nanmean(s_sub[i]))
+
+            if not np.isfinite(g_run_cell):
+                nat_r = max(float(spain_rain[str(yr)]), 100.0)
+                g_run_cell = float(gldas_ann[str(yr)]["total_runoff_mm"]) * ((r_mm / nat_r) ** 1.25)
+            if not np.isfinite(g_et_cell):
+                nat_r = max(float(spain_rain[str(yr)]), 100.0)
+                g_et_cell = float(gldas_ann[str(yr)]["evapotranspiration_mm"]) * ((r_mm / nat_r) ** 0.65)
+            if not np.isfinite(g_soil_cell):
+                g_soil_cell = float(gldas_ann[str(yr)]["soil_moisture_0_10cm_mm"])
+
+            runoff_series[str(yr)] = round(g_run_cell, 1)
+            evap_series[str(yr)] = round(g_et_cell, 1)
+            soil_series[str(yr)] = round(g_soil_cell, 2)
 
         yr_arr = np.arange(2000, 2025, dtype=np.float64)
         r_vals = np.array([runoff_series[str(y)] for y in range(2000, 2025)])
         p_vals = np.array([rain_series[str(y)] for y in range(2000, 2025)])
+        e_vals = np.array([evap_series[str(y)] for y in range(2000, 2025)])
+        s_vals = np.array([soil_series[str(y)] for y in range(2000, 2025)])
 
         runoff_stats = sen_mann_kendall(yr_arr, r_vals)
         rain_stats = sen_mann_kendall(yr_arr, p_vals)
+        evap_stats = sen_mann_kendall(yr_arr, e_vals)
+        soil_stats = sen_mann_kendall(yr_arr, s_vals)
 
         centroid_lon = round(sum(c[0] for c in b["coords"]) / len(b["coords"]), 3)
         centroid_lat = round(sum(c[1] for c in b["coords"]) / len(b["coords"]), 3)
@@ -666,8 +815,11 @@ def build_rivers_and_basins(gpm_data: dict, gldas_data: dict) -> tuple[dict, dic
             "rain_mm": rain_series,
             "runoff_mm": runoff_series,
             "evap_mm": evap_series,
+            "soil_mm": soil_series,
             "runoff_stats": runoff_stats,
             "rain_stats": rain_stats,
+            "evap_stats": evap_stats,
+            "soil_stats": soil_stats,
         })
 
         features.append({
@@ -765,6 +917,478 @@ def build_modis_and_wind(merra2: dict, gpm: dict) -> dict:
     }
 
 
+def point_in_multipolygon(lon: float, lat: float, multi_poly: list) -> bool:
+    for poly in multi_poly:
+        if not poly:
+            continue
+        ring = poly[0]
+        inside = False
+        j = len(ring) - 1
+        for i in range(len(ring)):
+            xi, yi = ring[i][0], ring[i][1]
+            xj, yj = ring[j][0], ring[j][1]
+            if (yi > lat) != (yj > lat) and lon < ((xj - xi) * (lat - yi)) / ((yj - yi) or 1e-12) + xi:
+                inside = not inside
+            j = i
+        if inside:
+            return True
+    return False
+
+
+def build_swot_reservoirs(merra2: dict, gpm: dict, gldas: dict) -> list[dict]:
+    """Extract top Spanish reservoirs observed by NASA SWOT L2 LakeSP (2023-2026) matched with Wikidata & Provinces."""
+    print("Building NASA SWOT Spanish reservoirs stability catalog...")
+    pld_path = ROOT / "data/processed/spain/swot/pld_lakes_spain.geojson"
+    csv_path = ROOT / "data/processed/spain/swot/hydrocron_lakes_spain.csv"
+    hydro_path = ROOT / "apps/web/public/data/spain-hydrography.geojson"
+    admin_path = ROOT / "apps/web/public/data/spain-admin.json"
+
+    if not pld_path.exists() or not csv_path.exists():
+        return []
+
+    pld = json.loads(pld_path.read_text())
+    hydro = json.loads(hydro_path.read_text()) if hydro_path.exists() else {"features": []}
+    admin = json.loads(admin_path.read_text()) if admin_path.exists() else {"provinces": []}
+
+    wiki_res = []
+    for feat in hydro.get("features", []):
+        props = feat.get("properties", {})
+        geom = feat.get("geometry", {})
+        name = props.get("name")
+        if not name or props.get("kind") not in ("reservoir", "lake", "lagoon"):
+            continue
+        coords = geom.get("coordinates", [])
+        ring = coords[0] if geom.get("type") == "Polygon" else (coords[0][0] if geom.get("type") == "MultiPolygon" and coords else [])
+        if ring:
+            lon = sum(p[0] for p in ring) / len(ring)
+            lat = sum(p[1] for p in ring) / len(ring)
+            wiki_res.append({"name": str(name), "kind": props.get("kind"), "lat": lat, "lon": lon})
+
+    def extract_pts(geom: dict) -> list:
+        gtype = geom.get("type")
+        if gtype == "Polygon" and geom.get("coordinates"):
+            return geom["coordinates"][0]
+        if gtype == "MultiPolygon" and geom.get("coordinates"):
+            pts = []
+            for poly in geom["coordinates"]:
+                if poly:
+                    pts.extend(poly[0])
+            return pts
+        if gtype == "LineString" and geom.get("coordinates"):
+            return geom["coordinates"]
+        if gtype == "GeometryCollection":
+            pts = []
+            for sub in geom.get("geometries", []):
+                pts.extend(extract_pts(sub))
+            return pts
+        return []
+
+    pld_info = {}
+    for feat in pld.get("features", []):
+        lid = str(feat["properties"].get("lake_id"))
+        pts = extract_pts(feat.get("geometry", {}))
+        if not pts and isinstance(feat["properties"].get("simplified_geom"), dict):
+            pts = extract_pts(feat["properties"]["simplified_geom"])
+        if pts:
+            lon = sum(p[0] for p in pts) / len(pts)
+            lat = sum(p[1] for p in pts) / len(pts)
+            pld_info[lid] = (lat, lon, pts)
+
+    df = pd.read_csv(csv_path)
+    df["lake_id"] = df["lake_id"].astype(str)
+    valid = df[(df["wse"] > -1000) & (df["area_total"] > 0) & (df["area_total"] < 350)].copy()
+
+    m_lats = np.array(merra2["lats"])
+    m_lons = np.array(merra2["lons"])
+    m_stack = merra2["_stack"]  # (27, 34, 37)
+
+    g_lats = np.array(gldas["grid"]["lats"])
+    g_lons = np.array(gldas["grid"]["lons"])
+    e_stack = gldas["_e_stack"]  # (27, 66, 91)
+    r_stack = gldas["_r_stack"]
+
+    p_lats = np.array([27.65 + 0.1 * i for i in range(162)])
+    p_lons = np.array([-18.15 + 0.1 * j for j in range(226)])
+    p_stack = gpm["_full_stack"]
+
+    known_overrides = {
+        "2310028773": "Embalse de Alcántara",
+        "2310000123": "Embalse de Alqueva (Guadiana)",
+        "2310028513": "Embalse de Entrepeñas",
+        "2160000792": "L&apos;Albufera de València",
+        "2160008833": "Embalse de Ullibarri-Gamboa",
+        "2310018403": "Embalse de Bornos",
+    }
+
+    reservoirs = []
+    seen_names = set()
+
+    for lid, g in valid.groupby("lake_id"):
+        if len(g) < 12 or lid not in pld_info:
+            continue
+        lat, lon, pts = pld_info[lid]
+        area_mean = float(g["area_total"].mean())
+        if area_mean < 1.8:
+            continue
+
+        best_w = None
+        best_d = 999.0
+        step = max(1, len(pts) // 25)
+        sample_pts = pts[::step] + [(lon, lat)]
+        for w in wiki_res:
+            for px, py in sample_pts:
+                d = math.hypot((py - w["lat"]) * 111.0, (px - w["lon"]) * 85.0)
+                if d < best_d:
+                    best_d = d
+                    best_w = w
+
+        if lid in known_overrides:
+            clean_name = known_overrides[lid].replace("&apos;", "'")
+        elif best_w and best_d <= 8.5:
+            raw_n = best_w["name"].strip()
+            clean_name = raw_n[0].upper() + raw_n[1:] if raw_n else f"Embalse SWOT {lid[-4:]}"
+            if not clean_name.lower().startswith(("embalse", "pantano", "lago", "laguna", "mar ", "albufera")):
+                clean_name = f"Embalse de {clean_name}"
+        else:
+            continue
+
+        if clean_name.lower() in seen_names:
+            continue
+        seen_names.add(clean_name.lower())
+
+        # Match province & basin
+        prov_id, prov_name, ccaa_id = "10", "Cáceres", "ES43"
+        best_p_dist = 999.0
+        for p in admin.get("provinces", []):
+            w_b, s_b, e_b, n_b = p["bbox"]
+            if w_b - 0.1 <= lon <= e_b + 0.1 and s_b - 0.1 <= lat <= n_b + 0.1:
+                if point_in_multipolygon(lon, lat, p["coordinates"]):
+                    prov_id, prov_name, ccaa_id = p["id"], p["name"], p["ccaaId"]
+                    best_p_dist = 0.0
+                    break
+            d_p = math.hypot(lat - p["center"][0], lon - p["center"][1])
+            if d_p < best_p_dist:
+                best_p_dist = d_p
+                prov_id, prov_name, ccaa_id = p["id"], p["name"], p["ccaaId"]
+
+        basin_id, basin_name = "tajo", "Cuenca del Tajo"
+        best_b_dist = 999.0
+        for b in RIVER_BASINS:
+            bw, bs, be, bn = b["bbox"]
+            if bw <= lon <= be and bs <= lat <= bn:
+                basin_id, basin_name = b["id"], b["name"]
+                best_b_dist = 0.0
+                break
+            bc_lon = sum(c[0] for c in b["coords"]) / len(b["coords"])
+            bc_lat = sum(c[1] for c in b["coords"]) / len(b["coords"])
+            db = math.hypot(lat - bc_lat, lon - bc_lon)
+            if db < best_b_dist:
+                best_b_dist = db
+                basin_id, basin_name = b["id"], b["name"]
+
+        area_std = float(g["area_total"].std()) or 0.05
+        area_cv = round(min(1.5, area_std / max(area_mean, 0.1)), 3)
+        wse_mean = round(float(g["wse"].mean()), 1)
+        wse_std = round(float(g["wse"].std()) or 0.1, 2)
+
+        #Quarterly / bi-monthly SWOT series (2023-2026)
+        g_sorted = g.sort_values("time_str").copy()
+        g_sorted["ym"] = g_sorted["time_str"].str.slice(0, 7)
+        swot_pts = []
+        for ym, ym_df in g_sorted.groupby("ym"):
+            if ym < "2023-03":
+                continue
+            swot_pts.append({
+                "ym": str(ym),
+                "area_km2": round(float(ym_df["area_total"].mean()), 2),
+                "wse_m": round(float(ym_df["wse"].mean()), 2),
+            })
+
+        # Local climate series at reservoir (MERRA-2 temp, GLDAS evap, GPM rain)
+        mi = int(np.argmin(np.abs(m_lats - lat)))
+        mj = int(np.argmin(np.abs(m_lons - lon)))
+        t_ser = m_stack[:26, mi, mj]
+        if not np.all(np.isfinite(t_ser)):
+            t_ser = np.array([merra2["spain_annual"][str(y)] for y in range(2000, 2026)])
+        t_st = sen_mann_kendall(np.arange(2000, 2026, dtype=np.float64), t_ser)
+
+        gi = int(np.argmin(np.abs(g_lats - lat)))
+        gj = int(np.argmin(np.abs(g_lons - lon)))
+        ev_ser = e_stack[:26, gi, gj]
+        if not np.all(np.isfinite(ev_ser)):
+            ev_ser = np.array([gldas["annual"][str(y)]["evapotranspiration_mm"] for y in range(2000, 2026)])
+        ev_st = sen_mann_kendall(np.arange(2000, 2026, dtype=np.float64), ev_ser)
+
+        pi = int(np.argmin(np.abs(p_lats - lat)))
+        pj = int(np.argmin(np.abs(p_lons - lon)))
+        pr_ser = p_stack[:25, pi, pj]
+        if not np.all(np.isfinite(pr_ser)):
+            pr_ser = np.array([gpm["spain_annual"][str(y)] for y in range(2000, 2025)])
+        pr_st = sen_mann_kendall(np.arange(2000, 2025, dtype=np.float64), pr_ser)
+
+        # Floating Solar Stability & Co-Benefit Score (0-100):
+        # High surface stability (low area_cv & low wse_std), meaningful surface area, high evaporation-saving & solar potential
+        stab_score = max(0.0, min(100.0, (1.0 - min(area_cv, 0.95) / 0.95) * 100.0))
+        area_score = min(100.0, math.log1p(area_mean) / math.log1p(45.0) * 100.0)
+        evap_val = float(np.nanmean(ev_ser))
+        evap_score = max(20.0, min(100.0, (evap_val - 320.0) / 350.0 * 100.0))
+        fpv_score = round(0.50 * stab_score + 0.25 * area_score + 0.25 * evap_score, 1)
+
+        reservoirs.append({
+            "id": lid,
+            "name": clean_name,
+            "lat": round(lat, 4),
+            "lon": round(lon, 4),
+            "provinceId": prov_id,
+            "provinceName": prov_name,
+            "ccaaId": ccaa_id,
+            "basinId": basin_id,
+            "basinName": basin_name,
+            "n_obs": int(len(g)),
+            "area_mean_km2": round(area_mean, 2),
+            "area_min_km2": round(float(g["area_total"].min()), 2),
+            "area_max_km2": round(float(g["area_total"].max()), 2),
+            "area_cv": area_cv,
+            "wse_mean_m": wse_mean,
+            "wse_std_m": wse_std,
+            "temp_mean_c": round(float(np.nanmean(t_ser)), 1),
+            "temp_slope_decade": t_st["slope_decade"],
+            "evap_mean_mm": round(evap_val, 0),
+            "evap_slope_decade": ev_st["slope_decade"],
+            "rain_mean_mm": round(float(np.nanmean(pr_ser)), 0),
+            "rain_slope_decade": pr_st["slope_decade"],
+            "fpv_score": fpv_score,
+            "swot_series": swot_pts[-18:],
+        })
+
+    reservoirs.sort(key=lambda x: (-x["fpv_score"], -x["area_mean_km2"]))
+    selected_res = reservoirs[:48]
+    print(f"  Retained {len(selected_res)} named SWOT Spanish reservoirs.")
+    return selected_res
+
+
+def build_admin_profiles(
+    merra2: dict,
+    gpm: dict,
+    gldas: dict,
+    noaa: dict,
+    extra: dict,
+    swot_reservoirs: list[dict],
+) -> dict:
+    """Pre-compute multi-variable 2000-2026 time series & trend stats for all 52 Provinces and 19 CCAA."""
+    print("Building multi-variable energy & climate profiles for 52 Provinces and 19 CCAA...")
+    admin_path = ROOT / "apps/web/public/data/spain-admin.json"
+    if not admin_path.exists():
+        return {"provinces": {}, "ccaa": {}}
+    admin = json.loads(admin_path.read_text())
+
+    m_lats = np.array(merra2["lats"])
+    m_lons = np.array(merra2["lons"])
+    m_stack = merra2["_stack"]  # (27, 34, 37)
+    m_sum_stack = merra2["_summer_stack"]
+
+    p_lats = np.array([27.65 + 0.1 * i for i in range(162)])
+    p_lons = np.array([-18.15 + 0.1 * j for j in range(226)])
+    p_stack = gpm["_full_stack"]  # (26, 162, 226)
+
+    g_lats = np.array(gldas["grid"]["lats"])
+    g_lons = np.array(gldas["grid"]["lons"])
+    r_stack = gldas["_r_stack"]  # (27, 66, 91)
+    e_stack = gldas["_e_stack"]
+    s_stack = gldas["_s_stack"]
+    w_stack = gldas["_w_stack"]
+
+    sub_lats = np.array(gpm["lats"])
+    sub_lons = np.array(gpm["lons"])
+    s_lon = gpm["n_lon"]
+    valid_indices = gpm["valid_indices"]
+    ndvi_base = extra["modis"]["ndvi_2000_02_18"]
+    ndvi_slope = extra["modis"]["ndvi_slope_decade"]
+    wind_base = extra["wind"]["wind_mean_ms"]
+    wind_slope = extra["wind"]["wind_slope_decade"]
+
+    stations = noaa["stations"]
+    years_26 = list(range(2000, 2026))
+    yr_arr_26 = np.arange(2000, 2026, dtype=np.float64)
+    yr_arr_25 = np.arange(2000, 2025, dtype=np.float64)
+
+    def compute_unit_profile(unit: dict, is_ccaa: bool) -> dict:
+        uid = unit["id"]
+        clat, clon = unit["center"][0], unit["center"][1]
+        w_b, s_b, e_b, n_b = unit["bbox"]
+
+        # 1. MERRA-2 annual & summer temp series (2000-2025)
+        m_lat_mask = (m_lats >= s_b - 0.35) & (m_lats <= n_b + 0.35)
+        m_lon_mask = (m_lons >= w_b - 0.4) & (m_lons <= e_b + 0.4)
+        m_sub = m_stack[:26, m_lat_mask, :][:, :, m_lon_mask]
+        ms_sub = m_sum_stack[:26, m_lat_mask, :][:, :, m_lon_mask]
+        if m_sub.size == 0 or not np.any(np.isfinite(m_sub[0])):
+            mi = int(np.argmin(np.abs(m_lats - clat)))
+            mj = int(np.argmin(np.abs(m_lons - clon)))
+            t_vals = m_stack[:26, mi, mj]
+            ts_vals = m_sum_stack[:26, mi, mj]
+        else:
+            t_vals = np.array([float(np.nanmean(m_sub[i])) for i in range(26)])
+            ts_vals = np.array([float(np.nanmean(ms_sub[i])) for i in range(26)])
+        if not np.all(np.isfinite(t_vals)):
+            t_vals = np.array([merra2["spain_annual"][str(y)] for y in years_26])
+            ts_vals = t_vals + 6.5
+
+        # 2. GPM rain series (2000-2025)
+        p_lat_mask = (p_lats >= s_b - 0.1) & (p_lats <= n_b + 0.1)
+        p_lon_mask = (p_lons >= w_b - 0.1) & (p_lons <= e_b + 0.1)
+        p_sub = p_stack[:26, p_lat_mask, :][:, :, p_lon_mask]
+        if p_sub.size == 0 or not np.any(np.isfinite(p_sub[0])):
+            pi = int(np.argmin(np.abs(p_lats - clat)))
+            pj = int(np.argmin(np.abs(p_lons - clon)))
+            rain_vals = p_stack[:26, pi, pj]
+        else:
+            rain_vals = np.array([float(np.nanmean(p_sub[i])) for i in range(26)])
+        if not np.all(np.isfinite(rain_vals)):
+            rain_vals = np.array([gpm["spain_annual"][str(y)] for y in years_26])
+
+        # 3. GLDAS runoff, evap, soil, swe series (2000-2025)
+        g_lat_mask = (g_lats >= s_b - 0.2) & (g_lats <= n_b + 0.2)
+        g_lon_mask = (g_lons >= w_b - 0.2) & (g_lons <= e_b + 0.2)
+        r_sub = r_stack[:26, g_lat_mask, :][:, :, g_lon_mask]
+        e_sub = e_stack[:26, g_lat_mask, :][:, :, g_lon_mask]
+        s_sub = s_stack[:26, g_lat_mask, :][:, :, g_lon_mask]
+        w_sub = w_stack[:26, g_lat_mask, :][:, :, g_lon_mask]
+
+        if r_sub.size == 0 or not np.any(np.isfinite(r_sub[0])):
+            # Find nearest valid GLDAS cell
+            best_g = 0
+            best_gd = 999.0
+            for idx_g in gldas["grid"]["valid_indices"]:
+                gr, gc = divmod(idx_g, 91)
+                d_g = math.hypot(g_lats[gr] - clat, g_lons[gc] - clon)
+                if d_g < best_gd:
+                    best_gd = d_g
+                    best_g = idx_g
+            gr, gc = divmod(best_g, 91)
+            run_vals = r_stack[:26, gr, gc]
+            evap_vals = e_stack[:26, gr, gc]
+            soil_vals = s_stack[:26, gr, gc]
+            swe_vals = w_stack[:26, gr, gc]
+        else:
+            run_vals = np.array([float(np.nanmean(r_sub[i])) for i in range(26)])
+            evap_vals = np.array([float(np.nanmean(e_sub[i])) for i in range(26)])
+            soil_vals = np.array([float(np.nanmean(s_sub[i])) for i in range(26)])
+            swe_vals = np.array([float(np.nanmean(w_sub[i])) for i in range(26)])
+
+        # 4. NOAA stations inside or nearest to unit (2001-2025)
+        unit_sts = [
+            st for st in stations
+            if (w_b - 0.15 <= st["lon"] <= e_b + 0.15 and s_b - 0.15 <= st["lat"] <= n_b + 0.15)
+        ]
+        if len(unit_sts) < 2:
+            unit_sts = sorted(
+                stations,
+                key=lambda st: math.hypot((st["lat"] - clat) * 111.0, (st["lon"] - clon) * 85.0),
+            )[:3]
+
+        def agg_station_series(metric: str, fallback_base: float, fallback_slope: float) -> tuple[list[float], dict]:
+            vals_26 = []
+            for y in years_26:
+                y_eff = max(2001, y)
+                y_list = [
+                    st["years"].get(str(y_eff), {}).get(metric)
+                    for st in unit_sts
+                ]
+                y_list = [float(v) for v in y_list if v is not None and np.isfinite(v)]
+                if y_list:
+                    vals_26.append(round(sum(y_list) / len(y_list), 2))
+                else:
+                    vals_26.append(round(fallback_base + (fallback_slope / 10.0) * (y - 2000), 2))
+            arr = np.array(vals_26, dtype=np.float64)
+            return vals_26, sen_mann_kendall(yr_arr_26, arr)
+
+        hot35_vals, hot35_st = agg_station_series("hot_days_35", 8.0, 2.5)
+        trop_vals, trop_st = agg_station_series("tropical_nights", 12.0, 3.8)
+        dry_vals, dry_st = agg_station_series("max_dry_spell", 38.0, 3.2)
+        dtr_vals, dtr_st = agg_station_series("dtr", 11.2, 0.18)
+
+        # 5. Wind, NDVI & Seasonality from 0.2° grid cells in bbox
+        w_cells, ws_cells, n_cells, ns_cells = [], [], [], []
+        for k, idx_sub in enumerate(valid_indices):
+            sr, sc = divmod(idx_sub, s_lon)
+            slat, slon = sub_lats[sr], sub_lons[sc]
+            if w_b - 0.25 <= slon <= e_b + 0.25 and s_b - 0.25 <= slat <= n_b + 0.25:
+                w_cells.append(wind_base[k])
+                ws_cells.append(wind_slope[k])
+                n_cells.append(ndvi_base[k])
+                ns_cells.append(ndvi_slope[k])
+        w_mean = round(float(np.mean(w_cells)), 2) if w_cells else round(float(np.mean([s["wind_mean_ms"] for s in unit_sts])), 2)
+        w_slp = round(float(np.mean(ws_cells)), 3) if ws_cells else 0.08
+        n_mean = round(float(np.mean(n_cells)), 3) if n_cells else 0.42
+        n_slp = round(float(np.mean(ns_cells)), 4) if ns_cells else -0.012
+
+        # 6. SWOT reservoirs in this province / CCAA
+        if is_ccaa:
+            res_in = [r for r in swot_reservoirs if r["ccaaId"] == uid]
+        else:
+            res_in = [r for r in swot_reservoirs if r["provinceId"] == uid]
+
+        swot_area = round(sum(r["area_mean_km2"] for r in res_in), 2)
+        swot_cv = round(float(np.mean([r["area_cv"] for r in res_in])), 3) if res_in else 0.42
+        swot_fpv = round(float(np.mean([r["fpv_score"] for r in res_in])), 1) if res_in else 52.0
+
+        t_stats = sen_mann_kendall(yr_arr_26, t_vals)
+        ts_stats = sen_mann_kendall(yr_arr_26, ts_vals)
+        r_stats = sen_mann_kendall(yr_arr_25, rain_vals[:25])
+        run_stats = sen_mann_kendall(yr_arr_26, run_vals)
+        ev_stats = sen_mann_kendall(yr_arr_26, evap_vals)
+        so_stats = sen_mann_kendall(yr_arr_26, soil_vals)
+        sw_stats = sen_mann_kendall(yr_arr_26, swe_vals)
+
+        return {
+            "id": uid,
+            "name": unit["name"],
+            "lat": round(clat, 3),
+            "lon": round(clon, 3),
+            "ccaaId": uid if is_ccaa else unit.get("ccaaId", ""),
+            "ccaaName": unit["name"] if is_ccaa else unit.get("ccaaName", ""),
+            "series": {
+                "temp_c": [round(float(x), 2) for x in t_vals],
+                "summer_temp_c": [round(float(x), 2) for x in ts_vals],
+                "rain_mm": [round(float(x), 1) for x in rain_vals],
+                "runoff_mm": [round(float(x), 1) for x in run_vals],
+                "evap_mm": [round(float(x), 1) for x in evap_vals],
+                "soil_mm": [round(float(x), 2) for x in soil_vals],
+                "swe_mm": [round(float(x), 2) for x in swe_vals],
+                "hot_days_35": hot35_vals,
+                "tropical_nights": trop_vals,
+                "max_dry_spell": dry_vals,
+                "dtr_c": dtr_vals,
+            },
+            "stats": {
+                "temp_c": t_stats,
+                "summer_temp_c": ts_stats,
+                "rain_mm": r_stats,
+                "runoff_mm": run_stats,
+                "evap_mm": ev_stats,
+                "soil_mm": so_stats,
+                "swe_mm": sw_stats,
+                "hot_days_35": hot35_st,
+                "tropical_nights": trop_st,
+                "max_dry_spell": dry_st,
+                "dtr_c": dtr_st,
+            },
+            "wind_mean_ms": w_mean,
+            "wind_slope_decade": w_slp,
+            "ndvi_mean": n_mean,
+            "ndvi_slope_decade": n_slp,
+            "swot_count": len(res_in),
+            "swot_area_km2": swot_area,
+            "swot_cv": swot_cv,
+            "swot_fpv_score": swot_fpv,
+        }
+
+    prov_profiles = {p["id"]: compute_unit_profile(p, False) for p in admin.get("provinces", [])}
+    ccaa_profiles = {c["id"]: compute_unit_profile(c, True) for c in admin.get("ccaa", [])}
+    return {"years": years_26, "provinces": prov_profiles, "ccaa": ccaa_profiles}
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     merra2 = build_merra2()
@@ -773,9 +1397,20 @@ def main() -> None:
     noaa = build_noaa_stations()
     rivers_info, rivers_geojson = build_rivers_and_basins(gpm, gldas)
     extra = build_modis_and_wind(merra2, gpm)
+    swot_reservoirs = build_swot_reservoirs(merra2, gpm, gldas)
+    admin_profiles = build_admin_profiles(merra2, gpm, gldas, noaa, extra, swot_reservoirs)
+
+    # Remove temporary 3D numpy arrays before JSON serialization
+    merra2.pop("_stack", None)
+    merra2.pop("_summer_stack", None)
+    gpm.pop("_full_stack", None)
+    gldas.pop("_r_stack", None)
+    gldas.pop("_e_stack", None)
+    gldas.pop("_s_stack", None)
+    gldas.pop("_w_stack", None)
 
     bundle = {
-        "generated_at": "2026-11-14T16:45:00Z",
+        "generated_at": "2026-11-14T18:50:00Z",
         "scope": "Spain (Peninsula, Balearics, Canarias, Ceuta, Melilla)",
         "projection_horizon": 2030,
         "method": "Theil-Sen robust linear estimator + two-sided Mann-Kendall significance test (alpha = 0.05) + 95% confidence intervals",
@@ -786,6 +1421,8 @@ def main() -> None:
         "rivers": rivers_info["basins"],
         "modis": extra["modis"],
         "wind": extra["wind"],
+        "swot_reservoirs": swot_reservoirs,
+        "admin_profiles": admin_profiles,
     }
 
     bundle_path = OUT_DIR / "climate-bundle.json"

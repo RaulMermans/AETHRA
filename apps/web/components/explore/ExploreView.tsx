@@ -20,7 +20,20 @@ import {
   renderDimensionHeatmapDataUrl,
   type ActiveClimateConfig,
   type ClimateBundle,
+  type PaletteId,
 } from "@/lib/globe/climate";
+import {
+  buildEnergyConceptOverlayGeoJson,
+  ENERGY_CONCEPTS,
+  evaluateEnergySites,
+  getEnergyConceptMeta,
+  renderEnergyConceptHeatmapDataUrl,
+  type EnergyConceptId,
+  type EnergyOptimizationGoal,
+  type EnergyTargetScope,
+  type EnergyVariableLens,
+  type EvaluatedEnergySite,
+} from "@/lib/globe/energy-tech";
 import { renderHydrographyDataUrl } from "@/lib/globe/hydrography";
 import type {
   CameraState,
@@ -42,6 +55,7 @@ import { AdminScopeBar } from "./AdminScopeBar";
 import { CameraControls } from "./CameraControls";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
+import { EnergyTechControlsDock, EnergyTechInspectorPanel } from "./EnergyTechAdvisor";
 import { EvidencePanel } from "./EvidencePanel";
 import { GoToPanel } from "./GoToPanel";
 import { Icon } from "./Icon";
@@ -91,11 +105,30 @@ export function ExploreView() {
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(true);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const [viewMode, setViewMode] = useState<ViewMode>("spain");
   const [dim, setDim] = useState<SceneDim>("3d");
   const homeView = viewMode === "spain" ? HOME_VIEW : WORLD_VIEW;
+
+  // --- Workspace Mode: "energy" (7 Energy Tech Concepts) vs "climate" (9 Raw Dimensions) ---
+  const [workspaceMode, setWorkspaceMode] = useState<"energy" | "climate">("energy");
+  const [energyConcept, setEnergyConcept] = useState<EnergyConceptId>("hydropower_stability");
+  const [energyScope, setEnergyScope] = useState<EnergyTargetScope>("basin");
+  const [energyGoal, setEnergyGoal] = useState<EnergyOptimizationGoal>("ideal");
+  const [energyLens, setEnergyLens] = useState<EnergyVariableLens>("composite");
+  const [selectedEnergySiteId, setSelectedEnergySiteId] = useState<string | null>(null);
+  const [energyHeatmap, setEnergyHeatmap] = useState<{
+    url: string;
+    domain: [number, number];
+    palette: PaletteId;
+    units: string;
+  }>({
+    url: "",
+    domain: [25, 88],
+    palette: "runoff",
+    units: "pts",
+  });
 
   // --- Climate bundle + Administrative Scope + 9 Dimensions & 2030 Extrapolation state ---
   const [bundle, setBundle] = useState<ClimateBundle | null>(null);
@@ -119,6 +152,11 @@ export function ExploreView() {
     [adminBundle, adminScope],
   );
 
+  const evaluatedEnergySites = useMemo<EvaluatedEnergySite[]>(() => {
+    if (!bundle) return [];
+    return evaluateEnergySites(bundle, energyConcept, energyScope, energyGoal, energyLens);
+  }, [bundle, energyConcept, energyScope, energyGoal, energyLens]);
+
   useEffect(() => {
     let active = true;
     loadClimateBundle()
@@ -130,8 +168,18 @@ export function ExploreView() {
       .then((ab) => {
         if (!active) return;
         setAdminBundle(ab);
-        // Check URL query params for initial scope (?scope=age|ccaa|provincia&id=...)
         const params = new URLSearchParams(window.location.search);
+        const labParam = params.get("lab");
+        const conceptParam = params.get("concept") as EnergyConceptId | null;
+        if (labParam === "climate") {
+          setWorkspaceMode("climate");
+        } else if (conceptParam && ENERGY_CONCEPTS.some((c) => c.id === conceptParam)) {
+          const meta = ENERGY_CONCEPTS.find((c) => c.id === conceptParam)!;
+          setWorkspaceMode("energy");
+          setEnergyConcept(conceptParam);
+          setEnergyScope(meta.recommendedScope);
+        }
+        // Check URL query params for initial scope (?scope=age|ccaa|provincia&id=...)
         const scopeParam = params.get("scope") as AdminScopeLevel | null;
         const idParam = params.get("id");
         if (scopeParam && ["age", "ccaa", "provincia"].includes(scopeParam)) {
@@ -166,6 +214,19 @@ export function ExploreView() {
       active = false;
     };
   }, [bundle, climateConfig, resolvedScope]);
+
+  useEffect(() => {
+    if (!bundle) return;
+    let active = true;
+    renderEnergyConceptHeatmapDataUrl(bundle, energyConcept, energyScope, energyLens, resolvedScope)
+      .then((res) => {
+        if (active) setEnergyHeatmap(res);
+      })
+      .catch((err) => console.error("[energy] failed to render energy heatmap", err));
+    return () => {
+      active = false;
+    };
+  }, [bundle, energyConcept, energyScope, energyLens, resolvedScope]);
 
   useEffect(() => {
     let active = true;
@@ -209,35 +270,91 @@ export function ExploreView() {
     controller.flyTo(resolvedScope.orbitView);
   }, [controller, resolvedScope]);
 
+  const handleChangeEnergyConcept = useCallback((nextConcept: EnergyConceptId) => {
+    setEnergyConcept(nextConcept);
+    const meta = getEnergyConceptMeta(nextConcept);
+    setEnergyScope(meta.recommendedScope);
+    setSelectedEnergySiteId(null);
+    setEvidenceOpen(true);
+    setLayerStates((prev) => ({
+      ...prev,
+      "climate-heatmap": { ...prev["climate-heatmap"], visible: true, opacity: 0.72 },
+      "climate-overlay": { ...prev["climate-overlay"], visible: true, opacity: 1 },
+      "spain-hydrography": {
+        ...prev["spain-hydrography"],
+        visible: nextConcept === "floating_solar" || nextConcept === "hydropower_stability" ? true : prev["spain-hydrography"].visible,
+      },
+    }));
+  }, []);
+
+  const handleSelectEnergySite = useCallback(
+    (site: EvaluatedEnergySite) => {
+      setSelectedEnergySiteId(site.id);
+      setSelected({ latitude: site.lat, longitude: site.lon });
+      setEvidenceOpen(true);
+      const range =
+        site.scope === "reservoir"
+          ? 45_000
+          : site.scope === "provincia"
+            ? 150_000
+            : site.scope === "ccaa"
+              ? 320_000
+              : 340_000;
+      controller?.flyTo({
+        target: { latitude: site.lat, longitude: site.lon },
+        heading: 0,
+        pitch: site.scope === "reservoir" ? -50 : -58,
+        range,
+        durationSeconds: 1.7,
+        terrainAware: true,
+      });
+    },
+    [controller],
+  );
+
   const allLayers = useMemo<LayerDescriptor[]>(() => {
     const dimMeta = DIMENSIONS.find((d) => d.id === climateConfig.dimension) ?? DIMENSIONS[0];
     const eff = getEffectiveMeta(climateConfig);
+    const conceptMeta = getEnergyConceptMeta(energyConcept);
+    const activeEnergySiteId = selectedEnergySiteId ?? evaluatedEnergySites[0]?.id ?? null;
+
+    const isEnergyMode = workspaceMode === "energy";
     const overlayData = bundle
-      ? buildDimensionOverlayGeoJson(bundle, climateConfig, resolvedScope, adminBundle)
+      ? isEnergyMode
+        ? buildEnergyConceptOverlayGeoJson(
+            evaluatedEnergySites,
+            energyConcept,
+            energyLens,
+            activeEnergySiteId,
+            adminBundle,
+          )
+        : buildDimensionOverlayGeoJson(bundle, climateConfig, resolvedScope, adminBundle)
       : { type: "FeatureCollection", features: [] };
+
+    const conceptDatasetsLabel = conceptMeta.variablesCrossed.map((v) => v.dataset).join(" · ");
 
     const analysisLayers: LayerDescriptor[] = [
       {
         id: "climate-heatmap",
         kind: "raster-field",
         group: "analysis",
-        title: `${dimMeta.label} Heatmap`,
-        description: eff.subtitle,
-        source: { name: dimMeta.datasets },
-        resolution: dimMeta.spatialNote,
-        synthetic: dimMeta.synthetic,
-        url: heatmapUrl,
+        title: isEnergyMode ? `${conceptMeta.shortTitle} Surface` : `${dimMeta.label} Heatmap`,
+        description: isEnergyMode ? conceptMeta.lensLabels[energyLens] : eff.subtitle,
+        source: { name: isEnergyMode ? conceptDatasetsLabel : dimMeta.datasets },
+        resolution: isEnergyMode ? "0.25° GLDAS / 0.1° GPM / 0.5° MERRA-2" : dimMeta.spatialNote,
+        synthetic: isEnergyMode ? !conceptMeta.coverageBadge.startsWith("100%") : dimMeta.synthetic,
+        url: isEnergyMode ? energyHeatmap.url : heatmapUrl,
         science: {
-          variable: dimMeta.id,
-          units: eff.units,
+          variable: isEnergyMode ? energyConcept : dimMeta.id,
+          units: isEnergyMode ? energyHeatmap.units : eff.units,
           bounds: HEATMAP_BOUNDS,
-          spatialResolution: dimMeta.spatialNote,
+          spatialResolution: isEnergyMode ? "0.25°–0.5° gridded reanalysis" : dimMeta.spatialNote,
           timeCoverage: { start: "2000-01-01", end: "2030-12-31", step: "P1Y" },
           encoding: "color",
           colorScale: {
-            domain: eff.domain,
-            palette: eff.palette,
-            kind: climateConfig.mode === "value" ? "sequential" : "diverging",
+            domain: isEnergyMode ? energyHeatmap.domain : eff.domain,
+            palette: isEnergyMode ? energyHeatmap.palette : eff.palette,
+            kind: isEnergyMode ? "diverging" : climateConfig.mode === "value" ? "sequential" : "diverging",
           },
           missingData: { policy: "hide" },
         },
@@ -246,19 +363,26 @@ export function ExploreView() {
         id: "climate-overlay",
         kind: "point-values",
         group: "analysis",
-        title:
-          climateConfig.dimension === "water_rivers"
+        title: isEnergyMode
+          ? `Evaluated ${energyScope} Sites (${evaluatedEnergySites.length})`
+          : climateConfig.dimension === "water_rivers"
             ? "Major Rivers & Basin Hubs"
             : "NOAA Weather Stations & Rivers",
-        description: "Ground-truth station observations (NOAA GHCN-Daily) and major Spanish river courses.",
-        source: { name: "NOAA GHCN-Daily + Hydrographic Demarcations" },
-        resolution: "175 stations + 8 basins",
+        description: isEnergyMode
+          ? "Ranked provinces, CCAA, river basins, or SWOT reservoirs for the selected energy concept."
+          : "Ground-truth station observations (NOAA GHCN-Daily) and major Spanish river courses.",
+        source: {
+          name: isEnergyMode
+            ? conceptDatasetsLabel
+            : "NOAA GHCN-Daily + Hydrographic Demarcations",
+        },
+        resolution: isEnergyMode ? `${evaluatedEnergySites.length} evaluated sites` : "175 stations + 8 basins",
         data: overlayData,
         science: {
-          variable: dimMeta.id,
-          units: eff.units,
+          variable: isEnergyMode ? energyConcept : dimMeta.id,
+          units: isEnergyMode ? energyHeatmap.units : eff.units,
           bounds: HEATMAP_BOUNDS,
-          spatialResolution: "Point stations",
+          spatialResolution: "Point stations & centroids",
           timeCoverage: { start: "2001-01-01", end: "2030-12-31", step: "P1Y" },
           encoding: "color",
           missingData: { policy: "hide" },
@@ -286,7 +410,22 @@ export function ExploreView() {
     };
     // Last = topmost imagery, so the water overlay sits above satellite and the heatmap.
     return hydroUrl ? [...analysisLayers, ...baseLayers, hydroLayer] : [...analysisLayers, ...baseLayers];
-  }, [baseLayers, bundle, climateConfig, heatmapUrl, hydroUrl, resolvedScope, adminBundle]);
+  }, [
+    baseLayers,
+    bundle,
+    climateConfig,
+    heatmapUrl,
+    hydroUrl,
+    resolvedScope,
+    adminBundle,
+    workspaceMode,
+    energyConcept,
+    energyScope,
+    energyLens,
+    energyHeatmap,
+    evaluatedEnergySites,
+    selectedEnergySiteId,
+  ]);
 
   // --- Map tools -------------------------------------------------------------------------
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
@@ -349,10 +488,31 @@ export function ExploreView() {
     [controller],
   );
 
-  const handleSelectLocation = useCallback((coord: GeoCoordinate | null) => {
-    setSelected(coord);
-    if (coord) setEvidenceOpen(true);
-  }, []);
+  const handleSelectLocation = useCallback(
+    (coord: GeoCoordinate | null) => {
+      setSelected(coord);
+      if (coord) {
+        setEvidenceOpen(true);
+        if (workspaceMode === "energy" && evaluatedEnergySites.length > 0) {
+          let bestSite: EvaluatedEnergySite | null = null;
+          let bestDist2 = Infinity;
+          for (const s of evaluatedEnergySites) {
+            const dlat = s.lat - coord.latitude;
+            const dlon = (s.lon - coord.longitude) * 0.76;
+            const d2 = dlat * dlat + dlon * dlon;
+            if (d2 < bestDist2) {
+              bestDist2 = d2;
+              bestSite = s;
+            }
+          }
+          if (bestSite && bestDist2 < 1.8) {
+            setSelectedEnergySiteId(bestSite.id);
+          }
+        }
+      }
+    },
+    [workspaceMode, evaluatedEnergySites],
+  );
 
   const inspectStation = useCallback(
     (coord: GeoCoordinate) => {
@@ -548,7 +708,46 @@ export function ExploreView() {
         }
       />
 
-      <div className="pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-8.5rem)] w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+      <div className="pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-8.5rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:left-6">
+        <div
+          role="tablist"
+          aria-label="Analysis workspace mode"
+          className="panel pointer-events-auto grid grid-cols-2 gap-1 p-1 text-xs"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={workspaceMode === "energy"}
+            onClick={() => {
+              setWorkspaceMode("energy");
+              setEvidenceOpen(true);
+            }}
+            className={`focus-ring rounded-md px-2.5 py-1.5 font-medium transition-colors ${
+              workspaceMode === "energy"
+                ? "bg-accent/20 text-accent shadow-[inset_0_0_0_1px_rgb(124_196_255/0.35)]"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            ⚡ Energy Tech Lab
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={workspaceMode === "climate"}
+            onClick={() => {
+              setWorkspaceMode("climate");
+              setEvidenceOpen(true);
+            }}
+            className={`focus-ring rounded-md px-2.5 py-1.5 font-medium transition-colors ${
+              workspaceMode === "climate"
+                ? "bg-accent/20 text-accent shadow-[inset_0_0_0_1px_rgb(124_196_255/0.35)]"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            Climate Layers
+          </button>
+        </div>
+
         <AdminScopeBar
           admin={adminBundle}
           scope={adminScope}
@@ -566,24 +765,47 @@ export function ExploreView() {
           qualityMode={qualityMode}
           onQualityChange={changeQuality}
         />
-        <DimensionDock
-          config={climateConfig}
-          heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
-          stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
-          hydroVisible={layerStates["spain-hydrography"]?.visible ?? true}
-          playing={playing}
-          onChange={updateClimateConfig}
-          onToggleHeatmap={() =>
-            updateLayer("climate-heatmap", { visible: !(layerStates["climate-heatmap"]?.visible ?? true) })
-          }
-          onToggleStations={() =>
-            updateLayer("climate-overlay", { visible: !(layerStates["climate-overlay"]?.visible ?? true) })
-          }
-          onToggleHydro={() =>
-            updateLayer("spain-hydrography", { visible: !(layerStates["spain-hydrography"]?.visible ?? true) })
-          }
-          onTogglePlay={() => setPlaying((p) => !p)}
-        />
+
+        {workspaceMode === "energy" ? (
+          <EnergyTechControlsDock
+            conceptId={energyConcept}
+            scope={energyScope}
+            goal={energyGoal}
+            lens={energyLens}
+            heatmapDomain={energyHeatmap.domain}
+            heatmapPalette={energyHeatmap.palette}
+            heatmapUnits={energyHeatmap.units}
+            onChangeConcept={handleChangeEnergyConcept}
+            onChangeScope={(s) => {
+              setEnergyScope(s);
+              setSelectedEnergySiteId(null);
+            }}
+            onChangeGoal={(g) => {
+              setEnergyGoal(g);
+              setSelectedEnergySiteId(null);
+            }}
+            onChangeLens={setEnergyLens}
+          />
+        ) : (
+          <DimensionDock
+            config={climateConfig}
+            heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
+            stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
+            hydroVisible={layerStates["spain-hydrography"]?.visible ?? true}
+            playing={playing}
+            onChange={updateClimateConfig}
+            onToggleHeatmap={() =>
+              updateLayer("climate-heatmap", { visible: !(layerStates["climate-heatmap"]?.visible ?? true) })
+            }
+            onToggleStations={() =>
+              updateLayer("climate-overlay", { visible: !(layerStates["climate-overlay"]?.visible ?? true) })
+            }
+            onToggleHydro={() =>
+              updateLayer("spain-hydrography", { visible: !(layerStates["spain-hydrography"]?.visible ?? true) })
+            }
+            onTogglePlay={() => setPlaying((p) => !p)}
+          />
+        )}
       </div>
 
       <div className="pointer-events-none absolute top-28 right-3 bottom-28 z-20 flex items-stretch justify-end gap-2 sm:top-16 sm:right-6 sm:bottom-32">
@@ -622,19 +844,37 @@ export function ExploreView() {
           <CameraControls controller={controller} flat={dim === "2d"} onReset={() => controller?.flyTo(homeView)} />
         </div>
         {evidenceOpen && (
-          <div className="flex h-full min-h-0 w-[min(26rem,calc(100vw-4.75rem))] shrink-0">
-            <EvidencePanel
-              open={evidenceOpen}
-              onClose={() => setEvidenceOpen(false)}
-              selected={selected}
-              bundle={bundle}
-              config={climateConfig}
-              resolvedScope={resolvedScope}
-              onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
-              onSelectLocation={handleSelectLocation}
-              onInspectStation={inspectStation}
-              onResetToNational={() => handleChangeAdminScope({ ...adminScope, level: "age" }, true)}
-            />
+          <div
+            className={`flex h-full min-h-0 shrink-0 ${
+              workspaceMode === "energy"
+                ? "w-[min(30rem,calc(100vw-4.75rem))]"
+                : "w-[min(26rem,calc(100vw-4.75rem))]"
+            }`}
+          >
+            {workspaceMode === "energy" ? (
+              <EnergyTechInspectorPanel
+                conceptId={energyConcept}
+                scope={energyScope}
+                goal={energyGoal}
+                sites={evaluatedEnergySites}
+                selectedSiteId={selectedEnergySiteId}
+                onSelectSite={handleSelectEnergySite}
+                onClose={() => setEvidenceOpen(false)}
+              />
+            ) : (
+              <EvidencePanel
+                open={evidenceOpen}
+                onClose={() => setEvidenceOpen(false)}
+                selected={selected}
+                bundle={bundle}
+                config={climateConfig}
+                resolvedScope={resolvedScope}
+                onSelectYear={(year) => updateClimateConfig({ year, mode: "value" })}
+                onSelectLocation={handleSelectLocation}
+                onInspectStation={inspectStation}
+                onResetToNational={() => handleChangeAdminScope({ ...adminScope, level: "age" }, true)}
+              />
+            )}
           </div>
         )}
       </div>
@@ -647,7 +887,7 @@ export function ExploreView() {
 
       {ready && !selected && !measure && (
         <p className="pointer-events-none absolute bottom-28 left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] text-muted backdrop-blur-md sm:block">
-          Drag to orbit · Scroll to zoom · Click a station or the map
+          Drag to orbit · Scroll to zoom · Click a ranked site or station
         </p>
       )}
 
@@ -672,7 +912,13 @@ export function ExploreView() {
               className="focus-ring panel pointer-events-auto inline-flex items-center gap-2 !rounded-full px-3.5 py-2 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
             >
               <Icon name="chart" className="size-4 text-muted" />
-              {evidenceOpen ? "Hide trend" : "Trend to 2030"}
+              {evidenceOpen
+                ? workspaceMode === "energy"
+                  ? "Hide Energy Advisor"
+                  : "Hide trend"
+                : workspaceMode === "energy"
+                  ? "Ideal Sites & Time Series"
+                  : "Trend to 2030"}
             </button>
           </div>
         </div>

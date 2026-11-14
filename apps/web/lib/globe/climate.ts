@@ -36,6 +36,7 @@ export interface TrendStats {
 export interface NoaaStationYearRecord {
   tavg: number | null;
   tmax: number | null;
+  dtr?: number | null;
   tropical_nights: number | null;
   hot_days_35: number | null;
   prcp: number | null;
@@ -72,8 +73,85 @@ export interface RiverBasin {
   rain_mm: Record<string, number>;
   runoff_mm: Record<string, number>;
   evap_mm: Record<string, number>;
+  soil_mm?: Record<string, number>;
   runoff_stats: TrendStats;
   rain_stats: TrendStats;
+  evap_stats?: TrendStats;
+  soil_stats?: TrendStats;
+}
+
+export interface SwotReservoir {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  provinceId: string;
+  provinceName: string;
+  ccaaId: string;
+  basinId: string;
+  basinName: string;
+  n_obs: number;
+  area_mean_km2: number;
+  area_min_km2: number;
+  area_max_km2: number;
+  area_cv: number;
+  wse_mean_m: number;
+  wse_std_m: number;
+  temp_mean_c: number;
+  temp_slope_decade: number;
+  evap_mean_mm: number;
+  evap_slope_decade: number;
+  rain_mean_mm: number;
+  rain_slope_decade: number;
+  fpv_score: number;
+  swot_series: Array<{
+    ym: string;
+    area_km2: number;
+    wse_m: number;
+  }>;
+}
+
+export interface AdminClimateProfile {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  ccaaId: string;
+  ccaaName: string;
+  series: {
+    temp_c: number[];
+    summer_temp_c: number[];
+    rain_mm: number[];
+    runoff_mm: number[];
+    evap_mm: number[];
+    soil_mm: number[];
+    swe_mm: number[];
+    hot_days_35: number[];
+    tropical_nights: number[];
+    max_dry_spell: number[];
+    dtr_c: number[];
+  };
+  stats: {
+    temp_c: TrendStats;
+    summer_temp_c: TrendStats;
+    rain_mm: TrendStats;
+    runoff_mm: TrendStats;
+    evap_mm: TrendStats;
+    soil_mm: TrendStats;
+    swe_mm: TrendStats;
+    hot_days_35: TrendStats;
+    tropical_nights: TrendStats;
+    max_dry_spell: TrendStats;
+    dtr_c: TrendStats;
+  };
+  wind_mean_ms: number;
+  wind_slope_decade: number;
+  ndvi_mean: number;
+  ndvi_slope_decade: number;
+  swot_count: number;
+  swot_area_km2: number;
+  swot_cv: number;
+  swot_fpv_score: number;
 }
 
 export interface ClimateBundle {
@@ -147,6 +225,27 @@ export interface ClimateBundle {
       }
     >;
     stats: Record<string, TrendStats>;
+    grid?: {
+      n_lat: number;
+      n_lon: number;
+      lats: number[];
+      lons: number[];
+      valid_indices: number[];
+      runoff_mean: number[];
+      runoff_slope_decade: number[];
+      runoff_p_value: number[];
+      runoff_intercept_2000: number[];
+      evap_mean: number[];
+      evap_slope_decade: number[];
+      evap_p_value: number[];
+      evap_intercept_2000: number[];
+      soil_mean: number[];
+      soil_slope_decade: number[];
+      soil_p_value: number[];
+      soil_intercept_2000: number[];
+      swe_mean: number[];
+      swe_slope_decade: number[];
+    };
   };
   noaa: {
     dataset: string;
@@ -173,6 +272,12 @@ export interface ClimateBundle {
     wind_mean_ms: number[];
     wind_slope_decade: number[];
     wind_dir_deg: number[];
+  };
+  swot_reservoirs?: SwotReservoir[];
+  admin_profiles?: {
+    years: number[];
+    provinces: Record<string, AdminClimateProfile>;
+    ccaa: Record<string, AdminClimateProfile>;
   };
 }
 
