@@ -423,8 +423,8 @@ export function ExploreView() {
         )}
       </div>
 
-      {/* Left column: Layers panel + Dimension Dock */}
-      <div className="pointer-events-none absolute top-14 left-4 z-10 flex max-w-[calc(100vw-2rem)] flex-col gap-2.5 sm:left-6">
+      {/* Left column: Layers panel + Dimension Dock (narrow so the globe stays visible) */}
+      <div className="pointer-events-none absolute top-14 left-4 z-10 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 sm:left-6">
         <LayerPanel
           open={layersOpen}
           onToggle={() => setLayersOpen((o) => !o)}
