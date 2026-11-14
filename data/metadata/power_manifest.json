@@ -1,0 +1,1455 @@
+{
+ "description": "NASA POWER daily regional downloads for docs/ENERGY_RESEARCH.md (Gate B). sha256 is of the uncompressed API response.",
+ "files": {
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2001_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:10:52+00:00",
+   "sha256": "d350b4d11a0478eaf6f6e52bb98865f426f0344c35ce013d3b32b3a475468834",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20010101&end=20011231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2001_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:10:51+00:00",
+   "sha256": "d68bae448f767a810cde4775d70817946ffae3c9dc4c4d12ba6b028a91fd9351",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20010101&end=20011231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2002_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:10:56+00:00",
+   "sha256": "d55d0d5f4a8e78c5c994ac2b505c3449f64fb74b4932c79af66535c55eb46b54",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20020101&end=20021231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2002_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:10:54+00:00",
+   "sha256": "11be602be14a84f4a332db6e27a94358265c6dd1a3673669d9fb8676ddc49748",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20020101&end=20021231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2003_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:10:59+00:00",
+   "sha256": "95f1557a52e0f51f0af7caf92bab75650ef4d147ec2c35c63339829d580b505e",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20030101&end=20031231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2003_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:10:58+00:00",
+   "sha256": "f335f593444fb863f651a017eef01dfe1039be8b4cc4ad276abd69bc3663118b",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20030101&end=20031231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2004_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:03+00:00",
+   "sha256": "f7315bf2d356e6ed22e5670e1fea18398c57fe27c2f954f9385ad99789bceec1",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20040101&end=20041231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2004_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:01+00:00",
+   "sha256": "69316374c6a4159ac0f258c073cf4697ce847a2371d73b014aaff90dfad6d81c",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20040101&end=20041231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2005_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:06+00:00",
+   "sha256": "4e7dabb5070e9ba4ec9797d43adbb57de092d37d446f7356b7ece872a9a327bf",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20050101&end=20051231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2005_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:05+00:00",
+   "sha256": "69558abf68e32217bf80cce82307443c28d2a05ca39036fb45001ed1bd368bce",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20050101&end=20051231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2006_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:08+00:00",
+   "sha256": "312733dbd4319e07f4f36db4b87e85c48caeec2981b8ff8b64a1ec91220dc223",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20060101&end=20061231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2006_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:07+00:00",
+   "sha256": "70076d08e9813e6fc4a142d3f06830ca753c175e7c64ac5e2d488e46df036d21",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20060101&end=20061231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2007_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:12+00:00",
+   "sha256": "883fd9eb27aec08456008156b199e2e9ddbb920991e6c1c5f859a0a690866a26",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20070101&end=20071231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2007_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:10+00:00",
+   "sha256": "30cbf8449bc0517455d34907539dfe27673187010b5f817f60ce7de7dfbbad11",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20070101&end=20071231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2008_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:16+00:00",
+   "sha256": "cb92033c60a44ad0c1f4c44c5f60da4914ba0a5e89a23a2efee786f5a415e18f",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20080101&end=20081231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2008_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:14+00:00",
+   "sha256": "3d4e7f1cb493fe425bb1c0fe65e84e94a49309caa8bfa9e34754e00f3ab6ca74",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20080101&end=20081231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2009_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:19+00:00",
+   "sha256": "1e7349c0682a3e0661876784854b863c76d931e3b1973d43c3fbcc19ef45955e",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20090101&end=20091231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2009_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:17+00:00",
+   "sha256": "9eb32051f9a1848def4557e3ab665612c41af35b7bd5121823607f40440973e1",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20090101&end=20091231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2010_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:22+00:00",
+   "sha256": "2f7f35978164de586b4f45fb7afa170a60bb20cdda53064d007ff3c8ce902092",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20100101&end=20101231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2010_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:21+00:00",
+   "sha256": "e7aaabefe76916aa6833def389d179561cc8fcc8b259cee8d8d082ac498150ad",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20100101&end=20101231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2011_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:25+00:00",
+   "sha256": "e36872c7730519f94860a4a45579a18b61ccd11468848c1143b43ef5c769cd74",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20110101&end=20111231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2011_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:24+00:00",
+   "sha256": "48ab99cff5c9598125ddae2f0ddc1cf7d6445f34d86caa1bacca87f9d4e8983b",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20110101&end=20111231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2012_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:28+00:00",
+   "sha256": "8a2ad489f839f2740d67a69b27beabac3307e2a97145c9533321891af5894d74",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20120101&end=20121231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2012_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:27+00:00",
+   "sha256": "8af1eb010ae64d9662554db1d3a7a0b657e48dcb6bf1c1853d8656140f5b8a41",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20120101&end=20121231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2013_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:32+00:00",
+   "sha256": "0d5f25d22d162e5269b4feb95559a6c19a00bc2bd249bb30d3e46485dd4ce182",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20130101&end=20131231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2013_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:30+00:00",
+   "sha256": "f8460298cac46c263176699c2d0217557aa8ffc6dad5e20f9b5346ad45544d71",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20130101&end=20131231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2014_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:35+00:00",
+   "sha256": "635b92ed77a0159861b0c30da538463dd20f4b9a2e5dad5ae81c7fda66900aa5",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20140101&end=20141231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2014_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:33+00:00",
+   "sha256": "7b434c1115aa8bf5ba3647dc4ffc2a09a2a68318e7c01d97ef20f79c0bb9ec82",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20140101&end=20141231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2015_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:39+00:00",
+   "sha256": "62b2fe12183ee4fb012d906778a1cad51680a174bb8900e35b51bc15cbcb1b75",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20150101&end=20151231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2015_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:37+00:00",
+   "sha256": "b789ce31c941be8503069b012b689fa85952cafcc132686d0d77c6f4aa7a05d4",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20150101&end=20151231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2016_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:42+00:00",
+   "sha256": "572e5f0086958aabdf54c2470168f93c71b0c9e943c941d4f701925c1175d29d",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20160101&end=20161231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2016_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:41+00:00",
+   "sha256": "2ca59635761dc73e4a899456a73717399afc8a10c360d339a0a64a79528e6408",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20160101&end=20161231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2017_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:46+00:00",
+   "sha256": "22039c40fc37a8967111e0c0bdfa1683a157a2a830a5af49e54cba5499a5285c",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20170101&end=20171231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2017_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:44+00:00",
+   "sha256": "07d11961da24d6b63334e8d9a807a15d009c2a18c9e93c835cc056ae15012923",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20170101&end=20171231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2018_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:49+00:00",
+   "sha256": "497c427288f3029bdba0538d90de78d258ab9f45724a8a1e597d9eafa914aa3c",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20180101&end=20181231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2018_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:48+00:00",
+   "sha256": "45dbb84d09a534be64e6d2cdb0e83fd7dae18d7f8091f3bb862477429b54c0db",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20180101&end=20181231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2019_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:53+00:00",
+   "sha256": "4143e5cf2d0ee6ecc7fa144f707efc805156d1c0eaa091b2934c6faf759574bd",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20190101&end=20191231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2019_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:51+00:00",
+   "sha256": "00e463adf51320ad1ab02148e2572993f38c77adb65efc34fc80ef61c3c48ba0",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20190101&end=20191231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2020_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:11:56+00:00",
+   "sha256": "5940138b0d113f085dd4a4d7699dc5d148b562b1dc8389f4291f415bb330eecd",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20200101&end=20201231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2020_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:55+00:00",
+   "sha256": "3bdfaddab9c83a8e5051ec1fffb570ab91d8a96f33f129299ab8e05fc7bde98c",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20200101&end=20201231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2021_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:12:00+00:00",
+   "sha256": "5cfebee4b32a3a10aeb3e5e1953faab316880a4d089824da3ecb8c0654f563a1",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20210101&end=20211231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2021_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:11:58+00:00",
+   "sha256": "aebb43f513ac4962ff222e240e591e449c715fc1c43702cd00b200a98fd35386",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20210101&end=20211231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2022_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:12:05+00:00",
+   "sha256": "04de6b60906c667512272995f12733e9894265dc76db88866424449948d6202f",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20220101&end=20221231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2022_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:12:03+00:00",
+   "sha256": "e083828ac17a144d80e7aad9184caf0ad3f5528f1373f905426b7077c9609b47",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20220101&end=20221231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2023_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:12:08+00:00",
+   "sha256": "3cdb2687cbec689ee1e250e3490fef37b68a0ce2cba0f3aec4e53df71588ce27",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20230101&end=20231231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2023_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:12:07+00:00",
+   "sha256": "669c6fd4a374556288afd3ec2e8bc09f20857982d5a724301abfef3e9e303710",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20230101&end=20231231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2024_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:12:11+00:00",
+   "sha256": "a63f3d9c009dfb72d7d4921206da775283c582d403c52555e1c66133cafdb3ee",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20240101&end=20241231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2024_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:12:10+00:00",
+   "sha256": "75c5ff0701a3fd5c5826eaa4cd7088b17446ec7982da6a61ea4ef59873effd39",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20240101&end=20241231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2025_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 45,
+   "retrieved_utc": "2026-11-14T19:12:15+00:00",
+   "sha256": "57e5e3edee451efd177128717a4a9e8a635e4c58593a103132af16e027314445",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20250101&end=20251231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/ALLSKY_SFC_SW_DWN/2025_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 90,
+   "retrieved_utc": "2026-11-14T19:12:13+00:00",
+   "sha256": "1ece15e3ef8a3868474d9897b71978db43a1345d4b7e52d499cacc5c72b71a9a",
+   "sources": [
+    "SYN1DEG"
+   ],
+   "time_standard": "LST",
+   "units": "kW-hr/m^2/day",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=ALLSKY_SFC_SW_DWN&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20250101&end=20251231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2001_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:19+00:00",
+   "sha256": "c8c2f9e064dbfa7ae5718d580a01e0c3737ce1d9a7d4fd93deb4eb1b950f138d",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20010101&end=20011231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2001_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:17+00:00",
+   "sha256": "26d74911152e06b464b92f08a39d9f537267f25ae9b1c7f23f1e47f73a91d7cd",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20010101&end=20011231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2002_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:23+00:00",
+   "sha256": "b2f8cc532fdaee3b488417b582fec1fae3a4aae95551bb8cdcd8e07eac733a92",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20020101&end=20021231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2002_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:22+00:00",
+   "sha256": "8bfafb707ac01a3995543896d9403761ab53e7f37a5a7a0ce4d8c993dd29293e",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20020101&end=20021231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2003_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:28+00:00",
+   "sha256": "a9a9338cfc088462fe47e21174c494d39b66925472bd90c7cff6305ab1b98b81",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20030101&end=20031231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2003_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:26+00:00",
+   "sha256": "3a535cf7ae6b20bfb89722877bf20b22ac7222106b91dee9431e1e1c7619e745",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20030101&end=20031231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2004_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:33+00:00",
+   "sha256": "3e4e189ccfba5d01c34e76299bfbaa4325563c35d55d28c68dce0b456ab7940c",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20040101&end=20041231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2004_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:31+00:00",
+   "sha256": "8bd782b3dcf3e823f8e698baff24ae3f584d57f40d1091db81f8e07202f25d1a",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20040101&end=20041231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2005_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:37+00:00",
+   "sha256": "644873cdc798c9604d78bd64bebfd7a0793bcf312a9149aa890878906ef88bb2",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20050101&end=20051231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2005_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:35+00:00",
+   "sha256": "772bef2c09976c07dfb8e89c5eb2c41c5bc984fee9182f172d4fc90e2e57d03b",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20050101&end=20051231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2006_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:42+00:00",
+   "sha256": "c1ee76a2d21279e5281c1b0d557f2f1a7f54d0db927a5df2f8ab37a038acb8da",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20060101&end=20061231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2006_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:40+00:00",
+   "sha256": "1dfa1c435dc46713f71cb6b775ea29833fdc905562e277f3b9559d231e33d31b",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20060101&end=20061231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2007_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:47+00:00",
+   "sha256": "df4d47ea32a1bbe9df18869861b00c83b136eb9c4bf65101608901691d70f3e0",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20070101&end=20071231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2007_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:45+00:00",
+   "sha256": "e234deffbf7e9820cc0a2da6658eeaf10b54fde37fc322c00687a5f3439b669e",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20070101&end=20071231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2008_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:52+00:00",
+   "sha256": "e6437cc06fb7da9a5f62ae42e915d4d3a0c0f53a364563504abdceac3e60c237",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20080101&end=20081231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2008_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:50+00:00",
+   "sha256": "126dc0696a20676fde104791adc0d8d569031d0dd03e676f4ef9b7157bc6f935",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20080101&end=20081231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2009_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:12:57+00:00",
+   "sha256": "daa2aab10394564b476b275ddebf5a18b5691eadd4fea294dea05e04afceeb04",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20090101&end=20091231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2009_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:12:55+00:00",
+   "sha256": "35b6d8aef0675ee80351234dc3d3c294028f780e0e269fd0ce2c9b160cb1ab4f",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20090101&end=20091231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2010_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:02+00:00",
+   "sha256": "e2f597b9a14c051658c027f7a2bbb6cfd5bb8b49e44fef859b638cbff46a1e30",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20100101&end=20101231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2010_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:00+00:00",
+   "sha256": "3753a77387fdb047b6092088bd9e8a3d01b7df757815a72e1041776c4deb6078",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20100101&end=20101231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2011_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:08+00:00",
+   "sha256": "ac0b27d688ab9c51064b5128205ad0f7d6094bf6399d3560816ed8fc5dd0c0b1",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20110101&end=20111231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2011_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:06+00:00",
+   "sha256": "444a9d0872675431b0ca95650526088268e3fbf6b0ec8de36bc125d7721f9275",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20110101&end=20111231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2012_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:13+00:00",
+   "sha256": "5d9d63b02148dd42a40b8a34ba069e95c1c42b00aab061007faae0fe911e24ac",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20120101&end=20121231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2012_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:11+00:00",
+   "sha256": "6caf5234761bbb007ef3e91235acf94b02d7887df6073ad9ce1afbbd732ca298",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20120101&end=20121231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2013_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:18+00:00",
+   "sha256": "331b8418fec5d4db8e3b441aa6d7766fa20998949de879c3fc00c352f45a6d3a",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20130101&end=20131231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2013_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:16+00:00",
+   "sha256": "304a47a4ba4f7c6c09ab8d68f4cff9cb4eca8bb344e9b103c368894b20338f69",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20130101&end=20131231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2014_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:23+00:00",
+   "sha256": "1d69cd5b10a3d925960ec442cd4b6dea5c86a9578be5d9274c6b551bbe1ac7f8",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20140101&end=20141231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2014_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:21+00:00",
+   "sha256": "dc55ddfb0a9a60a9b01a83788d6f42b0031aea0c79493879eda92b992432ffaa",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20140101&end=20141231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2015_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:28+00:00",
+   "sha256": "f25c02c50af741e806fea766e6686be5a206c51d6769aef2391bef091cb69c35",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20150101&end=20151231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2015_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:26+00:00",
+   "sha256": "41a45c5df63e38e92a7eca5d5e566320f12d15caac87b4115512d8d9fd797e33",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20150101&end=20151231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2016_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:33+00:00",
+   "sha256": "ce57c296d11df6cb533666322fc15434743cd8a8dc7a200febec3c434ebb1182",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20160101&end=20161231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2016_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:31+00:00",
+   "sha256": "ba82bbbde9f8be0d5f8777bdc6592fe8b473b3eebfd0df7e42ca614fa94f0ea7",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20160101&end=20161231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2017_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:38+00:00",
+   "sha256": "bda659fa82b396cf54c5b19c5e2a3d2b1a52d7d7b5a5cb29978bcf7c96f1e74b",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20170101&end=20171231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2017_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:36+00:00",
+   "sha256": "d12f218d042bbcaa1c81437556b94fd53618345bebc87efb4c3d2d4f5ce9a1a0",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20170101&end=20171231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2018_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:43+00:00",
+   "sha256": "8bc6659f567c7b8543865776b8375807369e421845b0c614b3d45c53994c9713",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20180101&end=20181231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2018_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:41+00:00",
+   "sha256": "ae477d8bc7df42cf4bfab5db16cabbfc5fabcdb4872e4b2acda6e849e72d42ea",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20180101&end=20181231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2019_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:48+00:00",
+   "sha256": "041a2a8fe02dbecb886e8620ba92a0f964e904b9d8074ba0848a5554fc4b270b",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20190101&end=20191231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2019_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:46+00:00",
+   "sha256": "d9658025b66948bfd99a1bc80d13c11beb7e0eb397baf8421b6eba04c30a217e",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20190101&end=20191231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2020_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:53+00:00",
+   "sha256": "84f4df365d443ba96a0490c090c91227ade86d593c7cc1b99e994a6c27ec36ae",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20200101&end=20201231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2020_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:51+00:00",
+   "sha256": "9519adf6c172bdb84a7c1472593dca012b6cbfb2354f24bf38b6bb28785684b8",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20200101&end=20201231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2021_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:13:58+00:00",
+   "sha256": "5700cbafbafc933ba0b961e69f5cf03c392441dcb1a9d78361dc67999a7f8258",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20210101&end=20211231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2021_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:13:56+00:00",
+   "sha256": "4c3335b9efa485fb993dde23976301057e6777d1cead5429477e969f1f959070",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20210101&end=20211231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2022_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:14:03+00:00",
+   "sha256": "8aa677186bee8886be48b4309da9e1a303eaea3a3a762437c36fa27ab77f423a",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20220101&end=20221231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2022_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:14:01+00:00",
+   "sha256": "b271d5dccc01c971fd34d8adab188060090e929ce8d80e37ecb96056562a7302",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20220101&end=20221231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2023_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:14:08+00:00",
+   "sha256": "3cdd92efedeaa00ddb1438ef9f3a4212d82d9682b30c9ef5aaf54af47102bf0a",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20230101&end=20231231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2023_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:14:06+00:00",
+   "sha256": "c93879d4e2b31073d72cad3c6be474fbb009bf092a17fee16e0a5da2407b29af",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20230101&end=20231231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2024_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:14:13+00:00",
+   "sha256": "57d62234c52dd7815922f7c7dd7627de5d364209ca61386a51c0d0df1428ddc2",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20240101&end=20241231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2024_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:14:11+00:00",
+   "sha256": "a98f89968d5e6dd105d7e19fb84aeb9ecf8ffb1a3618c778a42e1663dfccc4db",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20240101&end=20241231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2025_east.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 126,
+   "retrieved_utc": "2026-11-14T19:14:18+00:00",
+   "sha256": "6eec5a8890e84c39ce2212397e4aabcb648b8efd9e802659b14b7ac3370d12ce",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=0.0&longitude-max=4.5&start=20250101&end=20251231&format=JSON&time-standard=LST"
+  },
+  "data/raw/power/WS50M/2025_west.json.gz": {
+   "api_version": "v2.10.3",
+   "excluded_source_present": [],
+   "n_fill_values": 0,
+   "n_points": 288,
+   "retrieved_utc": "2026-11-14T19:14:15+00:00",
+   "sha256": "8c96637b6eb82163413c594d9d3044cc24bdf4806b66fdbd0249b10d21232101",
+   "sources": [
+    "MERRA2",
+    "POWER"
+   ],
+   "time_standard": "LST",
+   "units": "m/s",
+   "url": "https://power.larc.nasa.gov/api/temporal/daily/regional?parameters=WS50M&community=RE&latitude-min=35.5&latitude-max=44.0&longitude-min=-9.5&longitude-max=0.0&start=20250101&end=20251231&format=JSON&time-standard=LST"
+  }
+ }
+}

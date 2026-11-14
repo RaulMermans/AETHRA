@@ -37,7 +37,7 @@ In development, `window.__globe` exposes `{ controller, viewer, Cesium }` for de
 
 ```text
 app/explore/page.tsx           /explore route
-components/explore/            UI overlays: nav, layer panel, coordinates, camera, evidence
+components/explore/            UI overlays: nav, place picker, dimension dock, coordinates, camera, evidence
 components/globe/Globe.tsx     Cesium viewer lifecycle (client-only, via GlobeClient)
 lib/globe/types.ts             engine-agnostic types (layers, views, controller)
 lib/globe/catalog.ts           layer catalog + camera views (Spain, home)
@@ -51,4 +51,5 @@ lib/globe/cesium/              loader, providers (imagery/terrain), quality, lay
 2. Data-bearing layers (`raster-field`, `point-values`) must carry `science` metadata (units,
    bounds, native resolution, time coverage, colour scale, missing-data policy). Their Cesium
    adapters are added in `lib/globe/cesium/layer-manager.ts` with the first real dataset.
-3. Mark placeholder data with `synthetic: true` — the panel labels it.
+3. Mark placeholder data with `synthetic: true`. Heatmap and stations are toggled on the
+   dimension dock; there is no Layers panel.

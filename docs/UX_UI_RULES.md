@@ -1,9 +1,41 @@
-# UX/UI Guidelines
+# UX/UI Rules
 
-Recommendations for a consistent, good-looking interface — not merge blockers.
-See also the local UX guide: `docs/Guía de apoyo · UX.pdf`.
+Two levels. **Scientific presentation rules** (next section) are requirements for anything on the
+demo path. **Design guidelines** are recommendations. Local UX guide: `docs/Guía de apoyo · UX.pdf`.
+The globe is CesiumJS (ADR-001). Don't change engines and don't add map tools while P0 is open.
 
-## Guidelines
+## Scientific presentation rules (required)
+
+1. **Render, don't compute.** The browser displays results from the Python pipeline (ADR-002, pending
+   approval). It never computes or re-aggregates slopes, CIs, p-values or significance labels.
+   Formatting, colour scaling and layout are fine.
+2. **Every result carries:** variable + units · region + native resolution · period + temporal
+   resolution · slope ± 95 % CI per decade · method and n · outcome state · source + version/DOI.
+3. **Outcome states.** Each one has its own text label and icon, so meaning never depends on colour:
+
+   | State | When | Wording |
+   |---|---|---|
+   | Supported increase / decrease | Test passes after the autocorrelation check, CI excludes 0, robust to window | "Supported increase of X (CI a–b) per decade, 2000–2025" |
+   | No robustly supported trend | Test does not pass, or sign flips across windows | "No robust trend detected" (not "no change") |
+   | Insufficient evidence | Too few complete years / too low power | "Insufficient evidence" |
+   | Missing data | Years or region not covered | "No data for …" |
+   | Invalid data | Failed QA | "Data failed quality checks" |
+   | Exploratory | Not gate-checked | Visible "EXPLORATORY" tag |
+4. **p < 0.05 is not a certificate.** Show the effect size and CI first, then the test.
+5. **Observed vs derived vs extrapolated** look different: observed points solid, derived values
+   labelled, extrapolations (if ever shown) dashed and tagged *extrapolation, not a forecast*. No
+   synthetic value is ever shown as an observation.
+6. **No false precision.** Hover values are the native grid cell, with no interpolation finer than
+   native support. Station halos and basin boxes are labelled as what they are.
+7. **Label the data type:** reanalysis, satellite–gauge estimate, land-surface model, station
+   observation. GLDAS runoff is "modelled runoff", not river discharge.
+8. **Each EvidenceCard has a "do not conclude" line,** e.g. "Not energy production, not a forecast,
+   not causal."
+9. **Comparisons:** two separate "significant" badges don't show a difference between regions.
+   Show a difference test or say it hasn't been tested.
+10. **Per-cell maps:** state the multiple-comparison rule (FDR) in the legend, or show slopes only.
+
+## Design guidelines
 
 1. **Minimal, precise, premium scientific interface.** Data first; chrome second.
 2. **Clear visual hierarchy and consistent spacing** (Tailwind defaults work well).
@@ -18,7 +50,12 @@ See also the local UX guide: `docs/Guía de apoyo · UX.pdf`.
 11. **Missing data:** it's fine to show "no data" or "insufficient evidence" states.
 12. **Color:** colorblind-friendly palettes and labels alongside color help readability.
 13. **Provenance:** dataset and source info nearby is nice to have.
-14. **Computation:** can happen in the API or in the browser — whatever is fastest to build.
+14. **Computation:** ~~can happen in the API or in the browser~~. Replaced by scientific rule 1
+    (render, don't compute; ADR-002 proposed 14 Nov 2026).
+15. **Primary flow:** open Spain → pick variable/question → pick region → see series → see trend and
+    outcome state → read meaning and limits → open EvidenceCard → optionally compare a region. The user
+    should grasp what is measured, whether the change is supported, and what *not* to conclude within
+    seconds.
 
 ## Measurement units (Spain) — required, see D20
 

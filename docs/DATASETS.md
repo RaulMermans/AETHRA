@@ -1,9 +1,48 @@
 # Datasets
 
-**Status legend (informal):** `CANDIDATE` = looks useful · `IN USE` = being used in the app ·
-`DROPPED` = not used (note why if useful).
+## Readiness classification (audit 14 Nov 2026)
 
-The primary variable is OPEN (see `DECISIONS.md`). Use any dataset that helps — just note it here.
+Classes: **VERIFIED / READY** (passed Gate 1 + Gate 2, recorded) · **INGESTED, NOT VALIDATED**
+(on disk with provenance, no gate passed) · **EXPLORATORY** (results computed, unchecked) ·
+**PARTIAL / PILOT** · **SYNTHETIC / PLACEHOLDER** · **CANDIDATE** · **DEFERRED**.
+Only a recorded gate check moves an asset up a class (see `AGENTS.md`).
+
+| Asset | Type | Class | Shown in `/explore`? | What is missing |
+|---|---|---|---|---|
+| MERRA-2 M2TMNXSLV 5.12.4 `T2M` monthly, 2000-01 → 2026-09, 0.5° × 0.625° | Reanalysis | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (temperature) | Area weighting, extent rule (currently every cell touching Spain incl. Canarias), autocorrelation-aware test, window sensitivity, remove −0.85 °C partial-2026 adjustment. Gate A candidate (D36) |
+| GPM IMERG Final V07 monthly, 2000-01 → 2025-09, 0.1° | Satellite–gauge merged estimate | INGESTED, NOT VALIDATED · trend EXPLORATORY | Yes (rain, drought SPI, rain extremes, "rivers" basin boxes) | Same gate work. Annual trend uses 2000–2024 (n = 25), currently not significant |
+| GLDAS Noah 0.25° monthly v2.1 (grid + Giovanni Spain-mean CSVs) | Land-surface **model** | INGESTED, NOT VALIDATED · trends EXPLORATORY | Yes (runoff, soil, SWE) | Runoff is modelled, **not** measured river discharge. v2.0/v2.1 mixing check (ET CSVs) |
+| NOAA GHCN-Daily Spain, 2001 → 2026-11, ~175 stations | Station observations (partner, not NASA) | INGESTED, NOT VALIDATED | Yes (stations, catalog) | Not homogenized. Station coverage changes over time. Completeness rules per metric. Independent check only |
+| MODIS MOD13Q1 v061 NDVI/EVI, years 2000, 2012, 2024 + pilot | Satellite observation | PARTIAL / PILOT | No (removed, D29) | Snapshots only; no continuous series |
+| MERRA-2 U50M/V50M monthly (`data/nasa_merra2_wind_spain_monthly`) | Reanalysis | PARTIAL (download links only locally) | No | Monthly **vector** means, so not valid as wind speed or resource |
+| SWOT Hydrocron WSE + SWORD/PLD, 2023 → | Satellite observation | EXPLORATORY | No | Record too short for trends |
+| Spain hydrography (Natural Earth + Wikidata) | Non-NASA context | DEFERRED | No (D27) | Schematic geometry |
+| Bundle `wind` grid and `modis` block in `climate-bundle.json` | Hand-built formula | **SYNTHETIC / PLACEHOLDER** | No (D29/D31; verify before demo) | Never present as NASA data. Remove from the bundle when convenient |
+| 2027–2030 values, cones, `anomaly2030`, Decision Matrix | Linear extrapolation + rules | **EXPLORATORY EXTRAPOLATION** (not data) | **Yes, today** | Hide from demo path (D38) |
+| NASA POWER `ALLSKY_SFC_SW_DWN`, `WS50M` daily, 2001–2025 (`data/raw/power`, manifest `data/metadata/power_manifest.json`) | Satellite-derived flux / reanalysis | **Gate 1 PASSED** (14 Nov); results EXPLORATORY pending 2nd review | Yes (Evidence cards tool) | Second-person review (Gate 3). 2026 data excluded (FLASHFlux/GEOS-IT) |
+
+## NASA POWER (candidate for Gate B)
+
+Read from <https://power.larc.nasa.gov/docs/> on 14 Nov 2026. ⚠️ = not yet confirmed.
+
+| | `ALLSKY_SFC_SW_DWN` (solar) | `WS50M` / `WS10M` (wind) |
+|---|---|---|
+| Lineage | GEWEX SRB R4-IP 1984–2000 → CERES SYN1deg Ed4.2 2001-01-01 → NRT−~3–4 mo → CERES FLASHFlux NRT (not climate quality; release guide also mentions a NOAA-20 FLASHFlux version ⚠️) | MERRA-2 → ~1 month behind NRT; GEOS-IT appended for NRT, overwritten later |
+| Native resolution | 1° × 1° | 0.5° × 0.625° |
+| Temporal | Daily from 1981 (service), solar from 1984; hourly from 2001 | Same |
+| Time standard | LST (default) or UTC; LST derived from UTC by 15° longitude swaths | Same |
+| Units | kWh m⁻² day⁻¹ ⚠️ dictionary not read | m s⁻¹, height above grid-mean elevation |
+| Access | API, point (≤ 20 params daily) or regional (1 param/request, 0.5° output grid; area limit ⚠️). Data v10 (latest seen v10.2.3, 29 Dec 2025 ⚠️) | Same |
+| Trend caveats | Step at 2001-01-01 ("not a physical climate signal"). Don't trend across source changes. FLASHFlux not for trends | End trend analysis ≥ 2 months behind NRT. Regional mean flow, not local site |
+
+Resolved 14 Nov from API responses: units `kW-hr/m^2/day` and `m/s`; per-request `sources` show 2001–2025 = SYN1DEG only (solar) and MERRA2 (wind), 2000 includes SRB, 2026 adds FLASHFLUX + GEOSIT; regional limit is 10° of longitude; solar is served on its native 1° grid (90 + 45 points for the two tiles), wind on 0.5° × 0.625° (288 + 126 points); API v2.10.3. Fetch: `scripts/fetch_power_spain.py`.
+
+**Readiness summary (14 Nov, D48).** READY for daily regional use 2001–2025 (Gate 1 passed; results still need a second-person review). Daily = 100 % complete, 0 fill values, sources SYN1DEG (solar) and MERRA2 (wind) only. Hourly API is **point-only** (regional request → 404), solar hourly in Wh m⁻² with night zeros, UTC or LST. 2026 data mix in FLASHFLUX + GEOSIT and are excluded. `WS50M` is wind speed 50 m above the grid-mean elevation from a reanalysis: regional mean flow, not hub-height site wind and not turbine output. `ALLSKY_SFC_SW_DWN` is horizontal-plane irradiance, not PV output.
+
+## Notes from before the audit
+
+**Old status legend (informal):** `CANDIDATE` = looks useful · `IN USE` = being used in the app ·
+`DROPPED` = not used. "IN USE" ≠ validated; the readiness table above takes precedence.
 
 ## Access tools
 

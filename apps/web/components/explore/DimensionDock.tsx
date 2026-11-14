@@ -3,72 +3,60 @@
 import { useEffect } from "react";
 import {
   DIMENSIONS,
+  dimensionHasSpatialGrid,
   getEffectiveMeta,
-  paletteGradientCss,
+  LAST_COMPLETE_YEAR,
   type ActiveClimateConfig,
   type ClimateDisplayMode,
   type DimensionId,
   type HeatSubMetric,
-  type ProjectionScenario,
   type RainSubMetric,
-  type VegSubMetric,
 } from "@/lib/globe/climate";
 
 interface DimensionDockProps {
   config: ActiveClimateConfig;
   heatmapVisible: boolean;
   stationsVisible: boolean;
-  hydroVisible: boolean;
   playing: boolean;
   onChange: (patch: Partial<ActiveClimateConfig>) => void;
   onToggleHeatmap: () => void;
   onToggleStations: () => void;
-  onToggleHydro: () => void;
   onTogglePlay: () => void;
 }
 
 const MODE_LABELS: { id: ClimateDisplayMode; label: string; title: string }[] = [
-  { id: "value", label: "Annual", title: "Annual / Forecast" },
+  { id: "value", label: "Annual", title: "Observed annual value" },
   { id: "trend", label: "Trend", title: "Decadal Trend" },
-  { id: "anomaly2030", label: "2030 Δ", title: "2030 Δ Change" },
-];
-
-const SCENARIO_LABELS: { id: ProjectionScenario; label: string; title: string }[] = [
-  { id: "central", label: "Central", title: "Central (Sen)" },
-  { id: "high", label: "High", title: "Upper 95% CI" },
-  { id: "low", label: "Low", title: "Lower 95% CI" },
 ];
 
 export function DimensionDock({
   config,
   heatmapVisible,
   stationsVisible,
-  hydroVisible,
   playing,
   onChange,
   onToggleHeatmap,
   onToggleStations,
-  onToggleHydro,
   onTogglePlay,
 }: DimensionDockProps) {
   const activeDim = DIMENSIONS.find((d) => d.id === config.dimension) ?? DIMENSIONS[0];
   const eff = getEffectiveMeta(config);
-  const isForecastYear = config.year > 2026;
+  const hasGrid = dimensionHasSpatialGrid(config.dimension);
 
   useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => {
-      onChange({ year: config.year >= 2030 ? 2000 : config.year + 1 });
+      onChange({ year: config.year >= LAST_COMPLETE_YEAR ? 2000 : config.year + 1 });
     }, 650);
     return () => clearInterval(timer);
   }, [playing, config.year, onChange]);
 
   return (
     <section
-      aria-label="Climate dimensions and 2030 extrapolation"
+      aria-label="Climate dimensions"
       className="panel pointer-events-auto w-[min(18rem,calc(100vw-2rem))] overflow-hidden px-2 py-1.5 shadow-2xl"
     >
-      <div className="grid grid-cols-3 gap-1" role="tablist" aria-label="Environmental dimensions">
+      <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Environmental dimensions">
         {DIMENSIONS.map((d) => {
           const active = d.id === config.dimension;
           return (
@@ -92,6 +80,7 @@ export function DimensionDock({
       </div>
 
       <div className="mt-1.5 flex gap-1">
+        {hasGrid && (
         <button
           type="button"
           onClick={onToggleHeatmap}
@@ -104,11 +93,12 @@ export function DimensionDock({
         >
           Map
         </button>
+        )}
         <button
           type="button"
           onClick={onToggleStations}
           aria-pressed={stationsVisible}
-          title="NOAA weather stations (and river hubs). Hover a point for its name."
+          title="NOAA reference weather stations: one per province nationally, all of them inside a selected region (or river hubs). Full list: station catalog tool."
           className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
             stationsVisible
               ? "border-accent/50 bg-accent/15 text-ink"
@@ -117,24 +107,9 @@ export function DimensionDock({
         >
           Stations
         </button>
-        <button
-          type="button"
-          onClick={onToggleHydro}
-          aria-pressed={hydroVisible}
-          title="Rivers, reservoirs and lakes"
-          className={`focus-ring flex-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
-            hydroVisible
-              ? "border-sky-400/50 bg-sky-400/15 text-ink"
-              : "border-line bg-white/5 text-faint hover:text-muted"
-          }`}
-        >
-          Rivers
-        </button>
       </div>
 
-      {(config.dimension === "heat_extremes" ||
-        config.dimension === "rain_extremes" ||
-        config.dimension === "vegetation") && (
+      {(config.dimension === "heat_extremes" || config.dimension === "rain_extremes") && (
         <div className="mt-1.5 flex flex-wrap gap-1 border-t border-line/60 pt-1.5">
           {config.dimension === "heat_extremes" &&
             (
@@ -172,24 +147,6 @@ export function DimensionDock({
                 {label}
               </button>
             ))}
-          {config.dimension === "vegetation" &&
-            (
-              [
-                ["ndvi", "NDVI"],
-                ["evi", "EVI"],
-              ] as [VegSubMetric, string][]
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onChange({ vegMetric: id })}
-                className={`focus-ring rounded px-1.5 py-0.5 text-[10px] ${
-                  config.vegMetric === id ? "bg-white/15 font-medium text-ink" : "text-muted hover:text-ink"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
         </div>
       )}
 
@@ -216,7 +173,7 @@ export function DimensionDock({
           <button
             type="button"
             onClick={onTogglePlay}
-            aria-label={playing ? "Pause timeline" : "Play timeline 2000 to 2030"}
+            aria-label={playing ? "Pause timeline" : `Play timeline 2000 to ${LAST_COMPLETE_YEAR}`}
             className="focus-ring flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-ink hover:bg-white/20"
           >
             {playing ? "❚❚" : "▶"}
@@ -225,87 +182,32 @@ export function DimensionDock({
           <input
             type="range"
             min={2000}
-            max={2030}
+            max={LAST_COMPLETE_YEAR}
             step={1}
             value={config.year}
             onChange={(e) => onChange({ year: Number(e.target.value) })}
-            aria-label="Year selector (2000 to 2030)"
+            aria-label={`Year selector (2000 to ${LAST_COMPLETE_YEAR}, observed years only)`}
             className="focus-ring h-1.5 min-w-0 flex-1 accent-accent"
           />
-          <span className="font-mono text-[9px] text-amber-300">2030</span>
-          <span
-            className={`min-w-[3.4rem] rounded px-1 py-0.5 text-center font-mono text-[10px] font-semibold tabular-nums ${
-              isForecastYear ? "bg-amber-400/20 text-amber-300" : "bg-white/10 text-ink"
-            }`}
-          >
+          <span className="font-mono text-[9px] text-faint">{LAST_COMPLETE_YEAR}</span>
+          <span className="min-w-[3.4rem] rounded bg-white/10 px-1 py-0.5 text-center font-mono text-[10px] font-semibold text-ink tabular-nums">
             {config.year}
-            {isForecastYear ? "*" : ""}
           </span>
         </div>
       ) : (
-        <div className="mt-1.5 flex gap-1">
-          {SCENARIO_LABELS.map((sc) => (
-            <button
-              key={sc.id}
-              type="button"
-              title={sc.title}
-              onClick={() => onChange({ scenario: sc.id })}
-              className={`focus-ring flex-1 rounded px-1 py-0.5 text-[10px] ${
-                config.scenario === sc.id
-                  ? "bg-amber-400/20 font-medium text-amber-200"
-                  : "bg-white/5 text-muted hover:text-ink"
-              }`}
-            >
-              {sc.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {config.mode === "value" && isForecastYear && (
-        <div className="mt-1.5 rounded-md bg-amber-500/10 px-2 py-1">
-          <p className="text-[10px] leading-snug text-amber-200">Projected {config.year}</p>
-          <div className="mt-1 flex gap-1">
-            {SCENARIO_LABELS.map((sc) => (
-              <button
-                key={sc.id}
-                type="button"
-                title={sc.title}
-                onClick={() => onChange({ scenario: sc.id })}
-                className={`focus-ring flex-1 rounded px-1 py-0.5 text-[10px] ${
-                  config.scenario === sc.id
-                    ? "bg-amber-400/30 font-medium text-amber-100"
-                    : "text-amber-200/70 hover:text-amber-100"
-                }`}
-              >
-                {sc.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-1.5 border-t border-line/60 pt-1.5">
-        <p className="min-w-0 truncate text-[11px] font-medium text-ink">
-          {eff.title}
-          {activeDim.synthetic && (
-            <span className="ml-1 rounded bg-warn/15 px-1 py-px text-[9px] font-normal text-warn">
-              {activeDim.badge ?? "Pilot"}
-            </span>
-          )}
+        <p className="mt-1.5 text-[10px] leading-snug text-muted">
+          Theil–Sen slope per decade, complete years. Colour shows slope only, not significance.
         </p>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="font-mono text-[9px] tabular-nums text-muted">{eff.domain[0]}</span>
-          <div
-            className="h-1.5 flex-1 rounded-full border border-white/15"
-            style={{ background: paletteGradientCss(eff.palette) }}
-            aria-hidden
-          />
-          <span className="font-mono text-[9px] tabular-nums text-muted">
-            {eff.domain[1]} {eff.units}
+      )}
+
+      <p className="mt-1.5 min-w-0 truncate border-t border-line/60 pt-1.5 text-[11px] font-medium text-ink">
+        {eff.title}
+        {activeDim.synthetic && (
+          <span className="ml-1 rounded bg-warn/15 px-1 py-px text-[9px] font-normal text-warn">
+            {activeDim.badge ?? "Pilot"}
           </span>
-        </div>
-      </div>
+        )}
+      </p>
     </section>
   );
 }

@@ -70,6 +70,12 @@ Simple rule that ties them together: **rain ≈ evapotranspiration + total runof
 
 ## 🔍 Headline findings so far
 
+> ⚠️ **EXPLORATORY (audit 14 Nov 2026).** None of these has passed Gate 2 yet (`docs/ROADMAP.md`):
+> no area weighting, extent includes Canarias and border cells, no autocorrelation-aware test, no
+> window-sensitivity report. The MERRA-2 warming *sign* holds across the windows tried, but its
+> *magnitude* ranges from ~0.34 to ~0.74 °C/decade depending on the window. Don't quote these on slides
+> until they are gate-checked.
+
 A trend is **significant** when it is very unlikely to be chance (*p* < 0.05). Tested with Mann-Kendall (is there a real trend?) and Sen's slope (how big per decade?).
 
 | Finding | Value | Significant? |

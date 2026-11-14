@@ -13,7 +13,6 @@ const STATION_DIMS: DimensionId[] = [
   "snow",
   "heat_extremes",
   "rain_extremes",
-  "wind",
 ];
 
 function formatTick(n: number): string {
@@ -23,15 +22,10 @@ function formatTick(n: number): string {
 }
 
 function metricCaption(cfg: ActiveClimateConfig): string {
-  if (cfg.dimension === "water_rivers" || cfg.dimension === "drought") {
-    return cfg.mode === "trend"
-      ? "Basin runoff trend"
-      : cfg.mode === "anomaly2030"
-        ? "Projected basin runoff change"
-        : "Basin runoff this year";
+  if (cfg.dimension === "water_rivers") {
+    return cfg.mode === "trend" ? "Basin-box rainfall trend (GPM)" : "Basin-box rainfall this year (GPM)";
   }
   if (cfg.dimension === "snow") return "Snow days at mountain stations";
-  if (cfg.dimension === "wind") return "Mean wind speed at the station";
   if (cfg.dimension === "heat_extremes") {
     return cfg.heatMetric === "tropical_nights" ? "Tropical nights at the station" : "Hot days at the station";
   }
@@ -45,7 +39,7 @@ function metricCaption(cfg: ActiveClimateConfig): string {
 export function PointsLegend({ config }: { config: ActiveClimateConfig }) {
   const dim = config.dimension;
   const stations = STATION_DIMS.includes(dim);
-  const basins = dim === "water_rivers" || dim === "drought";
+  const basins = dim === "water_rivers";
   if (!stations && !basins) return null;
 
   const eff = getEffectiveMeta(config);

@@ -341,7 +341,7 @@ export const ENERGY_CONCEPTS: EnergyConceptMeta[] = [
     questionEs: "¿Dónde podría estudiarse el desarrollo solar o agrovoltaico sin agravar conflictos o mitigando el secado del suelo?",
     questionEn: "Where can agrivoltaic shading protect drying topsoil (0–10 cm) and heat-stressed crops, or avoid high-NDVI land conflict?",
     opportunity: "Dual-use Agrivoltaics (crops + PV shading that cuts soil evaporation) & low-conflict solar zoning",
-    linkedDimension: "vegetation",
+    linkedDimension: "drought",
     recommendedScope: "provincia",
     allowedScopes: ["provincia", "ccaa", "basin"],
     coverageBadge: "Direct NASA + Physical Proxy",
@@ -397,7 +397,7 @@ export const ENERGY_CONCEPTS: EnergyConceptMeta[] = [
     questionEs: "¿Dónde se compensan temporalmente sol y viento para una generación híbrida más equilibrada?",
     questionEn: "Where do strong wind corridors complement clear-sky solar resource to maximize grid substation utilization?",
     opportunity: "Co-located Wind + PV hybrid plants sharing grid interconnection (winter wind + summer sun)",
-    linkedDimension: "wind",
+    linkedDimension: "temperature",
     recommendedScope: "provincia",
     allowedScopes: ["provincia", "ccaa", "basin"],
     coverageBadge: "Direct NASA + Physical Proxy",
@@ -518,18 +518,50 @@ function norm(v: number, lo: number, hi: number): number {
   return clamp((v - lo) / (hi - lo), 0, 1);
 }
 
+/*
+ * EXPLORATORY (D44). Missing inputs stay NaN and render as "—"; nothing is filled with a typical
+ * value, and no p-value or significance is shown unless the Python pipeline computed one.
+ */
+const NO_TREND: TrendStats = {
+  slope_decade: NaN,
+  ci_low_decade: NaN,
+  ci_high_decade: NaN,
+  intercept_2000: NaN,
+  p_value: NaN,
+  significant: false,
+  n: 0,
+};
+function trendOrNone(st: TrendStats | null | undefined): TrendStats {
+  return st ?? NO_TREND;
+}
+/** Latest year with an observed value (NaN when the series is empty). */
+function lastObs(arr: (number | null | undefined)[]): number {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const v = arr[i];
+    if (v != null && Number.isFinite(v)) return v;
+  }
+  return NaN;
+}
+/** Replaces NaN fragments in generated prose with "n/a". */
+function clean(text: string): string {
+  return text.replace(/[+−-]?NaN%?/g, "n/a");
+}
+const INSUFFICIENT_LABEL = "Insufficient evidence";
+
 function buildDualSeriesFromArrays(
   years: number[],
-  pArr: number[],
+  pArr: (number | null)[],
   pStats: TrendStats,
-  sArr: number[],
+  sArr: (number | null)[],
   sStats: TrendStats,
 ): DualTimeSeriesPoint[] {
   const out: DualTimeSeriesPoint[] = [];
   for (let y = 2000; y <= 2030; y++) {
     const idx = years.indexOf(y);
-    const pObs = idx >= 0 && idx < pArr.length && Number.isFinite(pArr[idx]) ? pArr[idx] : undefined;
-    const sObs = idx >= 0 && idx < sArr.length && Number.isFinite(sArr[idx]) ? sArr[idx] : undefined;
+    const pv = idx >= 0 && idx < pArr.length ? pArr[idx] : null;
+    const sv = idx >= 0 && idx < sArr.length ? sArr[idx] : null;
+    const pObs = pv != null && Number.isFinite(pv) ? pv : undefined;
+    const sObs = sv != null && Number.isFinite(sv) ? sv : undefined;
     const pTr = extrapolateValue(pStats.intercept_2000, pStats.slope_decade, y, "central");
     const sTr = extrapolateValue(sStats.intercept_2000, sStats.slope_decade, y, "central");
     out.push({
@@ -553,22 +585,28 @@ function evaluateAdminProfile(
   lens: EnergyVariableLens,
   years: number[],
 ): EvaluatedEnergySite {
-  const s = prof.stats;
+  const s = Object.fromEntries(
+    Object.entries(prof.stats).map(([k, v]) => [k, trendOrNone(v)]),
+  ) as Record<keyof AdminClimateProfile["stats"], TrendStats>;
   const ser = prof.series;
-  const lastIdx = ser.temp_c.length - 1;
 
-  const tempVal = ser.temp_c[lastIdx] ?? 15.5;
-  const sumTempVal = ser.summer_temp_c[lastIdx] ?? 22.5;
-  const rainVal = ser.rain_mm[lastIdx] ?? 550;
-  const runoffVal = ser.runoff_mm[lastIdx] ?? 120;
-  const evapVal = ser.evap_mm[lastIdx] ?? 480;
-  const soilVal = ser.soil_mm[lastIdx] ?? 22.0;
-  const hot35Val = ser.hot_days_35[lastIdx] ?? 12;
-  const tropVal = ser.tropical_nights[lastIdx] ?? 18;
-  const dryVal = ser.max_dry_spell[lastIdx] ?? 42;
-  const dtrVal = ser.dtr_c[lastIdx] ?? 11.5;
-  const windVal = prof.wind_mean_ms;
-  const ndviVal = prof.ndvi_mean;
+  // Latest observed year of each series; NaN when the unit has no data (never a "typical" value).
+  const tempVal = lastObs(ser.temp_c);
+  const sumTempVal = lastObs(ser.summer_temp_c);
+  const rainVal = lastObs(ser.rain_mm);
+  const runoffVal = lastObs(ser.runoff_mm);
+  const evapVal = lastObs(ser.evap_mm);
+  const soilVal = lastObs(ser.soil_mm);
+  const hot35Val = lastObs(ser.hot_days_35);
+  const tropVal = lastObs(ser.tropical_nights);
+  const dryVal = lastObs(ser.max_dry_spell);
+  const dtrVal = lastObs(ser.dtr_c);
+  const windVal = prof.wind_mean_ms ?? NaN;
+  const windSlope = prof.wind_slope_decade ?? NaN;
+  const ndviVal = prof.ndvi_mean ?? NaN;
+  const ndviSlope = prof.ndvi_slope_decade ?? NaN;
+  const swotCv = prof.swot_cv ?? NaN;
+  const swotFpv = prof.swot_fpv_score ?? NaN;
 
   let score = 50;
   let advantageStatus: EvaluatedEnergySite["advantageStatus"] = "STABLE_HIGH";
@@ -646,16 +684,16 @@ function evaluateAdminProfile(
     secondarySeriesLabel = "Evapotranspiration ET (GLDAS)";
     secondarySeriesUnits = "mm/yr";
   } else if (conceptId === "floating_solar") {
-    const stabScore = norm(1 - prof.swot_cv, 0.25, 0.88) * 100;
+    const stabScore = norm(1 - swotCv, 0.25, 0.88) * 100;
     const areaScore = norm(prof.swot_area_km2, 0, 55) * 100;
     const evapSaveScore = norm(evapVal, 340, 650) * 100;
     score = Math.round(
       prof.swot_count > 0
-        ? 0.45 * prof.swot_fpv_score + 0.30 * areaScore + 0.25 * evapSaveScore
+        ? 0.45 * swotFpv + 0.30 * areaScore + 0.25 * evapSaveScore
         : 0.40 * stabScore + 0.35 * evapSaveScore + 0.25 * norm(dtrVal, 8, 14) * 100,
     );
 
-    if (prof.swot_count > 0 && prof.swot_cv <= 0.32) {
+    if (prof.swot_count > 0 && swotCv <= 0.32) {
       advantageStatus = "GAINING";
       advantageLabel = "High SWOT Stability";
     } else if (prof.swot_count > 0 && score >= 58) {
@@ -673,7 +711,7 @@ function evaluateAdminProfile(
       label: "SWOT Water Area",
       value: Number(prof.swot_area_km2.toFixed(1)),
       units: "km²",
-      slopeDecade: Number((1 - prof.swot_cv).toFixed(2)),
+      slopeDecade: Number((1 - swotCv).toFixed(2)),
       trendUnits: "1−CV stab.",
       pValue: s.evap_mm.p_value,
       significant: s.evap_mm.significant,
@@ -690,15 +728,15 @@ function evaluateAdminProfile(
     tertiaryMetric = {
       label: "SWOT Reservoirs",
       value: `${prof.swot_count} embalses`,
-      sub: `Area CV: ${prof.swot_cv.toFixed(2)}`,
+      sub: `Area CV: ${swotCv.toFixed(2)}`,
     };
     scientificFinding =
       prof.swot_count > 0
-        ? `${prof.swot_count} SWOT-monitored reservoir(s) totaling ${prof.swot_area_km2} km² with surface CV=${prof.swot_cv.toFixed(2)} and ${Math.round(evapVal)} mm/yr evaporative pressure.`
+        ? `${prof.swot_count} SWOT-monitored reservoir(s) totaling ${prof.swot_area_km2} km² with surface CV=${swotCv.toFixed(2)} and ${Math.round(evapVal)} mm/yr evaporative pressure.`
         : `Ambient warming (+${s.temp_c.slope_decade} °C/dec) raises evaporative demand (${Math.round(evapVal)} mm/yr); switch scope to 'SWOT Reservoirs' to inspect individual dams.`;
     industrialOpportunity =
       prof.swot_count > 0
-        ? `Covering 5% of stable reservoir area (~${(prof.swot_area_km2 * 0.05).toFixed(1)} km²) supports ~${Math.round(prof.swot_area_km2 * 0.05 * 45)} MWp of water-cooled FPV while cutting reservoir evaporation.`
+        ? `Stable SWOT-observed reservoir surface makes this unit a candidate to study floating PV; no generation estimate is made here.`
         : "Evaluate irrigation regulación ponds (balsas de riego) for small-scale floating solar.";
     pArr = ser.evap_mm;
     pStats = s.evap_mm;
@@ -856,10 +894,10 @@ function evaluateAdminProfile(
       label: "Wind + Solar Feedstock",
       value: Number(windVal.toFixed(1)),
       units: "m/s",
-      slopeDecade: prof.wind_slope_decade,
+      slopeDecade: windSlope,
       trendUnits: "m/s/dec",
-      pValue: s.dtr_c.p_value,
-      significant: s.dtr_c.significant,
+      pValue: NaN,
+      significant: false,
     };
     tertiaryMetric = {
       label: "Dry Spell / ET",
@@ -922,7 +960,7 @@ function evaluateAdminProfile(
     tertiaryMetric = {
       label: "MODIS Greenness",
       value: `NDVI ${ndviVal.toFixed(2)}`,
-      sub: `Trend: ${prof.ndvi_slope_decade > 0 ? "+" : ""}${prof.ndvi_slope_decade}/dec`,
+      sub: `Trend: ${ndviSlope > 0 ? "+" : ""}${ndviSlope}/dec`,
     };
     scientificFinding = `Topsoil moisture (0–10 cm) averages ${soilVal.toFixed(1)} mm (${s.soil_mm.slope_decade > 0 ? "+" : ""}${s.soil_mm.slope_decade} mm/dec, p=${s.soil_mm.p_value.toFixed(3)}) with NDVI=${ndviVal.toFixed(2)} and ${Math.round(hot35Val)} hot days/yr >35 °C.`;
     industrialOpportunity =
@@ -959,9 +997,9 @@ function evaluateAdminProfile(
       label: "Surface Wind Speed",
       value: Number(windVal.toFixed(2)),
       units: "m/s",
-      slopeDecade: prof.wind_slope_decade,
+      slopeDecade: windSlope,
       trendUnits: "m/s/dec",
-      pValue: 0.12,
+      pValue: NaN,
       significant: false,
     };
     secondaryMetric = {
@@ -978,7 +1016,7 @@ function evaluateAdminProfile(
       value: `${Math.round(rainVal)} mm/yr`,
       sub: `Temp: ${tempVal.toFixed(1)} °C (+${s.temp_c.slope_decade}/dec)`,
     };
-    scientificFinding = `Combines ${windVal.toFixed(2)} m/s wind corridor resource (${prof.wind_slope_decade > 0 ? "+" : ""}${prof.wind_slope_decade} m/s/dec) with ΔT=${dtrVal.toFixed(1)} °C clear-sky solar amplitude and ${Math.round(rainVal)} mm/yr rainfall.`;
+    scientificFinding = `Combines ${windVal.toFixed(2)} m/s wind corridor resource (${windSlope > 0 ? "+" : ""}${windSlope} m/s/dec) with ΔT=${dtrVal.toFixed(1)} °C clear-sky solar amplitude and ${Math.round(rainVal)} mm/yr rainfall.`;
     industrialOpportunity =
       score >= 60
         ? "High seasonal & diurnal complementarity: winter/equinox wind generation offsets cloudy months while summer PV saturates substation capacity."
@@ -1006,6 +1044,10 @@ function evaluateAdminProfile(
     lensUnits = primaryMetric.trendUnits;
   }
 
+  if (!Number.isFinite(score)) {
+    advantageStatus = "WATCH";
+    advantageLabel = INSUFFICIENT_LABEL;
+  }
   const sig = primaryMetric.significant || secondaryMetric.significant;
   const pVal = Math.min(primaryMetric.pValue, secondaryMetric.pValue);
 
@@ -1027,9 +1069,9 @@ function evaluateAdminProfile(
     pValue: pVal,
     primaryMetric,
     secondaryMetric,
-    tertiaryMetric,
-    scientificFinding,
-    industrialOpportunity,
+    tertiaryMetric: { ...tertiaryMetric, value: clean(tertiaryMetric.value), sub: clean(tertiaryMetric.sub) },
+    scientificFinding: clean(scientificFinding),
+    industrialOpportunity: clean(industrialOpportunity),
     primarySeriesLabel,
     primarySeriesUnits,
     secondarySeriesLabel,
@@ -1045,32 +1087,34 @@ function evaluateBasin(
   lens: EnergyVariableLens,
 ): EvaluatedEnergySite {
   const years = Array.from({ length: 25 }, (_, i) => 2000 + i);
-  const rainArr = years.map((y) => b.rain_mm[String(y)] ?? 500);
-  const runArr = years.map((y) => b.runoff_mm[String(y)] ?? 110);
-  const evapArr = years.map((y) => b.evap_mm[String(y)] ?? 450);
-  const soilArr = years.map((y) => b.soil_mm?.[String(y)] ?? 22.0);
+  const rainArr = years.map((y) => b.rain_mm[String(y)] ?? null);
+  const runArr = years.map((y) => b.runoff_mm?.[String(y)] ?? null);
+  const evapArr = years.map((y) => b.evap_mm?.[String(y)] ?? null);
+  const soilArr = years.map((y) => b.soil_mm?.[String(y)] ?? null);
 
-  const rainVal = rainArr[rainArr.length - 1];
-  const runVal = runArr[runArr.length - 1];
-  const evapVal = evapArr[evapArr.length - 1];
-  const soilVal = soilArr[soilArr.length - 1];
+  const rainVal = lastObs(rainArr);
+  const runVal = lastObs(runArr);
+  const evapVal = lastObs(evapArr);
+  const soilVal = lastObs(soilArr);
 
-  const evapStats = b.evap_stats ?? bundle.gldas.stats.evapotranspiration_mm;
-  const soilStats = b.soil_stats ?? bundle.gldas.stats.soil_moisture_0_10cm_mm;
+  // Basin-box stats only; never substitute the national series for a basin.
+  const runStats = trendOrNone(b.runoff_stats);
+  const rainStats = trendOrNone(b.rain_stats);
+  const evapStats = trendOrNone(b.evap_stats);
+  const soilStats = trendOrNone(b.soil_stats);
   const resInBasin = (bundle.swot_reservoirs ?? []).filter((r) => r.basinId === b.id);
-  const meanCv = resInBasin.length > 0 ? resInBasin.reduce((acc, r) => acc + r.area_cv, 0) / resInBasin.length : 0.42;
+  const meanCv = resInBasin.length > 0 ? resInBasin.reduce((acc, r) => acc + r.area_cv, 0) / resInBasin.length : NaN;
 
   const runoffRatio = runVal / Math.max(rainVal, 80);
   let score = Math.round(
     0.45 * norm(runVal, 30, 350) * 100 +
-      0.35 * norm(b.runoff_stats.slope_decade, -45, 15) * 100 +
+      0.35 * norm(runStats.slope_decade, -45, 15) * 100 +
       0.20 * (1 - norm(evapStats.slope_decade, -10, 35)) * 100,
   );
   if (conceptId === "floating_solar") {
+    // Storage-capacity term dropped: no sourced capacity in the v2 bundle; remaining weights renormalised.
     score = Math.round(
-      0.45 * (1 - norm(meanCv, 0.12, 0.75)) * 100 +
-        0.30 * norm(b.reservoir_capacity_hm3, 1000, 11000) * 100 +
-        0.25 * norm(evapVal, 350, 650) * 100,
+      ((0.45 * (1 - norm(meanCv, 0.12, 0.75)) + 0.25 * norm(evapVal, 350, 650)) / 0.7) * 100,
     );
   } else if (conceptId === "energy_agriculture") {
     score = Math.round(
@@ -1079,12 +1123,13 @@ function evaluateBasin(
     );
   }
 
-  const advantageStatus: EvaluatedEnergySite["advantageStatus"] =
-    score >= 65
+  const advantageStatus: EvaluatedEnergySite["advantageStatus"] = !Number.isFinite(score)
+    ? "WATCH"
+    : score >= 65
       ? "GAINING"
       : score >= 50
         ? "STABLE_HIGH"
-        : b.runoff_stats.slope_decade < -20
+        : runStats.slope_decade < -20
           ? "LOSING"
           : "WATCH";
 
@@ -1092,10 +1137,10 @@ function evaluateBasin(
     label: "Basin Runoff Q (GLDAS)",
     value: Math.round(runVal),
     units: "mm/yr",
-    slopeDecade: b.runoff_stats.slope_decade,
+    slopeDecade: runStats.slope_decade,
     trendUnits: "mm/dec",
-    pValue: b.runoff_stats.p_value,
-    significant: b.runoff_stats.significant,
+    pValue: runStats.p_value,
+    significant: runStats.significant,
   };
   const secondaryMetric: MetricReadout = {
     label: "Basin Evap ET (GLDAS)",
@@ -1123,7 +1168,7 @@ function evaluateBasin(
   return {
     id: b.id,
     name: b.name,
-    subLabel: `${b.river} · ${b.hydro_mw.toLocaleString("en-US")} MW Hydro · ${b.reservoir_capacity_hm3.toLocaleString("en-US")} hm³`,
+    subLabel: `${b.river} · basin box (approx.)`,
     scope: "basin",
     lat: b.lat,
     lon: b.lon,
@@ -1132,31 +1177,32 @@ function evaluateBasin(
     lensValue,
     lensUnits,
     advantageStatus,
-    advantageLabel:
-      advantageStatus === "GAINING"
+    advantageLabel: !Number.isFinite(score)
+      ? INSUFFICIENT_LABEL
+      : advantageStatus === "GAINING"
         ? "Resilient Hydro Basin"
         : advantageStatus === "LOSING"
           ? "Runoff Divergence Alert"
           : "Managed Basin Balance",
-    significant: b.runoff_stats.significant || b.rain_stats.significant || evapStats.significant,
-    pValue: Math.min(b.runoff_stats.p_value, b.rain_stats.p_value, evapStats.p_value),
+    significant: runStats.significant || rainStats.significant || evapStats.significant,
+    pValue: Math.min(runStats.p_value, rainStats.p_value, evapStats.p_value),
     primaryMetric,
     secondaryMetric,
     tertiaryMetric: {
-      label: "Installed Hydro & Storage",
-      value: `${b.hydro_mw} MW · ${b.reservoir_capacity_hm3} hm³`,
-      sub: `Q/P Ratio: ${Math.round(runoffRatio * 100)}% · Soil: ${soilVal.toFixed(1)} mm`,
+      label: "Basin Water Balance",
+      value: clean(`Q/P ${Math.round(runoffRatio * 100)}%`),
+      sub: clean(`Soil 0–10 cm: ${soilVal.toFixed(1)} mm · ${resInBasin.length} SWOT reservoirs`),
     },
-    scientificFinding: `${b.name} (${b.hydro_mw} MW hydro): Runoff evolves at ${b.runoff_stats.slope_decade > 0 ? "+" : ""}${b.runoff_stats.slope_decade} mm/dec vs Rain at ${b.rain_stats.slope_decade > 0 ? "+" : ""}${b.rain_stats.slope_decade} mm/dec, with ${Math.round(evapVal)} mm/yr ET and ${resInBasin.length} SWOT reservoirs.`,
+    scientificFinding: clean(`${b.name}: Runoff evolves at ${runStats.slope_decade > 0 ? "+" : ""}${runStats.slope_decade} mm/dec vs Rain at ${rainStats.slope_decade > 0 ? "+" : ""}${rainStats.slope_decade} mm/dec, with ${Math.round(evapVal)} mm/yr ET and ${resInBasin.length} SWOT reservoirs.`),
     industrialOpportunity:
-      b.runoff_stats.slope_decade < -18
-        ? `Modernize ${b.name} hydro fleet (${b.hydro_mw} MW) with reversible pumping and floating PV on its ${resInBasin.length} SWOT reservoirs to buffer runoff decline.`
-        : `High hydro-storage dispatch capability (${b.reservoir_capacity_hm3} hm³) suitable for balancing wind+solar ramps.`,
+      runStats.slope_decade < -18
+        ? `Modelled runoff in ${b.name} is declining; worth studying storage rules and floating PV on its ${resInBasin.length} SWOT reservoirs.`
+        : `No strong modelled runoff decline in ${b.name}; capacity figures are not part of this exploratory view.`,
     primarySeriesLabel: "Basin River Runoff Q (GLDAS)",
     primarySeriesUnits: "mm/yr",
     secondarySeriesLabel: "Basin Precipitation P (GPM)",
     secondarySeriesUnits: "mm/yr",
-    dualSeries: buildDualSeriesFromArrays(years, runArr, b.runoff_stats, rainArr, b.rain_stats),
+    dualSeries: buildDualSeriesFromArrays(years, runArr, runStats, rainArr, rainStats),
   };
 }
 
@@ -1170,7 +1216,10 @@ function evaluateReservoir(
   const years = bundle.admin_profiles?.years ?? Array.from({ length: 26 }, (_, i) => 2000 + i);
 
   const stabilityPct = Math.round(clamp(1 - r.area_cv, 0.05, 0.98) * 100);
-  let score = Math.round(r.fpv_score);
+  const evapMean = r.evap_mean_mm ?? NaN;
+  const evapSlope = r.evap_slope_decade ?? NaN;
+  const tempSlope = r.temp_slope_decade ?? NaN;
+  let score = Math.round(r.fpv_score ?? NaN);
   if (conceptId === "hydropower_stability") {
     score = Math.round(0.55 * stabilityPct + 0.45 * norm(r.area_mean_km2, 2, 45) * 100);
   }
@@ -1190,17 +1239,18 @@ function evaluateReservoir(
     units: "% (1−CV)",
     slopeDecade: r.area_cv,
     trendUnits: "CV (σ/μ)",
-    pValue: 0.018,
-    significant: r.n_obs >= 35,
+    // Descriptive CV of SWOT passes: no hypothesis test, so no p-value
+    pValue: NaN,
+    significant: false,
   };
   const secondaryMetric: MetricReadout = {
     label: "Evaporation Saved (ET)",
-    value: Math.round(r.evap_mean_mm),
+    value: Math.round(evapMean),
     units: "mm/yr",
-    slopeDecade: r.evap_slope_decade,
+    slopeDecade: evapSlope,
     trendUnits: "mm/dec",
-    pValue: 0.032,
-    significant: Math.abs(r.evap_slope_decade) > 8,
+    pValue: NaN,
+    significant: false,
   };
 
   let lensValue = score;
@@ -1209,73 +1259,52 @@ function evaluateReservoir(
     lensValue = r.area_mean_km2;
     lensUnits = "km² (SWOT)";
   } else if (lens === "secondary") {
-    lensValue = r.evap_mean_mm;
+    lensValue = evapMean;
     lensUnits = "mm/yr ET";
   } else if (lens === "trend") {
-    lensValue = r.temp_slope_decade;
+    lensValue = tempSlope;
     lensUnits = "°C/dec";
   }
 
-  const pArr = provProf ? provProf.series.evap_mm : years.map(() => r.evap_mean_mm);
-  const pStats = provProf
-    ? provProf.stats.evap_mm
-    : {
-        slope_decade: r.evap_slope_decade,
-        ci_low_decade: r.evap_slope_decade - 8,
-        ci_high_decade: r.evap_slope_decade + 8,
-        intercept_2000: r.evap_mean_mm - r.evap_slope_decade * 1.3,
-        p_value: 0.04,
-        significant: true,
-        n: 26,
-      };
-  const sArr = provProf ? provProf.series.temp_c : years.map(() => r.temp_mean_c);
-  const sStats = provProf
-    ? provProf.stats.temp_c
-    : {
-        slope_decade: r.temp_slope_decade,
-        ci_low_decade: r.temp_slope_decade - 0.15,
-        ci_high_decade: r.temp_slope_decade + 0.15,
-        intercept_2000: r.temp_mean_c - r.temp_slope_decade * 1.3,
-        p_value: 0.002,
-        significant: true,
-        n: 26,
-      };
-
-  const mwPotential = Math.round(r.area_mean_km2 * 0.05 * 45);
+  // Province context series (pipeline-computed); no profile -> empty series, never synthetic stats.
+  const pArr = provProf ? provProf.series.evap_mm : years.map(() => null);
+  const pStats = trendOrNone(provProf?.stats.evap_mm);
+  const sArr = provProf ? provProf.series.temp_c : years.map(() => null);
+  const sStats = trendOrNone(provProf?.stats.temp_c);
 
   return {
     id: r.id,
     name: r.name,
-    subLabel: `${r.provinceName} · ${r.basinName} · ${r.n_obs} SWOT passes`,
+    subLabel: [r.provinceName, r.basinName, `${r.n_obs} SWOT passes`].filter(Boolean).join(" · "),
     scope: "reservoir",
     lat: r.lat,
     lon: r.lon,
     provinceId: r.provinceId,
     ccaaId: r.ccaaId,
-    basinId: r.basinId,
+    basinId: r.basinId ?? undefined,
     score: clamp(score, 12, 98),
     lensValue,
     lensUnits,
     advantageStatus,
     advantageLabel:
       r.area_cv <= 0.22
-        ? "Ultra-Stable Surface (FPV Ideal)"
+        ? "Very stable surface"
         : r.area_cv <= 0.48
           ? "Moderate Surface Swing"
           : "High Drawdown Volatility",
-    significant: true,
-    pValue: 0.018,
+    significant: false,
+    pValue: NaN,
     primaryMetric,
     secondaryMetric,
     tertiaryMetric: {
       label: "SWOT Area & WSE",
       value: `${r.area_mean_km2} km² · ${r.wse_mean_m} m`,
-      sub: `WSE σ: ±${r.wse_std_m} m · ~${mwPotential} MWp @ 5% area`,
+      sub: `WSE σ: ±${r.wse_std_m} m`,
     },
-    scientificFinding: `Observed across ${r.n_obs} NASA SWOT passes (2023–2026): mean surface ${r.area_mean_km2} km² (range ${r.area_min_km2}–${r.area_max_km2} km², CV=${r.area_cv}), WSE ${r.wse_mean_m}±${r.wse_std_m} m, local warming +${r.temp_slope_decade} °C/dec.`,
+    scientificFinding: `Observed across ${r.n_obs} NASA SWOT passes (2023–2026): mean surface ${r.area_mean_km2} km² (range ${r.area_min_km2}–${r.area_max_km2} km², CV=${r.area_cv}), WSE ${r.wse_mean_m}±${r.wse_std_m} m (descriptive, 2023–2026 only).`,
     industrialOpportunity:
       r.area_cv <= 0.38
-        ? `Top candidate for Floating Solar (FPV): low shoreline fluctuation (CV=${r.area_cv}) simplifies anchoring; a 5% coverage (~${(r.area_mean_km2 * 0.05).toFixed(2)} km²) yields ~${mwPotential} MWp and cuts ${r.evap_mean_mm} mm/yr evaporative loss.`
+        ? `Low shoreline fluctuation (CV=${r.area_cv}) over the SWOT record makes this reservoir a candidate to study floating PV; no generation estimate is made here.`
         : `High seasonal drawdown (CV=${r.area_cv}, WSE σ=±${r.wse_std_m} m) requires deep-pool mooring or variable-tension anchoring systems.`,
     primarySeriesLabel: "Evaporative Loss ET (GLDAS)",
     primarySeriesUnits: "mm/yr",
@@ -1315,11 +1344,14 @@ export function evaluateEnergySites(
     if (filtered.length >= 3) sites = filtered;
   }
 
-  if (goal === "at_risk") {
-    sites.sort((a, b) => a.score - b.score || a.pValue - b.pValue);
-  } else {
-    sites.sort((a, b) => b.score - a.score || a.pValue - b.pValue);
-  }
+  const fin = (v: number) => Number.isFinite(v);
+  const byP = (a: EvaluatedEnergySite, b: EvaluatedEnergySite) =>
+    (fin(a.pValue) ? a.pValue : 2) - (fin(b.pValue) ? b.pValue : 2);
+  sites.sort((a, b) => {
+    if (fin(a.score) !== fin(b.score)) return fin(a.score) ? -1 : 1; // insufficient evidence last
+    const d = goal === "at_risk" ? a.score - b.score : b.score - a.score;
+    return d || byP(a, b);
+  });
 
   return sites;
 }
@@ -1387,6 +1419,7 @@ export async function renderEnergyConceptHeatmapDataUrl(
       let den = 0;
       for (let i = 0; i < sites.length; i++) {
         const s = sites[i];
+        if (!Number.isFinite(s.lensValue)) continue;
         const dLat = lat - s.lat;
         const dLon = (lon - s.lon) * 0.82;
         const d2 = dLat * dLat + dLon * dLon;
