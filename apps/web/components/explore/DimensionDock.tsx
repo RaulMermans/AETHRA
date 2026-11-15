@@ -33,7 +33,7 @@ interface DimensionDockProps {
   onTogglePlay: () => void;
 }
 
-function dockTitle(config: ActiveClimateConfig, copy: Messages): string {
+export function dockTitle(config: ActiveClimateConfig, copy: Messages): string {
   if (config.dimension === "heat_extremes") {
     return config.heatMetric === "hot_days_35" ? copy.dock.hotDays : copy.dock.tropical;
   }

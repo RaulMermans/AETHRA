@@ -27,7 +27,7 @@ def signed(v: float, d: int = 2) -> str:
 
 
 def load() -> dict:
-    cards = {c["id"]: c for c in json.loads(CARDS.read_text())["cards"]}
+    cards = {c["id"]: c for c in json.loads(CARDS.read_text(encoding="utf-8"))["cards"]}
     cyl, temp = cards["energy-gap-ES41"], cards["gate-a-temperature-R0"]
     regions = [cards[k] for k in ("energy-gap-R0", "energy-gap-ES11", "energy-gap-ES41", "energy-gap-ES24", "energy-gap-ES61")]
     return {"cyl": cyl, "temp": temp, "regions": regions, "ext": temp["external_check"]}
@@ -130,7 +130,7 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     doc = f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>AETHRA pitch deck</title><style>{CSS}</style></head><body>{''.join(slides(load()))}</body></html>"
     page_html = OUT / "aethra-deck.html"
-    page_html.write_text(doc)
+    page_html.write_text(doc, encoding="utf-8", newline="\n")
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path=a.chrome)
         page = b.new_page(viewport={"width": 1280, "height": 720})

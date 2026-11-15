@@ -159,7 +159,7 @@ def main() -> None:
         "source": THEIA_WFS, "clipped_to": str(BOUNDARY.relative_to(ROOT)),
         "n_reaches": int(len(reaches)), "n_lakes": int(len(lakes)),
         "retrieved_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     wide = reaches
     if "p_width" in wide.columns:
@@ -195,9 +195,9 @@ def main() -> None:
     rdf = pd.DataFrame(reach_rows)
     ldf = pd.DataFrame(lake_rows)
     if not rdf.empty:
-        rdf.to_csv(PROC / "hydrocron_reaches_spain.csv", index=False)
+        rdf.to_csv(PROC / "hydrocron_reaches_spain.csv", index=False, lineterminator="\n")
     if not ldf.empty:
-        ldf.to_csv(PROC / "hydrocron_lakes_spain.csv", index=False)
+        ldf.to_csv(PROC / "hydrocron_lakes_spain.csv", index=False, lineterminator="\n")
     (PROC / "README.md").write_text(
         "# SWOT rivers and lakes in Spain\n\n"
         f"- SWORD reaches: `{len(reaches)}` (`sword_reaches_spain.geojson`)\n"
@@ -208,7 +208,7 @@ def main() -> None:
         f"(area ≥ {MIN_LAKE_KM2} km²)\n"
         f"- Period: {SWOT_START[:10]} → {end[:10]} (SWOT science orbit; short for climate trends)\n"
         "- Variables: water-surface elevation (m), river width (m), lake area. Not in-situ discharge.\n"
-        "- Source: SWOT L2 HR RiverSP / LakeSP via Hydrocron; SWORD/PLD via Theia WFS. NASA/CNES/CSA.\n"
+        "- Source: SWOT L2 HR RiverSP / LakeSP via Hydrocron; SWORD/PLD via Theia WFS. NASA/CNES/CSA.\n", encoding="utf-8", newline="\n"
     )
     log(f"done: reaches series {len(rdf)} rows, lakes series {len(ldf)} rows → {PROC}")
 

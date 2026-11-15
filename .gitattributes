@@ -1,0 +1,33 @@
+# Cross-platform line endings (macOS, Linux, Windows).
+# Source and docs are stored with LF and checked out with LF on every OS, so diffs stay clean.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Data and result files are never converted: their bytes must match the SHA-256 values recorded
+# in data/metadata/ manifests on every OS.
+*.csv -text
+*.tsv -text
+*.json -text
+*.geojson -text
+*.svg -text
+data/** -text
+
+# Binary
+*.nc binary
+*.nc4 binary
+*.h5 binary
+*.hdf binary
+*.tif binary
+*.tiff binary
+*.zip binary
+*.parquet binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.glb binary
+*.pdf binary

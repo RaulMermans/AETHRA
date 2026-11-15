@@ -180,7 +180,7 @@ def wikidata_water() -> list[dict]:
     """
     if WIKIDATA_CACHE.exists():
         log(f"  cache {WIKIDATA_CACHE}")
-        data = json.loads(WIKIDATA_CACHE.read_text())
+        data = json.loads(WIKIDATA_CACHE.read_text(encoding="utf-8"))
     else:
         r = requests.get(SPARQL, params={"query": query, "format": "json"}, headers=UA, timeout=120)
         r.raise_for_status()

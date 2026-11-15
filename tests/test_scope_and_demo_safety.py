@@ -13,16 +13,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "apps/web"
-CARDS = json.loads((WEB / "public/data/evidence-cards.json").read_text())["cards"]
-CLIMATE = json.loads((WEB / "public/data/climate-bundle.json").read_text())
-ENERGY = json.loads((ROOT / "data/results/energy_gap/analysis_bundle.json").read_text())
-GATE_A = json.loads((ROOT / "data/results/gate_a_temperature/analysis_bundle.json").read_text())
-INDEP = json.loads((ROOT / "data/results/energy_gap/independence_check.json").read_text())
-NOAA = json.loads((ROOT / "data/results/noaa_validation/analysis_bundle.json").read_text())
+CARDS = json.loads((WEB / "public/data/evidence-cards.json").read_text(encoding="utf-8"))["cards"]
+CLIMATE = json.loads((WEB / "public/data/climate-bundle.json").read_text(encoding="utf-8"))
+ENERGY = json.loads((ROOT / "data/results/energy_gap/analysis_bundle.json").read_text(encoding="utf-8"))
+GATE_A = json.loads((ROOT / "data/results/gate_a_temperature/analysis_bundle.json").read_text(encoding="utf-8"))
+INDEP = json.loads((ROOT / "data/results/energy_gap/independence_check.json").read_text(encoding="utf-8"))
+NOAA = json.loads((ROOT / "data/results/noaa_validation/analysis_bundle.json").read_text(encoding="utf-8"))
 
 
 def src(rel: str) -> str:
-    return (WEB / rel).read_text()
+    return (WEB / rel).read_text(encoding="utf-8")
 
 
 # --- EvidenceCards match their stated geographic support -----------------------------------
@@ -113,7 +113,7 @@ def test_judge_mode_is_default_and_gates_every_exploratory_entry_point():
     assert "EXPLORATORY_FEATURES_ENABLED || !t.exploratory" in t
     for env in (WEB / ".env.local", WEB / ".env", ROOT / ".env"):
         if env.exists():
-            assert "NEXT_PUBLIC_ENABLE_EXPLORATORY=1" not in env.read_text(), f"{env} enables exploratory mode"
+            assert "NEXT_PUBLIC_ENABLE_EXPLORATORY=1" not in env.read_text(encoding="utf-8"), f"{env} enables exploratory mode"
 
 
 def test_judge_path_has_no_forecast_or_2030_wording():
@@ -127,7 +127,7 @@ def test_judge_path_has_no_forecast_or_2030_wording():
 
 
 def test_multiplicity_caveat_matches_recorded_check():
-    m = json.loads((ROOT / "data/results/scope_multiplicity/scope_bh.json").read_text())["variables"]
+    m = json.loads((ROOT / "data/results/scope_multiplicity/scope_bh.json").read_text(encoding="utf-8"))["variables"]
     assert m["temperature"]["supported_after_bh"] == m["temperature"]["supported_unadjusted"]
     assert m["precipitation"]["supported_after_bh"] == 0 and m["drought"]["supported_after_bh"] == 0
     r = m["water_rivers"]

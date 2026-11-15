@@ -34,7 +34,7 @@ def _geom(entry: dict):
 @lru_cache(maxsize=1)
 def scopes() -> dict[str, dict]:
     """scope key -> {"name", "geom"}; coordinates are [lon, lat]."""
-    admin = json.loads(ADMIN.read_text())
+    admin = json.loads(ADMIN.read_text(encoding="utf-8"))
     out: dict[str, dict] = {}
     ccaa = {c["id"]: _geom(c) for c in admin["ccaa"]}
     out["age"] = {"name": R0_LABEL, "geom": unary_union([g for k, g in ccaa.items() if k not in R0_EXCLUDE])}

@@ -141,13 +141,13 @@ def http(method: str, url: str, **kw) -> requests.Response:
 
 
 def load_json(path: Path, default):
-    return json.loads(path.read_text()) if path.exists() else default
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else default
 
 
 def save_json(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, default=str) + "\n")
+    tmp.write_text(json.dumps(obj, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
     os.replace(tmp, path)  # atomic: an interrupted run never leaves a half-written manifest
 
 

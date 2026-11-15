@@ -14,13 +14,25 @@ available. Dataset details are in [docs/DATASETS.md](../docs/DATASETS.md).
 3. Provide your credentials using **one** of these options. Never commit them.
    - `cp .env.example .env` and fill in `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`, or
    - add this line to `~/.netrc`: `machine urs.earthdata.nasa.gov login <user> password <pass>`,
-     then run `chmod 600 ~/.netrc`.
+     then run `chmod 600 ~/.netrc`. On Windows the file is `%USERPROFILE%\_netrc` (no `chmod`);
+     the `.env` option is simpler there.
 4. Install the dependencies:
 
 ```bash
 uv venv .venv && uv pip install -p .venv -r scripts/requirements.txt
 # or: python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 ```
+
+**Windows (PowerShell):** the virtual environment's interpreter is `.venv\Scripts\python.exe`
+instead of `.venv/bin/python`. Use it in every command below.
+
+```powershell
+uv venv .venv; uv pip install -p .venv -r scripts/requirements.txt
+# or: py -m venv .venv; .venv\Scripts\pip install -r scripts/requirements.txt
+Copy-Item .env.example .env
+.venv\Scripts\python.exe scripts/download_nasa_data.py
+```
+
 
 ### Run
 

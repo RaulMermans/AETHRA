@@ -46,14 +46,14 @@ def r(x, d=2):
 
 
 def energy_card(bundle_path: Path, rid: str) -> dict:
-    b = json.loads(bundle_path.read_text())
+    b = json.loads(bundle_path.read_text(encoding="utf-8"))
     res = b["results"][rid]
     e1 = res["E1_joint_low_days_P20"]
     a = pd.read_csv(EG / "annual_series.csv")
     a = a[a.region == rid]
     sens = res["E1_sensitivity"]
-    ind = json.loads(INDEP.read_text())["regions"][rid]
-    eff = json.loads(WEIGHTS.read_text())[rid]
+    ind = json.loads(INDEP.read_text(encoding="utf-8"))["regions"][rid]
+    eff = json.loads(WEIGHTS.read_text(encoding="utf-8"))[rid]
     return {
         "id": f"energy-gap-{rid}",
         "topic": "joint_low",
@@ -124,7 +124,7 @@ def e1_fmt(t: dict) -> str:
 
 
 def noaa_check() -> dict:
-    v = json.loads(NOAA.read_text())
+    v = json.loads(NOAA.read_text(encoding="utf-8"))
     s = v["summary"]
     return {
         "name": "NOAA GHCN-Daily external station comparison",
@@ -142,7 +142,7 @@ def noaa_check() -> dict:
 
 
 def temperature_card(bundle_path: Path) -> dict:
-    b = json.loads(bundle_path.read_text())
+    b = json.loads(bundle_path.read_text(encoding="utf-8"))
     res = b["result"]
     a = pd.read_csv(GA / "annual_series.csv")
     lo, hi = b["slope_range_per_decade"]
@@ -187,7 +187,7 @@ def temperature_card(bundle_path: Path) -> dict:
 
 def main() -> None:
     cards = [temperature_card(GA / "analysis_bundle.json")] + [energy_card(EG / "analysis_bundle.json", r) for r in ENERGY_REGIONS]
-    OUT.write_text(json.dumps({"generated_by": "scripts/export_evidence_cards.py", "cards": cards}, indent=1, ensure_ascii=False))
+    OUT.write_text(json.dumps({"generated_by": "scripts/export_evidence_cards.py", "cards": cards}, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
     for c in cards:
         print(c["id"], c["region"]["scope"], c["outcome_label"], c["how_much"]["slope_per_decade"], c["how_much"]["ci95_per_decade"])
 

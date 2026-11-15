@@ -29,7 +29,7 @@ export function ViewModeToggle({
         className="focus-ring flex items-center gap-1.5 rounded-md border border-line bg-atlantic/70 px-2.5 py-1.5 text-xs text-muted backdrop-blur-md transition hover:border-nav/50 hover:text-ink disabled:opacity-50"
       >
         <Icon name="home" className="size-3.5" />
-        {m.view.spain}
+        <span className="max-sm:sr-only">{m.view.spain}</span>
       </button>
       <Segmented
         label={m.view.mapType}

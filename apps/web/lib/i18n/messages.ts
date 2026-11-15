@@ -41,6 +41,8 @@ type Copy = {
     trendPanel: string;
     mapScale: string;
     hideTrend: string;
+    showControls: string;
+    hideControls: string;
     trend: string;
     hideAdvisor: string;
     idealSites: string;
@@ -552,6 +554,8 @@ export const messages: Record<Locale, Copy> = {
       trendPanel: "Trend panel",
       mapScale: "Map color scale",
       hideTrend: "Hide trend",
+      showControls: "Show map controls",
+      hideControls: "Hide map controls",
       trend: "Trend",
       hideAdvisor: "Hide Energy Advisor",
       idealSites: "Ideal Sites & Time Series",
@@ -1126,6 +1130,8 @@ export const messages: Record<Locale, Copy> = {
       trendPanel: "Panel de tendencia",
       mapScale: "Escala de color del mapa",
       hideTrend: "Ocultar tendencia",
+      showControls: "Mostrar controles del mapa",
+      hideControls: "Ocultar controles del mapa",
       trend: "Tendencia",
       hideAdvisor: "Ocultar asesor energético",
       idealSites: "Sitios ideales y series",

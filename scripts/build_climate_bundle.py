@@ -579,9 +579,9 @@ def build_swot_reservoirs(merra2_grid, gpm_full, gldas_grid) -> list[dict]:
     for q in (pld_path, csv_path, hydro_path):
         if q.exists():
             INPUTS[str(q.relative_to(ROOT))] = sha(q)
-    pld = json.loads(pld_path.read_text())
-    hydro = json.loads(hydro_path.read_text()) if hydro_path.exists() else {"features": []}
-    admin = json.loads(admin_path.read_text())
+    pld = json.loads(pld_path.read_text(encoding="utf-8"))
+    hydro = json.loads(hydro_path.read_text(encoding="utf-8")) if hydro_path.exists() else {"features": []}
+    admin = json.loads(admin_path.read_text(encoding="utf-8"))
 
     names = []
     for f in hydro.get("features", []):
@@ -719,7 +719,7 @@ def _on_years(src_years, values, nd) -> list:
 
 def build_admin_profiles(merra2_grid, gpm_full, gldas_grid, noaa: dict, swot: list[dict]) -> dict:
     print("EXPLORATORY: province / CCAA profiles ...")
-    admin = json.loads((ROOT / "apps/web/public/data/spain-admin.json").read_text())
+    admin = json.loads((ROOT / "apps/web/public/data/spain-admin.json").read_text(encoding="utf-8"))
     m_stack, m_summer, m_lats, m_lons = merra2_grid
     p_full, p_lats, p_lons = gpm_full
     g_stacks, g_lats, g_lons = gldas_grid
@@ -844,8 +844,8 @@ def main() -> None:
         },
     }
     path = OUT_DIR / "climate-bundle.json"
-    path.write_text(json.dumps(bundle, separators=(",", ":"), ensure_ascii=False))
-    (OUT_DIR / "spain-rivers.geojson").write_text(json.dumps(rivers_geojson, separators=(",", ":"), ensure_ascii=False))
+    path.write_text(json.dumps(bundle, separators=(",", ":"), ensure_ascii=False), encoding="utf-8", newline="\n")
+    (OUT_DIR / "spain-rivers.geojson").write_text(json.dumps(rivers_geojson, separators=(",", ":"), ensure_ascii=False), encoding="utf-8", newline="\n")
     print(f"Wrote {path.relative_to(ROOT)}: {path.stat().st_size / 1024:.0f} KiB")
     s = merra2["spain_stats"]
     print(f"Spain (R0) T2M: {s['slope_decade']:+.3f} °C/decade [{s['ci_low_decade']:+.3f}, {s['ci_high_decade']:+.3f}] p={s['p_value']} n={s['n']}")

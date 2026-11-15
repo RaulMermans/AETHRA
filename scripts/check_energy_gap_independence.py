@@ -110,7 +110,7 @@ def main() -> None:
             indent=1,
             ensure_ascii=False,
         )
-        + "\n"
+        + "\n", encoding="utf-8", newline="\n"
     )
     for rid, v in out.items():
         print(rid, v["observed_joint_low_days_2001_2025"], v["year_shift"]["surrogate_mean"], v["year_shift"]["surrogate_range_2_5_97_5"], v["ratio_observed_to_expected"])

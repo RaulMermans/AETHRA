@@ -86,7 +86,7 @@ def spacing(vals) -> float:
 
 
 def region_polygons() -> dict[str, MultiPolygon]:
-    admin = json.loads(ADMIN.read_text())
+    admin = json.loads(ADMIN.read_text(encoding="utf-8"))
     polys = {}
     for c in admin["ccaa"]:
         coords = json.loads(c["coordinates"]) if isinstance(c["coordinates"], str) else c["coordinates"]
@@ -265,7 +265,7 @@ def svg_figure(path: Path, panels, caption: str, cols: int = 3):
     )
     path.write_text(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
-        f'font-family="Helvetica,Arial,sans-serif"><rect width="100%" height="100%" fill="#fff"/>{"".join(body)}{cap}</svg>'
+        f'font-family="Helvetica,Arial,sans-serif"><rect width="100%" height="100%" fill="#fff"/>{"".join(body)}{cap}</svg>', encoding="utf-8", newline="\n"
     )
 
 
@@ -273,7 +273,7 @@ def svg_figure(path: Path, panels, caption: str, cols: int = 3):
 def main() -> None:
     PROC.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    manifest = json.loads(MANIFEST.read_text())
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     excluded = {k: v["excluded_source_present"] for k, v in manifest["files"].items() if v["excluded_source_present"]}
     if excluded:
         raise SystemExit(f"Excluded sources found in 2001–2025 requests: {excluded}")
@@ -303,8 +303,8 @@ def main() -> None:
     for rid in REGIONS:
         for d, sv, wv in zip(daily[(rid, "solar")].index, daily[(rid, "solar")], daily[(rid, "wind")]):
             rows.append({"date": d.date().isoformat(), "region": rid, "solar_kwh_m2_day": sv, "ws50m_m_s": wv})
-    pd.DataFrame(rows).to_csv(PROC / "power_regional_daily_2001-2025.csv", index=False, float_format="%.4f")
-    (PROC / "region_weights.json").write_text(json.dumps(weights_out, indent=1))
+    pd.DataFrame(rows).to_csv(PROC / "power_regional_daily_2001-2025.csv", index=False, float_format="%.4f", lineterminator="\n")
+    (PROC / "region_weights.json").write_text(json.dumps(weights_out, indent=1), encoding="utf-8", newline="\n")
 
     t = np.array(YEARS, float)
     results, annual_rows, e1_p = {}, [], []
@@ -378,7 +378,7 @@ def main() -> None:
         )
 
     annual = pd.DataFrame(annual_rows)
-    annual.to_csv(OUT / "annual_series.csv", index=False)
+    annual.to_csv(OUT / "annual_series.csv", index=False, lineterminator="\n")
 
     # plots
     def fig(col, key, title, ylabel, fname, caption):
@@ -440,7 +440,7 @@ def main() -> None:
             "boundaries_sha256": sha(ADMIN),
         },
     }
-    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False, default=float))
+    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False, default=float), encoding="utf-8", newline="\n")
     print(json.dumps({k: {"E1": v["E1_joint_low_days_P20"]["slope_per_decade"], "p": v["E1_joint_low_days_P20"]["p"], "p_bh": v["E1_p_BH"], "outcome": v["E1_outcome"]} for k, v in results.items()}, indent=1))
 
 

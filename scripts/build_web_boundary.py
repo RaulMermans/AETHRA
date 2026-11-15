@@ -79,13 +79,13 @@ def rings(polys) -> list:
 def write(name: str, geometry: dict, props: dict) -> None:
     fc = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": props, "geometry": geometry}]}
     path = OUT_DIR / name
-    path.write_text(json.dumps(fc, separators=(",", ":")))
+    path.write_text(json.dumps(fc, separators=(",", ":")), encoding="utf-8", newline="\n")
     print(f"{path.relative_to(ROOT)}: {path.stat().st_size / 1024:.0f} KiB")
 
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    src = json.loads(SRC.read_text())
+    src = json.loads(SRC.read_text(encoding="utf-8"))
     land = unary_union([shape(f["geometry"]) for f in src["features"]])
 
     # 1. Land
@@ -102,7 +102,7 @@ def main() -> None:
         COUNTRIES.parent.mkdir(parents=True, exist_ok=True)
         print(f"Downloading {COUNTRIES_URL}")
         urllib.request.urlretrieve(COUNTRIES_URL, COUNTRIES)
-    countries = json.loads(COUNTRIES.read_text())
+    countries = json.loads(COUNTRIES.read_text(encoding="utf-8"))
     neighbours = unary_union([shape(f["geometry"]) for f in countries["features"]
                               if f["properties"]["CNTR_ID"] != "ES"])
     band = unary_union([buffer_metres(p, SEA_BAND_M) for p in parts(land)])

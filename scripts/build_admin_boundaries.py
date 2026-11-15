@@ -839,7 +839,7 @@ def main() -> None:
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8", newline="\n")
     size_kb = OUT_PATH.stat().st_size / 1024
     print(f"Wrote {OUT_PATH.relative_to(ROOT)} ({size_kb:.1f} KiB)")
     print(f"  CCAA: {len(ccaa_list)}, Provinces: {len(provinces_list)}")

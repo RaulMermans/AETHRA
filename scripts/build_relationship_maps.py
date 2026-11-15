@@ -79,7 +79,7 @@ def correlate_family(series: list[tuple[np.ndarray, np.ndarray, np.ndarray] | No
 
 def build_r1() -> dict:
     sha(VALIDATION)
-    v = json.loads(VALIDATION.read_text())
+    v = json.loads(VALIDATION.read_text(encoding="utf-8"))
     pairs = [
         {
             "id": p["station"],
@@ -178,7 +178,7 @@ def build_r2() -> dict:
 def build_r3() -> dict:
     print("R3: NOAA hot_days_35 × max_dry_spell per station ...")
     sha(BUNDLE)
-    stations = json.loads(BUNDLE.read_text())["noaa"]["stations"]
+    stations = json.loads(BUNDLE.read_text(encoding="utf-8"))["noaa"]["stations"]
     rows: list[dict] = []
     series: list[tuple[np.ndarray, np.ndarray, np.ndarray] | None] = []
     for st in stations:
@@ -246,7 +246,7 @@ def main() -> None:
             "inputs_sha256": INPUTS,
         },
     }
-    OUT.write_text(json.dumps(out, separators=(",", ":"), ensure_ascii=False))
+    OUT.write_text(json.dumps(out, separators=(",", ":"), ensure_ascii=False), encoding="utf-8", newline="\n")
     print(f"Wrote {OUT.relative_to(ROOT)}: {OUT.stat().st_size // 1024} KiB")
 
 

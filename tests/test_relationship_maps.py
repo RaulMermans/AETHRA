@@ -11,8 +11,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REL = json.loads((ROOT / "apps/web/public/data/relationship-maps.json").read_text())
-VALIDATION = json.loads((ROOT / "data/results/noaa_validation/analysis_bundle.json").read_text())
+REL = json.loads((ROOT / "apps/web/public/data/relationship-maps.json").read_text(encoding="utf-8"))
+VALIDATION = json.loads((ROOT / "data/results/noaa_validation/analysis_bundle.json").read_text(encoding="utf-8"))
 
 
 def _family(rows: list[dict]) -> None:
@@ -65,8 +65,8 @@ def test_r3_follows_the_preregistered_design():
 
 
 def test_frontend_renders_relationships_without_statistics():
-    src = (ROOT / "apps/web/lib/globe/relationships.ts").read_text()
-    src += (ROOT / "apps/web/components/explore/RelationshipPanel.tsx").read_text()
+    src = (ROOT / "apps/web/lib/globe/relationships.ts").read_text(encoding="utf-8")
+    src += (ROOT / "apps/web/components/explore/RelationshipPanel.tsx").read_text(encoding="utf-8")
     assert not re.search(r"(p_value|q_value\w*|rho)\s*[<>]=?\s*0\.\d", src), "threshold in frontend"
     assert not re.search(r"spearman|pearson\s*\(|detrend\s*\(|benjamini", src, re.IGNORECASE), "statistic in frontend"
 

@@ -144,7 +144,7 @@ def download() -> None:
             indent=2,
             ensure_ascii=False,
         )
-        + "\n"
+        + "\n", encoding="utf-8", newline="\n"
     )
 
 
@@ -169,11 +169,11 @@ def _province_shapes(admin: dict[str, Any]) -> dict[str, MultiPolygon]:
 
 
 def build() -> dict[str, Any]:
-    manifest = json.loads(RAW_MANIFEST.read_text())
+    manifest = json.loads(RAW_MANIFEST.read_text(encoding="utf-8"))
     if manifest["sha256"] != _sha(RAW_ZIP):
         raise RuntimeError("raw zip does not match its manifest checksum; re-run with --download")
-    admin = json.loads(ADMIN.read_text())
-    climate = json.loads(CLIMATE.read_text())
+    admin = json.loads(ADMIN.read_text(encoding="utf-8"))
+    climate = json.loads(CLIMATE.read_text(encoding="utf-8"))
     lats, lons = climate["merra2"]["lats"], climate["merra2"]["lons"]
     provinces = {p["id"]: p for p in admin["provinces"]}
     shapes = _province_shapes(admin)
@@ -310,7 +310,7 @@ def main() -> int:
     if args.download or not RAW_ZIP.exists():
         download()
     out = build()
-    OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n")
+    OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
     c = out["counts"]
     print(f"wrote {OUT.relative_to(ROOT)}: {c['installations']} installations {c['by_technology']}; excluded {c['excluded_polygons']}")
     return 0

@@ -27,7 +27,7 @@ VARIABLES = ["temperature", "precipitation", "drought", "water_rivers"]
 
 
 def main() -> None:
-    b = json.loads(BUNDLE.read_text())
+    b = json.loads(BUNDLE.read_text(encoding="utf-8"))
     out: dict[str, dict] = {}
     for var in VARIABLES:
         items = [(k, v[var]["stats"]) for k, v in sorted(b["scopes"].items()) if v.get(var, {}).get("stats")]
@@ -49,7 +49,7 @@ def main() -> None:
         "rule": "BH q < 0.05 across all scopes with a precomputed result, per variable, plus 95% CI excludes 0",
         "input_sha256": hashlib.sha256(BUNDLE.read_bytes()).hexdigest(),
         "variables": out,
-    }, indent=1) + "\n")
+    }, indent=1) + "\n", encoding="utf-8", newline="\n")
     for var, v in out.items():
         print(var, v["n_scopes"], "supported", v["supported_unadjusted"], "after BH", v["supported_after_bh"])
 

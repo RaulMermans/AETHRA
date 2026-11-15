@@ -11,10 +11,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES_TS = (ROOT / "apps/web/lib/globe/energy-research-cases.ts").read_text()
-ENERGY = json.loads((ROOT / "data/results/energy_gap/analysis_bundle.json").read_text())
-INDEP = json.loads((ROOT / "data/results/energy_gap/independence_check.json").read_text())
-CARDS = json.loads((ROOT / "apps/web/public/data/evidence-cards.json").read_text())["cards"]
+CASES_TS = (ROOT / "apps/web/lib/globe/energy-research-cases.ts").read_text(encoding="utf-8")
+ENERGY = json.loads((ROOT / "data/results/energy_gap/analysis_bundle.json").read_text(encoding="utf-8"))
+INDEP = json.loads((ROOT / "data/results/energy_gap/independence_check.json").read_text(encoding="utf-8"))
+CARDS = json.loads((ROOT / "apps/web/public/data/evidence-cards.json").read_text(encoding="utf-8"))["cards"]
 
 CASE_REGIONS = {
     "case-r0-joint-low": "R0",

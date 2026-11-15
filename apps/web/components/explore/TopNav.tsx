@@ -44,7 +44,7 @@ export function TopNav({ center }: { center?: ReactNode }) {
         <div
           role="group"
           aria-label={m.lang.group}
-          className="pointer-events-auto justify-self-end rounded-md border border-line bg-atlantic/70 p-0.5 backdrop-blur-md"
+          className="pointer-events-auto flex shrink-0 justify-self-end rounded-md border border-line bg-atlantic/70 p-0.5 backdrop-blur-md"
         >
           {option("es", "ES", "Español")}
           {option("en", "EN", "English")}

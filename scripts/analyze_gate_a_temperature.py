@@ -59,7 +59,7 @@ def main() -> None:
         m = (t >= a) & (t <= b)
         sens[f"{a}-{b}"] = T.trend(t[m], s.values[m]).to_dict()
     slopes = [v["slope_per_decade"] for v in sens.values()]
-    pd.DataFrame({"year": YEARS, "t2m_annual_mean_c": s.round(3).values}).to_csv(OUT / "annual_series.csv", index=False)
+    pd.DataFrame({"year": YEARS, "t2m_annual_mean_c": s.round(3).values}).to_csv(OUT / "annual_series.csv", index=False, lineterminator="\n")
     g = A.svg_panel(t, s.values, [True] * len(t), main_res["slope_per_decade"], main_res["intercept"],
                     f"Peninsula + Balearics · {main_res['slope_per_decade']:+.2f} °C/decade", "°C (annual mean, 2 m)")
     A.svg_figure(OUT / "t2m.svg", [g], "MERRA-2 M2TMNXSLV 5.12.4 T2M, area-weighted, 2000–2025. Reanalysis.", cols=1)
@@ -86,7 +86,7 @@ def main() -> None:
         "not_measured": "energy production, causes of warming, future temperature",
         "provenance": {"input_files_sha256": files, "code": {"scripts/analyze_gate_a_temperature.py": A.sha(Path(__file__)), "packages/science/trends.py": A.sha(ROOT / "packages/science/trends.py"), "git": A.git_rev()}},
     }
-    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False))
+    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
     print(json.dumps({"result": {k: main_res[k] for k in ("slope_per_decade", "ci_low_per_decade", "ci_high_per_decade", "p", "lag1_autocorr", "hamed_rao_applied")}, "range": [min(slopes), max(slopes)], "outcome": bundle["outcome"]}, indent=1))
 
 

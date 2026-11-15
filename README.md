@@ -62,6 +62,13 @@ cd apps/web && npm install && npm run dev  # http://localhost:3000 → /explore 
 # NEXT_PUBLIC_ENABLE_EXPLORATORY=1 npm run dev
 ```
 
+Runs on macOS and Linux; Windows is supported by the setup below but not yet tested on a Windows
+machine. Tested with Python 3.11 and Node 20 (the app); the agent policy
+test (`tests/test_aethra_agent.py`) needs Node 22.6+. On Windows (PowerShell) use
+`Copy-Item .env.example .env`, and `.venv\Scripts\python.exe` wherever the docs say
+`.venv/bin/python`. Line endings are pinned by `.gitattributes`; data files are never converted, so
+their SHA-256 values match on every OS.
+
 Rebuilding the climate bundle and downloading data: [scripts/README.md](scripts/README.md).
 Web app details: [apps/web/README.md](apps/web/README.md).
 

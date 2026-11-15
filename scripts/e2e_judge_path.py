@@ -189,7 +189,7 @@ def main() -> None:
         responsive(browser, a.base, rec)
         failure_handling(browser, a.base, rec)
         browser.close()
-    (a.out / "results.json").write_text(json.dumps(rec.rows, indent=1, ensure_ascii=False))
+    (a.out / "results.json").write_text(json.dumps(rec.rows, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
     fails = [r for r in rec.rows if not r["ok"]]
     print(f"\n{len(rec.rows) - len(fails)}/{len(rec.rows)} checks passed")
     sys.exit(1 if fails else 0)

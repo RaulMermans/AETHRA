@@ -106,7 +106,7 @@ def svg_scatter(rows: list[dict], path: Path) -> None:
     el.append(f'<text x="{pad}" y="16" font-size="11" font-weight="600">Trend 2001–2025 (°C/decade): {len(rows)} paired stations</text>')
     el.append(f'<text x="{w / 2}" y="{h - 8}" font-size="10" text-anchor="middle">NOAA GHCN-D station, (Tmax+Tmin)/2</text>')
     el.append(f'<text x="12" y="{h / 2}" font-size="10" text-anchor="middle" transform="rotate(-90 12 {h / 2})">MERRA-2 T2M, containing cell</text>')
-    path.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" font-family="Helvetica,Arial,sans-serif"><rect width="100%" height="100%" fill="#fff"/>{"".join(el)}</svg>')
+    path.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" font-family="Helvetica,Arial,sans-serif"><rect width="100%" height="100%" fill="#fff"/>{"".join(el)}</svg>', encoding="utf-8", newline="\n")
 
 
 def main() -> None:
@@ -148,7 +148,7 @@ def main() -> None:
     if not rows:
         raise SystemExit("no station passed the inclusion rule")
     df = pd.DataFrame(rows)
-    df.drop(columns=["station_ci", "merra2_ci"]).to_csv(OUT / "station_pairs.csv", index=False)
+    df.drop(columns=["station_ci", "merra2_ci"]).to_csv(OUT / "station_pairs.csv", index=False, lineterminator="\n")
     d = df.slope_diff_cell_minus_station
     same_sign = int((np.sign(df.station_slope) == np.sign(df.merra2_slope)).sum())
     summary = {
@@ -179,7 +179,7 @@ def main() -> None:
             "code": {"scripts/validate_merra2_vs_noaa.py": sha(Path(__file__)), "packages/science/trends.py": sha(ROOT / "packages/science/trends.py")},
         },
     }
-    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False) + "\n")
+    (OUT / "analysis_bundle.json").write_text(json.dumps(bundle, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(summary, indent=1, ensure_ascii=False))
 
 

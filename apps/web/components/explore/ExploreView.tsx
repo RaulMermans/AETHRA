@@ -91,7 +91,7 @@ import { ExploreSpain } from "./ExploreSpain";
 import { MapMarkerLegend } from "./MapMarkerLegend";
 import { MapEncodingKey } from "./MapEncodingKey";
 import { CoordinateReadout } from "./CoordinateReadout";
-import { DimensionDock } from "./DimensionDock";
+import { DimensionDock, dockTitle } from "./DimensionDock";
 import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
 import { EnergyTechControlsDock, EnergyTechInspectorPanel } from "./EnergyTechAdvisor";
 import { EvidencePanel } from "./EvidencePanel";
@@ -187,6 +187,9 @@ export function ExploreView() {
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  // Below the sm breakpoint only; on wider screens the controls are always shown.
+  const [controlsOpen, setControlsOpen] = useState(true);
+  const foldOnPhone = controlsOpen ? "contents" : "contents max-sm:hidden";
   const [proofStage, setProofStage] = useState<ProofStage | null>(null);
   // Height of the bottom bar (wraps on narrow screens, grows with the point readout).
   const [bottomBarHeight, setBottomBarHeight] = useState(0);
@@ -205,6 +208,8 @@ export function ExploreView() {
   useEffect(() => {
     // Wide screens only: below 1200 px the open panel hides the left controls (see inspectorOpen).
     if (window.matchMedia("(min-width: 1200px)").matches) setEvidenceOpen(true);
+    // Phones: start with the map controls folded so Spain is visible (summary chip stays on screen).
+    if (window.matchMedia("(max-width: 639px)").matches) setControlsOpen(false);
   }, []);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const viewMode: ViewMode = "world";
@@ -246,6 +251,7 @@ export function ExploreView() {
     rainMetric: "max_dry_spell",
     vegMetric: "ndvi",
   });
+  const activeClimateDim = DIMENSIONS.find((d) => d.id === climateConfig.dimension) ?? DIMENSIONS[0];
   const [heatmapUrl, setHeatmapUrl] = useState<string>("");
   const [playing, setPlaying] = useState(false);
   const [heatmapByYear, setHeatmapByYear] = useState<ReadonlyMap<number, string>>(new Map());
@@ -1434,10 +1440,32 @@ export function ExploreView() {
       <div
         // Ends above the measured bottom bar (buttons + point readout), so the two never overlap.
         style={{ maxHeight: `calc(100dvh - 4.75rem - ${bottomBarHeight}px - 0.75rem)` }}
-        className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 [&>*]:shrink-0 ${
+        className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 [&>*]:shrink-0 [&>.contents>*]:shrink-0 ${
           inspectorOpen ? "max-[1199px]:hidden" : ""
         } ${proofStage ? "max-lg:hidden" : ""}`}
       >
+        <button
+          type="button"
+          onClick={() => setControlsOpen((o) => !o)}
+          aria-expanded={controlsOpen}
+          aria-controls="map-controls map-dock"
+          aria-label={controlsOpen ? m.explore.hideControls : m.explore.showControls}
+          className="focus-ring panel pointer-events-auto flex min-h-11 items-center gap-2 px-3 py-2 text-left text-xs text-ink sm:hidden"
+        >
+          <span className="min-w-0 flex-1 truncate font-medium">
+            {workspaceMode === "energy"
+              ? m.explore.energyLab
+              : `${dockTitle(climateConfig, m)} · ${climateConfig.mode === "trend" ? m.dock.trend : climateConfig.year}`}
+            {workspaceMode !== "energy" && activeClimateDim.synthetic && (
+              <span className="ml-1 rounded bg-warn/15 px-1 py-px text-[9px] font-normal text-warn">
+                {activeClimateDim.badge ?? m.dock.pilot}
+              </span>
+            )}
+          </span>
+          <span aria-hidden className="text-muted">{controlsOpen ? "▴" : "▾"}</span>
+        </button>
+
+        <div id="map-controls" className={foldOnPhone}>
         {EXPLORATORY_FEATURES_ENABLED && (
         <div
           role="tablist"
@@ -1490,7 +1518,9 @@ export function ExploreView() {
           onChange={handleChangeAdminScope}
           onFocusCamera={handleFocusActiveScope}
         />
+        </div>
         {workspaceMode === "energy" ? (
+          <div id="map-dock" className={foldOnPhone}>
           <EnergyTechControlsDock
             conceptId={energyConcept}
             scope={energyScope}
@@ -1510,8 +1540,10 @@ export function ExploreView() {
             }}
             onChangeLens={setEnergyLens}
           />
+          </div>
         ) : (
           <>
+            <div id="map-dock" className={foldOnPhone}>
             <DimensionDock
               config={climateConfig}
               heatmapVisible={layerStates["climate-heatmap"]?.visible ?? true}
@@ -1543,6 +1575,7 @@ export function ExploreView() {
                 });
               }}
             />
+            </div>
             {/* The climate scale and key describe the climate map, not a relationship map. */}
             {!relationsOpen && (
             <div className="mt-1 flex items-start gap-3 pl-1">

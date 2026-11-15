@@ -55,7 +55,7 @@ def main() -> None:
     ap.add_argument("--end", type=int, default=2025)
     args = ap.parse_args()
 
-    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"files": {}}
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {"files": {}}
     manifest["description"] = (
         "NASA POWER daily regional downloads for docs/ENERGY_RESEARCH.md (Gate B). "
         "sha256 is of the uncompressed API response."
@@ -102,9 +102,9 @@ def main() -> None:
                     "sha256": hashlib.sha256(body).hexdigest(),
                 }
                 print(f"{rel}: {len(d['features'])} pts, sources={sources}, fill={n_fill}")
-                MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=True))
+                MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=True), encoding="utf-8", newline="\n")
                 time.sleep(0.5)
-    MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=True))
+    MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=True), encoding="utf-8", newline="\n")
     bad = {k: v["excluded_source_present"] for k, v in manifest["files"].items() if v["excluded_source_present"]}
     print("files with excluded sources:", bad or "none")
 

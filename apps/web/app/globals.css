@@ -118,6 +118,15 @@ body {
   50% { opacity: 1; }
 }
 
+/* Touch screens: controls at least 36 px so they can be hit with a finger (mouse layouts unchanged).
+   :where() keeps specificity at zero, so explicit sizes such as size-11 still win. */
+@media (pointer: coarse) {
+  :where(main) :where(button, [role="tab"], [role="button"], select):not(:where(.globe-credits *)) {
+    min-height: 2.25rem;
+    min-width: 2.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

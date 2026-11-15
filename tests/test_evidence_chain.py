@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BUNDLE = json.loads((ROOT / "apps/web/public/data/climate-bundle.json").read_text())
+BUNDLE = json.loads((ROOT / "apps/web/public/data/climate-bundle.json").read_text(encoding="utf-8"))
 
 
 def _all_stats(obj, path=""):
@@ -54,7 +54,7 @@ def test_every_trend_is_internally_consistent():
 
 def test_headline_matches_independent_gate_a_analysis():
     a = BUNDLE["merra2"]["spain_stats"]
-    g = json.loads((ROOT / "data/results/gate_a_temperature/analysis_bundle.json").read_text())["result"]
+    g = json.loads((ROOT / "data/results/gate_a_temperature/analysis_bundle.json").read_text(encoding="utf-8"))["result"]
     assert abs(a["slope_decade"] - g["slope_per_decade"]) < 1e-3
     assert abs(a["ci_low_decade"] - g["ci_low_per_decade"]) < 1e-3
     assert abs(a["ci_high_decade"] - g["ci_high_per_decade"]) < 1e-3
@@ -74,7 +74,7 @@ def test_every_ui_scope_has_precomputed_series():
 
 
 def test_cards_copy_bundle_values():
-    cards = {c["id"]: c for c in json.loads((ROOT / "apps/web/public/data/evidence-cards.json").read_text())["cards"]}
+    cards = {c["id"]: c for c in json.loads((ROOT / "apps/web/public/data/evidence-cards.json").read_text(encoding="utf-8"))["cards"]}
     t = cards["gate-a-temperature-R0"]["how_much"]
     a = BUNDLE["merra2"]["spain_stats"]
     assert t["slope_per_decade"] == round(a["slope_decade"], 2)
@@ -84,9 +84,9 @@ def test_frontend_does_not_compute_statistics():
     forbidden = re.compile(r"senFromSeries|averageStats|averageStationMetric|erfcApprox|Math\.erf|function\s+\w*(mann|kendall|theil|sen|pvalue)\w*\s*\(", re.I)
     for f in ["apps/web/lib/globe/climate.ts", "apps/web/components/explore/EvidencePanel.tsx",
               "apps/web/components/explore/EvidenceCardPanel.tsx"]:
-        hits = forbidden.findall((ROOT / f).read_text())
+        hits = forbidden.findall((ROOT / f).read_text(encoding="utf-8"))
         assert not hits, (f, hits)
-    panel = (ROOT / "apps/web/components/explore/EvidencePanel.tsx").read_text()
+    panel = (ROOT / "apps/web/components/explore/EvidencePanel.tsx").read_text(encoding="utf-8")
     assert "2030" not in panel and "decisions" not in panel
 
 
@@ -122,7 +122,7 @@ def test_frontend_does_not_threshold_q_values():
     forbidden = re.compile(r"(p_value|q_value\w*)\s*(\[[^\]]*\])?\s*[<>]=?")
     for f in ["apps/web/lib/globe/climate.ts", "apps/web/components/explore/MapEncodingKey.tsx",
               "apps/web/lib/globe/cesium/layer-manager.ts"]:
-        hits = forbidden.findall((ROOT / f).read_text())
+        hits = forbidden.findall((ROOT / f).read_text(encoding="utf-8"))
         assert not hits, (f, hits)
 
 

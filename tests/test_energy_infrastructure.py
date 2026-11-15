@@ -16,8 +16,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from build_energy_infrastructure import exclusion_reason, merra2_cell  # noqa: E402
 
-DATA = json.loads((ROOT / "apps/web/public/data/energy-infrastructure.json").read_text())
-CLIMATE = json.loads((ROOT / "apps/web/public/data/climate-bundle.json").read_text())
+DATA = json.loads((ROOT / "apps/web/public/data/energy-infrastructure.json").read_text(encoding="utf-8"))
+CLIMATE = json.loads((ROOT / "apps/web/public/data/climate-bundle.json").read_text(encoding="utf-8"))
 LATS, LONS = CLIMATE["merra2"]["lats"], CLIMATE["merra2"]["lons"]
 
 GOOD = {"c_reg_adm": "001/BU/RE/b.2/1", "n_inst_ener": "X", "v_kw_tot": 1000, "n_tip_inst": "Eólica"}
