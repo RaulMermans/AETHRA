@@ -90,8 +90,10 @@ def test_competition_cut_d76():
     view = src("components/explore/ExploreView.tsx")
     # D81 supersedes D76(a): TARO button and panel are always rendered, in every build.
     assert 'aria-label="TARO"' in view
-    assert '{secondaryPanel === "core" && (' in view
-    assert 'EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core"' not in view
+    # The panel is mounted unconditionally and toggled by `coreOpen` (no build-flag gate).
+    assert "<AethraCorePanel" in view and "open={coreOpen}" in view
+    assert not re.search(r"EXPLORATORY_FEATURES_ENABLED\s*&&\s*(coreOpen|secondaryPanel === \"core\")", view)
+    assert not re.search(r"EXPLORATORY_FEATURES_ENABLED\s*&&\s*renderTaroButton", view)
     panel = src("components/explore/EvidenceCardPanel.tsx")
     order = [panel.index(k) for k in ("m.cards.sClaim", "m.cards.sVerdict", "m.cards.sSize", "m.cards.sLimits", "m.cards.sMethod", "m.cards.sData")]
     assert order == sorted(order), "evidence receipt sections out of order"

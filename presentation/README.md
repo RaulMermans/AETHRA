@@ -4,7 +4,7 @@ Strict 7-slide, high-impact HTML slide deck designed specifically for the offici
 
 ## Quick Start
 
-1. Open [`presentation/index.html`](index.html) (or [`AETHRA_PRESENTACION.html`](../AETHRA_PRESENTACION.html)) in any browser.
+1. Open [`presentation/index.html`](index.html) in any browser.
 2. **Keyboard Navigation**:
    - `Right Arrow` / `Space` / `Page Down`: Next slide.
    - `Left Arrow` / `Page Up`: Previous slide.

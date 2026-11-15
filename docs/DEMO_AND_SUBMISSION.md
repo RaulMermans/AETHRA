@@ -1,7 +1,7 @@
 # Demo and Submission
 
 Single source for event rules, the submission checklist, the pitch and the 7-slide outline.
-Sources: local *[NASA] Guía del participante · Space Apps 2026.pdf* (revised 14 Nov 2026) and the
+Sources: local *docs/reference/event/[NASA] Guía del participante · Space Apps 2026.pdf* (revised 14 Nov 2026) and the
 official site. The official site could not be read automatically on 14 Nov, so **a human must
 confirm each rule marked ⚠️**.
 

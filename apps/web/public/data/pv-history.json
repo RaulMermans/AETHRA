@@ -10,7 +10,7 @@
     "version": "February 2026 Spain utility-scale snapshot (projects >= 1 MW)",
     "license": "CC BY 4.0",
     "file": "data/gem_solar_spain/gem_solar_spain_utility_2026-02.csv",
-    "sha256": "7bad769602dd5095eba0447a8ec5f4b8fe57f9256115d2c6833a829ec246c272"
+    "sha256": "33c7df0a190beb42505fb724ef33dc0f524c4125f4e6e9bee889617a51f89497"
   },
   "measure": "Number of operating GEM solar PV project phases by reported start_year; PV and Assumed PV shown separately",
   "units": "registered project phases (count)",

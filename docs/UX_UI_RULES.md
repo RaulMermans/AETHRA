@@ -1,7 +1,7 @@
 # UX/UI Rules
 
 Two levels. **Scientific presentation rules** (next section) are requirements for anything on the
-demo path. **Design guidelines** are recommendations. Local UX guide: `docs/Guía de apoyo · UX.pdf`.
+demo path. **Design guidelines** are recommendations. Local UX guide: `docs/reference/event/Guía de apoyo · UX.pdf`.
 The globe is CesiumJS (ADR-001). Don't change engines and don't add map tools while P0 is open.
 
 ## Scientific presentation rules (required)
