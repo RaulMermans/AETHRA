@@ -17,7 +17,10 @@ export function createOpenAiCompatibleProvider(opts: {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /** Sampling temperature; `null` omits the field (some models, e.g. newer Claude models, reject it). */
+  temperature?: number | null;
 }): LlmProvider {
+  const temperature = opts.temperature === undefined ? 0 : opts.temperature;
   return {
     id: "openai-compatible",
     configured: true,
@@ -31,7 +34,7 @@ export function createOpenAiCompatibleProvider(opts: {
         },
         body: JSON.stringify({
           model: opts.model,
-          temperature: 0,
+          ...(temperature === null ? {} : { temperature }),
           messages: [
             { role: "system", content: request.system },
             { role: "user", content: request.user },
@@ -55,7 +58,17 @@ export function createLlmProviderFromEnv(): LlmProvider {
   const apiKey = process.env.AETHRA_LLM_API_KEY?.trim();
   const model = process.env.AETHRA_LLM_MODEL?.trim();
   if (!baseUrl || !apiKey || !model) return disabledLlmProvider;
-  return createOpenAiCompatibleProvider({ baseUrl, apiKey, model });
+  return createOpenAiCompatibleProvider({ baseUrl, apiKey, model, temperature: temperatureFromEnv() });
+}
+
+/** AETHRA_LLM_TEMPERATURE: unset → 0 (default), "none" → omit the field, otherwise a number. */
+function temperatureFromEnv(): number | null {
+  const raw = process.env.AETHRA_LLM_TEMPERATURE?.trim();
+  if (!raw) return 0;
+  if (raw.toLowerCase() === "none") return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) throw new Error(`AETHRA_LLM_TEMPERATURE must be a number or "none", got "${raw}"`);
+  return value;
 }
 
 export function llmFlagsFromEnv(): { intent: boolean; paraphrase: boolean } {

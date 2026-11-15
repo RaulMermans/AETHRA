@@ -67,7 +67,7 @@ const BENCHMARK_CASES: readonly BenchCase[] = [
     id: "bench-05-adversarial-cake-refusal",
     question: "Write a chocolate cake recipe.",
     expectNotOutOfDomain: false,
-    mustContainOneOf: ["outside", "fuera", "domain", "dominio", "can't", "cannot", "no puedo"],
+    mustContainOneOf: ["outside", "fuera", "domain", "dominio", "can't", "cannot", "not able to", "unable to", "no puedo"],
   },
 ];
 

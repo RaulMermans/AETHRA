@@ -1,6 +1,6 @@
 import { NAMED_PLACES, type NamedPlace } from "../globe/places-es.ts";
 import { cardFor, type EvidenceCard, type EvidenceCatalog } from "./cards.ts";
-import { interpretCard, interpretOutcome } from "./interpret.ts";
+import { ciRangeText, interpretCard, interpretOutcome, outcomeLabelText, unitsText } from "./interpret.ts";
 import { claimById, CYL_INCLUDED_INSTALLATIONS } from "./knowledge/claims.ts";
 import { matchesCurriculum, selectClaims } from "./knowledge/select.ts";
 import type { KnowledgeClaim } from "./knowledge/types.ts";
@@ -341,8 +341,9 @@ function jointLowBriefing(
   const survey = rows
     .map(({ region, card }) => {
       const here = formatLonLat(region.latitude, region.longitude);
-      const ci = `${signed(card.how_much.ci95_per_decade[0])} to ${signed(card.how_much.ci95_per_decade[1])}`;
-      return `${region.name}: ${card.outcome_label}, ${signed(card.how_much.slope_per_decade)} ${card.how_much.units} (95% CI ${ci}) · ${here}`;
+      const ci = ciRangeText(card, language);
+      const ciLabel = language === "es" ? "IC 95 %" : "95% CI";
+      return `${region.name}: ${outcomeLabelText(card, language)}, ${signed(card.how_much.slope_per_decade)} ${unitsText(card, language)} (${ciLabel} ${ci}) · ${here}`;
     })
     .join(" ");
   const missing = missingPlace
@@ -436,10 +437,12 @@ function explainBriefing(question: string, language: AgentLanguage): AgentAnswer
     };
   }
   const body = claims.map((c) => (language === "es" ? c.textEs : c.text)).join(" ");
+  // The identity claim already introduces TARO; don't introduce it twice.
+  const introducesItself = /^(I am TARO|I'm TARO|Soy TARO)\b/.test(body);
   const responseText = canned(
     language,
-    `I'm TARO, AETHRA's research companion. ${body} Documented knowledge — not a new AETHRA measurement.`,
-    `Soy TARO, el compañero de investigación de AETHRA. ${body} Conocimiento documentado — no una medición nueva de AETHRA.`,
+    `${introducesItself ? "" : "I'm TARO, AETHRA's research companion. "}${body} Documented knowledge — not a new AETHRA measurement.`,
+    `${introducesItself ? "" : "Soy TARO, el compañero de investigación de AETHRA. "}${body} Conocimiento documentado — no una medición nueva de AETHRA.`,
   );
   return {
     ...base(question, "explain_mechanism", language, "DESCRIPTIVE", responseText),
@@ -562,19 +565,10 @@ function withCard(answer: AgentAnswer, card: EvidenceCard, dest: string): AgentA
 }
 
 function trendSentence(card: EvidenceCard, language: AgentLanguage): string {
-  const slope = `${signed(card.how_much.slope_per_decade)} ${card.how_much.units}`;
-  const ci = `${signed(card.how_much.ci95_per_decade[0])} to ${signed(card.how_much.ci95_per_decade[1])}`;
+  const slope = `${signed(card.how_much.slope_per_decade)} ${unitsText(card, language)}`;
+  const ci = ciRangeText(card, language);
   if (language === "es") {
-    const label =
-      card.outcome_label === "Supported increase"
-        ? "Aumento respaldado"
-        : card.outcome_label === "Supported decrease"
-          ? "Descenso respaldado"
-          : card.outcome_label === "Insufficient evidence"
-            ? "Evidencia insuficiente"
-            : card.outcome_label === "No robust trend detected"
-              ? "No se detecta una tendencia robusta"
-              : card.outcome_label;
+    const label = outcomeLabelText(card, language);
     const region = card.region.name === "Peninsula + Balearics" ? "Península y Baleares" : card.region.name;
     return `He ido a la ficha. Mira: ${region}, ${label}. ${slope} (IC del 95 % ${ci}; n = ${card.evidence.n_years}; p = ${card.evidence.p}). ${interpretOutcome(card, language)} Te dejo la evidencia aquí. Fuente: ${card.provenance.bundle}.`;
   }
