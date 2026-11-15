@@ -119,12 +119,19 @@ import { useLocale } from "@/lib/i18n/locale";
 import type { Messages } from "@/lib/i18n/messages";
 import { ToolsBar, type ToolAction } from "./ToolsBar";
 import { TopNav } from "./TopNav";
+import { useColorblindMode } from "./AccessibilityMenu";
 import { ViewModeToggle } from "./ViewModeToggle";
 // Evidence-based solar PV screening (EVIDENCE_SCREENING_PLAN.md): visible in judge mode, labelled exploratory.
-import { SolarScreeningPanel, SunGlyph } from "./SolarScreeningPanel";
+import { SolarScreeningPanel, SunGlyph, ZONE_CARD_HEADING_ID } from "./SolarScreeningPanel";
 import { cellAt, loadPvScreeningData, plantAt, type PvScreeningData, type SolarPlant } from "@/lib/globe/pv-screening";
 import { buildScreeningLayers, screeningLayerStates, screeningPlants, type ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
 import { screeningCopy } from "@/lib/i18n/screening-copy";
+// Inclusive mode, blind / low vision (agent B): skip link, map in words, announcements.
+import { useAccessibility } from "@/lib/a11y/accessibility";
+import { blindCopy } from "@/lib/i18n/a11y-blind-copy";
+import { MAIN_CONTENT_ID, SkipLink } from "@/components/a11y/SkipLink";
+import { MAP_IN_WORDS_ID, MapInWords } from "@/components/a11y/MapInWords";
+import { zoneRegionName } from "@/components/a11y/zoneRegion";
 
 const QUALITY_KEY = "globe-quality-mode";
 
@@ -167,6 +174,8 @@ const PROOF_COMPACT_VIEW: OrbitView = {
 
 export function ExploreView() {
   const { m, locale } = useLocale();
+  // Colour-blind mode (agent A): heatmap rasters and solar cells re-render with CVD-safe palettes.
+  const colorblind = useColorblindMode();
   const [baseLayers] = useState(() => buildLayerCatalog());
   const [layerStates, setLayerStates] = useState<LayerStateMap>(() => ({
     ...initialLayerStates(baseLayers),
@@ -362,7 +371,7 @@ export function ExploreView() {
     return () => {
       active = false;
     };
-  }, [bundle, climateConfig, resolvedScope, playing]);
+  }, [bundle, climateConfig, resolvedScope, playing, colorblind]);
 
   useEffect(() => {
     if (!playing || !bundle || climateConfig.mode !== "value") {
@@ -443,6 +452,7 @@ export function ExploreView() {
     climateConfig.rainMetric,
     climateConfig.vegMetric,
     climateConfig.scenario,
+    colorblind,
   ]);
 
   useEffect(() => {
@@ -1358,8 +1368,8 @@ export function ExploreView() {
 
   const screeningText = useMemo(() => screeningCopy(locale), [locale]);
   const screeningLayers = useMemo<LayerDescriptor[]>(
-    () => (screeningActive && screeningData ? buildScreeningLayers(screeningData, screeningCell, screeningText.plantDetail, plantYear) : []),
-    [screeningActive, screeningData, screeningCell, screeningText, plantYear],
+    () => (screeningActive && screeningData ? buildScreeningLayers(screeningData, screeningCell, screeningText.plantDetail, plantYear, colorblind) : []),
+    [screeningActive, screeningData, screeningCell, screeningText, plantYear, colorblind],
   );
   const sceneLayers = useMemo(
     () => (screeningLayers.length ? [...displayLayers, ...screeningLayers] : displayLayers),
@@ -1400,14 +1410,183 @@ export function ExploreView() {
     setScreeningOpen(true);
   };
 
+  // --- Inclusive mode: blind / low vision -------------------------------------------------------
+  const { settings: a11ySettings, announce } = useAccessibility();
+  const blind = blindCopy(locale);
+  const [mapInWordsOpen, setMapInWordsOpen] = useState(false);
+  // Screen-reader mode shows the text version of the map automatically (it can still be hidden).
+  useEffect(() => {
+    if (a11ySettings.screenReader) setMapInWordsOpen(true);
+  }, [a11ySettings.screenReader]);
+  /** Same as clicking a zone on the globe: show cells, select it, fly there. */
+  const selectScreeningCell = useCallback(
+    (cellId: string, opts?: { focusCard?: boolean }) => {
+      const cell = screeningData?.screening?.cells.find((item) => item.id === cellId);
+      if (!cell) return;
+      const isPvCase = cell.id === screeningData?.sevillaCase?.cell_id;
+      setScreeningToggles((current) => ({ ...current, cells: true, plants: isPvCase || current.plants }));
+      setScreeningCellId(cell.id);
+      setScreeningPlant(null);
+      controller?.flyTo({
+        target: { latitude: cell.lat, longitude: cell.lon },
+        heading: 0,
+        pitch: -60,
+        range: 180_000,
+        durationSeconds: 1.7,
+        terrainAware: false,
+      });
+      if (opts?.focusCard) {
+        // The card renders on the next commit; move keyboard focus to its heading.
+        window.setTimeout(() => document.getElementById(ZONE_CARD_HEADING_ID)?.focus(), 60);
+      }
+    },
+    [screeningData, controller],
+  );
+  const screeningCellName = useMemo(
+    () => (screeningCell ? zoneRegionName(screeningCell.lat, screeningCell.lon, adminBundle, blind.nearRegion) : null),
+    [screeningCell, adminBundle, blind],
+  );
+  const climateInWords = useMemo(() => {
+    const variable = dockTitle(climateConfig, m);
+    const period =
+      climateConfig.mode === "trend" ? blind.trendPeriod(FIRST_OBSERVED_YEAR, LAST_COMPLETE_YEAR) : blind.yearPeriod(climateConfig.year);
+    // Published Spain-wide (Peninsula + Balearics) trend for this variable, read from the bundle.
+    const dimKey = climateConfig.dimension as "temperature" | "precipitation" | "drought" | "water_rivers";
+    const stats = bundle?.scopes?.age?.[dimKey]?.stats ?? null;
+    const meta = DIMENSIONS.find((d) => d.id === climateConfig.dimension);
+    let trendSentence = blind.noSpainTrend;
+    if (stats && meta) {
+      const mag = Math.abs(stats.slope_decade);
+      const raw = mag.toFixed(mag >= 10 ? 0 : mag >= 1 ? 1 : 2);
+      const amount = locale === "es" ? raw.replace(".", ",") : raw;
+      const sign = stats.slope_decade > 0 ? "up" : stats.slope_decade < 0 ? "down" : "flat";
+      const units = meta.trendUnits.replace(/\s*(\/|per)\s*(decade|década|dec)\.?\s*$/i, "");
+      trendSentence = blind.spainTrend(
+        variable.toLowerCase(),
+        sign,
+        amount,
+        units,
+        stats.first_year ?? FIRST_OBSERVED_YEAR,
+        stats.last_year ?? LAST_COMPLETE_YEAR,
+        stats.significant,
+      );
+    }
+    return { variable, period, trendSentence };
+  }, [climateConfig, m, blind, bundle, locale]);
+  const globeAriaLabel = useMemo(() => {
+    if (!ready) return blind.globeLoading + blind.globeKeys;
+    const sum = screeningData?.screening?.summary;
+    if (screeningActive && sum) return blind.globeSolar(sum.cells_good, sum.cells_mixed, sum.cells_avoid) + blind.globeKeys;
+    return blind.globeClimate(climateInWords.variable, climateInWords.period) + blind.globeKeys;
+  }, [ready, screeningActive, screeningData, climateInWords, blind]);
+
+  // Announcements (polite live region) for the key changes a sighted user would see on the map.
+  const announceRef = useRef(announce);
+  announceRef.current = announce;
+  const prevA11y = useRef<{
+    screening: boolean;
+    evidence: boolean;
+    words: boolean;
+    toggles: ScreeningToggles;
+    heat: boolean;
+    stations: boolean;
+    cell: string | null;
+    plant: string | null;
+  } | null>(null);
+  useEffect(() => {
+    const now = {
+      screening: screeningOpen,
+      evidence: evidenceOpen,
+      words: mapInWordsOpen,
+      toggles: screeningToggles,
+      heat: mapLayerVisible,
+      stations: stationsLayerVisible,
+      cell: screeningCellId,
+      plant: screeningPlant?.name ?? null,
+    };
+    const prev = prevA11y.current;
+    prevA11y.current = now;
+    if (!prev) return;
+    const say: string[] = [];
+    const openClose = (was: boolean, is: boolean, name: string) => {
+      if (was !== is) say.push(is ? blind.panelOpened(name) : blind.panelClosed(name));
+    };
+    openClose(prev.screening, now.screening, screeningText.title);
+    openClose(prev.evidence, now.evidence, blind.trendPanel);
+    openClose(prev.words, now.words, blind.mapInWords);
+    (Object.keys(now.toggles) as (keyof ScreeningToggles)[]).forEach((k) => {
+      // Selecting a zone switches the cells layer on by itself: the zone announcement covers it.
+      if (prev.toggles[k] !== now.toggles[k] && now.cell === prev.cell) {
+        const name = k === "cells" ? screeningText.toggleCells : k === "miteco" ? screeningText.toggleMiteco : screeningText.togglePlants;
+        say.push(blind.layerToggled(name, now.toggles[k]));
+      }
+    });
+    if (prev.heat !== now.heat) say.push(blind.layerToggled(blind.mapLayer, now.heat));
+    if (prev.stations !== now.stations) say.push(blind.layerToggled(blind.stationsLayer, now.stations));
+    if (now.cell && now.cell !== prev.cell && screeningCell) {
+      const v = screeningCell.verdict;
+      const verdict = v === "no_data" ? screeningText.verdictTitle.no_data : blind.verdictWord[v];
+      say.push(blind.zoneSelected(screeningCellName ?? screeningText.cellLabel(screeningCell), verdict));
+    }
+    if (now.plant && now.plant !== prev.plant) say.push(blind.plantSelected(now.plant));
+    if (say.length) announceRef.current(say.join(" "));
+  }, [
+    screeningOpen,
+    evidenceOpen,
+    mapInWordsOpen,
+    screeningToggles,
+    mapLayerVisible,
+    stationsLayerVisible,
+    screeningCellId,
+    screeningPlant,
+    screeningCell,
+    screeningCellName,
+    screeningText,
+    blind,
+  ]);
+  useEffect(() => {
+    if (!screeningData) return;
+    announceRef.current(screeningData.screening ? blind.dataLoaded(blind.solarData) : blind.dataFailed(blind.solarData));
+    // Announce once per load, not on every language switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- copy read at load time
+  }, [screeningData]);
+  useEffect(() => {
+    if (status?.phase === "ready") announceRef.current(blind.globeReady);
+    else if (status?.phase === "error") announceRef.current(blind.globeFailed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- announce phase changes only
+  }, [status?.phase]);
+  useEffect(() => {
+    // loadClimateBundle() is the same request the data effect above makes; this only reports a failure.
+    let active = true;
+    loadClimateBundle().catch(() => {
+      if (active) announceRef.current(blind.dataFailed(blind.climateData));
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, at start
+  }, []);
+
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-space">
+    <div className="relative h-dvh w-full overflow-hidden bg-space">
+      <SkipLink />
+      <TopNav
+        center={
+          <ViewModeToggle
+            onRecenterSpain={() => controller?.flyTo(homeView)}
+            dim={dim}
+            onDimChange={changeDim}
+            disabled={!controller}
+          />
+        }
+      />
+    <main id={MAIN_CONTENT_ID} tabIndex={-1} className="absolute inset-0 outline-none">
       <h1 className="sr-only">{m.explore.h1}</h1>
 
       {creditEl && (
         <GlobeClient
           className="absolute inset-0 focus-ring"
-          ariaLabel={m.explore.globeAria}
+          ariaLabel={globeAriaLabel}
           layers={sceneLayers}
           layerStates={sceneLayerStates}
           selected={selected}
@@ -1458,16 +1637,6 @@ export function ExploreView() {
       )}
 
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-atlantic/80 to-transparent" />
-      <TopNav
-        center={
-          <ViewModeToggle
-            onRecenterSpain={() => controller?.flyTo(homeView)}
-            dim={dim}
-            onDimChange={changeDim}
-            disabled={!controller}
-          />
-        }
-      />
 
       {proofStage && proofCard && (
         <DraggableWindow
@@ -1498,13 +1667,30 @@ export function ExploreView() {
         </DraggableWindow>
       )}
 
+      {mapInWordsOpen && !proofStage && (
+        <div
+          style={{ maxHeight: `calc(100dvh - 4.75rem - ${bottomBarHeight}px - 0.75rem)` }}
+          className="pointer-events-none absolute top-[4.75rem] left-4 z-[25] flex w-[min(22rem,calc(100vw-2rem))] flex-col sm:left-6"
+        >
+          <MapInWords
+            mode={screeningActive ? "solar" : "climate"}
+            screening={screeningData?.screening ?? null}
+            loading={screeningData === null}
+            admin={adminBundle}
+            selectedCellId={screeningCellId}
+            onSelectCell={(id) => selectScreeningCell(id, { focusCard: true })}
+            climate={climateInWords}
+            onClose={() => setMapInWordsOpen(false)}
+          />
+        </div>
+      )}
       <DraggableWindow
         windowId="left-controls-dock"
         // Ends above the measured bottom bar (buttons + point readout), so the two never overlap.
         style={{ maxHeight: `calc(100dvh - 4.75rem - ${bottomBarHeight}px - 0.75rem)` }}
         className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 [&>*]:shrink-0 [&>.contents>*]:shrink-0 ${
           inspectorOpen ? "max-[1199px]:hidden" : ""
-        } ${proofStage ? "max-lg:hidden" : ""}`}
+        } ${proofStage ? "max-lg:hidden" : ""} ${mapInWordsOpen ? "hidden" : ""}`}
       >
         <button
           type="button"
@@ -1693,7 +1879,8 @@ export function ExploreView() {
           <CameraControls controller={controller} flat={dim === "2d"} onReset={() => controller?.flyTo(homeView)} />
         </DraggableWindow>
         {inspectorOpen && (
-          <div
+          <section
+            aria-label={blind.panelsRegion}
             className={`flex min-h-0 min-w-0 flex-col gap-2 ${
               workspaceMode === "energy"
                 ? "w-[min(34rem,calc(100vw-4.75rem))]"
@@ -1753,22 +1940,8 @@ export function ExploreView() {
                       setScreeningCellId(null);
                       setScreeningPlant(null);
                     }}
-                    onSelectFeatured={(cellId) => {
-                      const cell = screeningData?.screening?.cells.find((item) => item.id === cellId);
-                      if (!cell) return;
-                      const isPvCase = cell.id === screeningData?.sevillaCase?.cell_id;
-                      setScreeningToggles((current) => ({ ...current, cells: true, plants: isPvCase || current.plants }));
-                      setScreeningCellId(cell.id);
-                      setScreeningPlant(null);
-                      controller?.flyTo({
-                        target: { latitude: cell.lat, longitude: cell.lon },
-                        heading: 0,
-                        pitch: -60,
-                        range: 180_000,
-                        durationSeconds: 1.7,
-                        terrainAware: false,
-                      });
-                    }}
+                    onSelectFeatured={(cellId) => selectScreeningCell(cellId)}
+                    selectedCellName={screeningCellName}
                     onClose={toggleScreening}
                   />
                 )}
@@ -1895,7 +2068,7 @@ export function ExploreView() {
                 )}
               </DraggableWindow>
             )}
-          </div>
+          </section>
         )}
       </div>
 
@@ -1976,7 +2149,7 @@ export function ExploreView() {
             )}
           </div>
           {/* Bottom menu: same place with or without open panels (D82); TARO at the end of the group (D81). */}
-          <div ref={menuRowRef} className="flex flex-wrap items-end justify-end gap-2">
+          <nav ref={menuRowRef} aria-label={blind.mainActions} className="flex flex-wrap items-end justify-end gap-2">
             {activeDestination && activeDestination.id !== "spain" && (
               <p className="pointer-events-none mb-1 max-w-[16rem] text-[10px] leading-snug text-muted">
                 {activeDestination.protectedLandscape
@@ -2005,7 +2178,8 @@ export function ExploreView() {
               type="button"
               onClick={() => setEvidenceOpen((o) => !o)}
               aria-expanded={evidenceOpen}
-              aria-controls="evidence-panel"
+              // Only reference the panel id while that panel is in the DOM (axe aria-valid-attr-value).
+              aria-controls={evidenceOpen && trendTab === "series" && workspaceMode !== "energy" ? "evidence-panel" : undefined}
               className="focus-ring panel pointer-events-auto inline-flex items-center gap-2 !rounded-full px-3.5 py-2 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
             >
               <Icon name="chart" className="size-4 text-muted" />
@@ -2017,8 +2191,21 @@ export function ExploreView() {
                   ? m.explore.idealSites
                   : m.explore.trend}
             </button>
+            <button
+              type="button"
+              onClick={() => setMapInWordsOpen((o) => !o)}
+              aria-expanded={mapInWordsOpen}
+              aria-controls={MAP_IN_WORDS_ID}
+              data-testid="map-in-words-toggle"
+              className="focus-ring panel pointer-events-auto inline-flex items-center gap-2 !rounded-full px-3.5 py-2 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" className="size-4 text-muted" aria-hidden>
+                <path d="M4 6h16M4 10h16M4 14h10M4 18h7" />
+              </svg>
+              {mapInWordsOpen ? blind.mapInWordsHide : blind.mapInWordsShow}
+            </button>
             {renderTaroButton("inline-flex sm:mb-1")}
-          </div>
+          </nav>
         </div>
       </div>
 
@@ -2033,5 +2220,6 @@ export function ExploreView() {
         className="globe-credits pointer-events-auto absolute inset-x-4 bottom-1.5 z-10 sm:inset-x-6"
       />
     </main>
+    </div>
   );
 }

@@ -524,8 +524,97 @@ const PALETTES: Record<PaletteId, RGB[]> = {
   ],
 };
 
+// --- Colour-vision-deficiency (CVD) safe variants, used while inclusive colour-blind mode is on ------
+// Sequential maps -> perceptually uniform viridis / inferno / cividis (lightness rises monotonically, so
+// order survives protanopia, deuteranopia, tritanopia and greyscale). Diverging maps -> blue / white /
+// orange (the one hue pair every dichromat keeps apart). Verified by tests/test_cvd_palettes.py.
+
+const VIRIDIS: RGB[] = [
+  [68, 1, 84],
+  [68, 57, 131],
+  [49, 104, 142],
+  [33, 145, 140],
+  [53, 183, 121],
+  [144, 215, 67],
+  [253, 231, 37],
+];
+const INFERNO: RGB[] = [
+  [27, 12, 65],
+  [74, 12, 107],
+  [120, 28, 109],
+  [165, 44, 96],
+  [207, 68, 70],
+  [237, 105, 37],
+  [251, 155, 6],
+  [247, 209, 61],
+  [252, 255, 164],
+];
+const CIVIDIS: RGB[] = [
+  [0, 34, 78],
+  [18, 53, 112],
+  [59, 73, 108],
+  [87, 93, 109],
+  [112, 113, 115],
+  [138, 135, 121],
+  [166, 157, 117],
+  [196, 181, 108],
+  [228, 207, 91],
+  [254, 232, 56],
+];
+/** Blue (low / negative) -> near white (0) -> orange (high / positive). */
+const BLUE_ORANGE: RGB[] = [
+  [33, 102, 172],
+  [103, 169, 207],
+  [209, 229, 240],
+  [247, 247, 247],
+  [254, 224, 182],
+  [241, 163, 64],
+  [179, 88, 6],
+];
+const rev = (stops: RGB[]): RGB[] => [...stops].reverse();
+
+/** CVD-safe palette for every PaletteId (same id, so callers do not change). Exported for tests/legends. */
+export const CVD_PALETTES: Record<PaletteId, RGB[]> = {
+  thermal: INFERNO, // cold = dark, hot = bright
+  precip: rev(VIRIDIS), // dry = bright yellow, wet = dark blue/purple
+  drought_spi: rev(BLUE_ORANGE), // drought = orange, wet = blue
+  vegetation: rev(VIRIDIS),
+  snow: CIVIDIS,
+  runoff: rev(VIRIDIS),
+  heat_extreme: INFERNO,
+  wind: VIRIDIS,
+  rdbu_rev: BLUE_ORANGE, // cooling / decrease = blue, warming / increase = orange
+  brbg: rev(BLUE_ORANGE), // drying = orange, wetting = blue
+};
+
+/** Default palettes (exported read-only for tests). */
+export const DEFAULT_PALETTES: Readonly<Record<PaletteId, RGB[]>> = PALETTES;
+
+let cvdPalettes = false;
+
+/**
+ * Switch every map palette to its CVD-safe variant. Module-level so all samplers (heatmaps, station
+ * symbols, relationship maps, energy lenses) follow without threading a prop. Call it through
+ * `useColorblindMode()` (components/explore/AccessibilityMenu.tsx) so it is set during render,
+ * before any memo/effect that samples colours. Clears the heatmap cache when it changes.
+ */
+export function setCvdPalettes(on: boolean): void {
+  if (cvdPalettes === on) return;
+  cvdPalettes = on;
+  heatmapCache.clear();
+}
+
+export function cvdPalettesActive(): boolean {
+  return cvdPalettes;
+}
+
+function paletteStops(palette: PaletteId): RGB[] {
+  const table = cvdPalettes ? CVD_PALETTES : PALETTES;
+  return table[palette] ?? table.thermal;
+}
+
 export function samplePalette(palette: PaletteId, t: number): RGB {
-  const stops = PALETTES[palette] ?? PALETTES.thermal;
+  const stops = paletteStops(palette);
   const clamped = Math.max(0, Math.min(1, Number.isFinite(t) ? t : 0.5));
   const pos = clamped * (stops.length - 1);
   const i = Math.min(stops.length - 2, Math.floor(pos));
@@ -547,7 +636,7 @@ export function samplePaletteCss(palette: PaletteId, value: number, domain: [num
 }
 
 export function paletteGradientCss(palette: PaletteId, axis: "x" | "y" = "x"): string {
-  const stops = PALETTES[palette] ?? PALETTES.thermal;
+  const stops = paletteStops(palette);
   const parts = stops.map(([r, g, b], i) => `rgb(${r},${g},${b}) ${Math.round((i / (stops.length - 1)) * 100)}%`);
   return `linear-gradient(${axis === "y" ? "to top" : "to right"}, ${parts.join(", ")})`;
 }
@@ -1069,7 +1158,7 @@ export async function renderDimensionHeatmapDataUrl(
       ? `${resolvedScope.level}:${resolvedScope.id}`
       : "all-spain";
   const domainKey = colorDomain ? `${colorDomain[0]}:${colorDomain[1]}` : "year";
-  const cacheKey = `${cfg.dimension}|${cfg.year}|${cfg.mode}|${cfg.scenario}|${cfg.heatMetric}|${cfg.rainMetric}|${cfg.vegMetric}|${scopeKey}|${domainKey}`;
+  const cacheKey = `${cfg.dimension}|${cfg.year}|${cfg.mode}|${cfg.scenario}|${cfg.heatMetric}|${cfg.rainMetric}|${cfg.vegMetric}|${scopeKey}|${domainKey}|${cvdPalettes ? "cvd" : "std"}`;
   const cached = heatmapCache.get(cacheKey);
   if (cached) return cached;
 

@@ -606,7 +606,9 @@ export default function Globe(props: GlobeProps) {
       className={props.className}
       style={props.measure ? { cursor: "crosshair" } : undefined}
       tabIndex={0}
-      role="application"
+      // A described picture (WCAG 1.1.1): the label says what the map shows; every map action has a
+      // button equivalent in the panels and in "Map in words". Arrow keys still move the camera.
+      role="img"
       aria-label={
         props.ariaLabel ??
         "Interactive 3D globe. Drag to rotate, scroll or pinch to zoom, Ctrl-drag or middle-drag to tilt. Keyboard: arrow keys rotate and tilt, plus and minus zoom, N resets north."

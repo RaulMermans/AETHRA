@@ -5,6 +5,8 @@ import type { PvScreeningData } from "@/lib/globe/pv-screening";
 import { executiveCopy, type ExecTile, type ExecTone } from "@/lib/i18n/executive-copy";
 import { formatScreeningNumber } from "@/lib/i18n/screening-copy";
 import type { Locale } from "@/lib/i18n/messages";
+import { ReadAloudButton } from "@/components/a11y/ReadAloudButton";
+import { blindCopy } from "@/lib/i18n/a11y-blind-copy";
 
 const TONE: Record<ExecTone, { ring: string; number: string; dot: string }> = {
   positive: { ring: "border-emerald-400/35 bg-emerald-400/[0.06]", number: "text-emerald-100", dot: "bg-emerald-300" },
@@ -40,10 +42,13 @@ function Strip({ series, locale, label }: { series: NonNullable<ExecTile["series
 
 function Tile({ tile, index, locale, howLabel, decisionLabel, sourceLabel }: { tile: ExecTile; index: number; locale: Locale; howLabel: string; decisionLabel: string; sourceLabel: string }) {
   const tone = TONE[tile.tone];
+  const speech = [`${tile.label}.`, tile.value, tile.valueNote ?? "", `${tile.meaning}`, `${decisionLabel}: ${tile.hint}`].filter(Boolean).join(" ");
   return (
-    <li className={`rounded-lg border ${tone.ring}`}>
+    <li className={`relative rounded-lg border ${tone.ring}`}>
+      {/* Outside <summary>: a button inside it would be a nested interactive control. */}
+      <ReadAloudButton text={speech} what={blindCopy(locale).tileCard(tile.label)} className="absolute top-1.5 right-1.5 z-[1] !size-6" />
       <details className="group">
-        <summary className="focus-ring block cursor-pointer list-none rounded-lg px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+        <summary className="focus-ring block cursor-pointer list-none rounded-lg py-2.5 pr-9 pl-3 [&::-webkit-details-marker]:hidden">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.1em] text-faint uppercase">
             <span aria-hidden className="tabular-nums">{index + 1}</span>
             <span aria-hidden className={`size-1.5 rounded-full ${tone.dot}`} />

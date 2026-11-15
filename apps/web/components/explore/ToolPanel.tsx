@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale";
+import { usePanelFocus } from "@/components/a11y/usePanelFocus";
 import { Icon, type IconName } from "./Icon";
 
 /** Shared frame for map-tool panels. */
@@ -17,10 +18,12 @@ export function ToolPanel({
   children: ReactNode;
 }) {
   const { m } = useLocale();
+  const headingId = useId();
+  const { panelRef, headingRef, onKeyDown } = usePanelFocus<HTMLElement>(onClose);
   return (
-    <section aria-label={m.tools.toolAria(title)} className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden p-4">
+    <section ref={panelRef} onKeyDown={onKeyDown} aria-labelledby={headingId} className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden p-4">
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm text-ink">
+        <h2 id={headingId} ref={headingRef} tabIndex={-1} aria-label={m.tools.toolAria(title)} className="focus-ring flex items-center gap-2 rounded-sm text-sm text-ink">
           <Icon name={icon} className="size-4 text-accent" />
           {title}
         </h2>

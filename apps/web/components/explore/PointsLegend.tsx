@@ -6,6 +6,7 @@ import {
   type ActiveClimateConfig,
   type DimensionId,
 } from "@/lib/globe/climate";
+import { useColorblindMode } from "./AccessibilityMenu";
 
 const STATION_DIMS: DimensionId[] = [
   "temperature",
@@ -37,6 +38,7 @@ function metricCaption(cfg: ActiveClimateConfig): string {
 }
 
 export function PointsLegend({ config }: { config: ActiveClimateConfig }) {
+  useColorblindMode(); // re-render the swatches when the CVD palettes switch
   const dim = config.dimension;
   const stations = STATION_DIMS.includes(dim);
   const basins = dim === "water_rivers";

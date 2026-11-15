@@ -1,4 +1,5 @@
 import type { LayerDescriptor, LayerStateMap } from "../types";
+import { cvdPalettesActive } from "../climate";
 import {
   mitecoImageUrl,
   VERDICT_COLORS,
@@ -26,6 +27,31 @@ export const SCREENING_LAYER_IDS = {
   plants: "pv-solar-plants",
 };
 
+/**
+ * Colour-blind (CVD) safe colours, Okabe & Ito (2008). Used while inclusive colour-blind mode is on;
+ * meaning is always also carried by the verdict symbol ✓ ~ ✕ and text. Verified for protanopia,
+ * deuteranopia and tritanopia by tests/test_cvd_palettes.py (keep both in sync).
+ */
+export const CVD_VERDICT_COLORS = { good: "#0072B2", mixed: "#E69F00", avoid: "#D55E00" } as const;
+export const VERDICT_SYMBOLS = { good: "✓", mixed: "~", avoid: "✕", no_data: "–" } as const;
+/** MITECO classes 0 (maximum sensitivity) … 4 (low): vermillion, orange, yellow, sky blue, blue. */
+export const CVD_MITECO_COLORS = ["#D55E00", "#E69F00", "#F0E442", "#56B4E9", "#0072B2"] as const;
+
+/** Verdict colours for the current mode (`colorblind` defaults to the global inclusive-mode flag). */
+export function verdictColors(colorblind: boolean = cvdPalettesActive()): Record<"good" | "mixed" | "avoid", string> {
+  return colorblind ? { ...CVD_VERDICT_COLORS } : { ...VERDICT_COLORS };
+}
+
+/** MITECO class colour for the current mode, or null to keep the colour published in the JSON. */
+export function mitecoClassColor(value: number, colorblind: boolean = cvdPalettesActive()): string | null {
+  return colorblind ? (CVD_MITECO_COLORS[value] ?? null) : null;
+}
+
+/** CVD variant of a MITECO PNG: same bounds, file name with a `-cvd` suffix (scripts/build_miteco_cvd_png.py). */
+export function mitecoCvdFile(file: string): string {
+  return file.replace(/(\.png)$/i, "-cvd$1");
+}
+
 const CELL_FILL_ALPHA = { good: "66", mixed: "5c", avoid: "52" } as const; // hex alpha ≈ 0.40 / 0.36 / 0.32
 
 function ring(b: Bounds4): [number, number][] {
@@ -39,16 +65,21 @@ function ring(b: Bounds4): [number, number][] {
   ];
 }
 
-function cellLayer(verdict: "good" | "mixed" | "avoid", cells: PvCell[], period: [number, number]): LayerDescriptor {
-  const color = VERDICT_COLORS[verdict];
+function cellLayer(
+  verdict: "good" | "mixed" | "avoid",
+  cells: PvCell[],
+  period: [number, number],
+  colorblind: boolean,
+): LayerDescriptor {
+  const color = verdictColors(colorblind)[verdict];
   const subset = cells.filter((c) => c.verdict === verdict);
   return {
     id: `pv-cells-${verdict}`,
     kind: "geojson",
     group: "analysis",
-    title: `PV screening: ${verdict}`,
+    title: `PV screening: ${VERDICT_SYMBOLS[verdict]} ${verdict}`,
     description: `Evidence-based PV screening verdict per native MERRA-2 cell, ${period[0]}–${period[1]}. Exploratory.`,
-    cacheKey: `pv-${verdict}-${subset.length}-${subset[0]?.id ?? ""}`,
+    cacheKey: `pv-${verdict}-${subset.length}-${subset[0]?.id ?? ""}${colorblind ? "-cvd" : ""}`,
     source: { name: "AETHRA PV screening (NASA MERRA-2 + MITECO)" },
     resolution: "MERRA-2 0.5° × 0.625° cell",
     data: {
@@ -119,6 +150,7 @@ export function buildScreeningLayers(
   selectedCell: PvCell | null,
   plantDetail: (p: SolarPlant) => string,
   plantYear: number | null = null,
+  colorblind: boolean = cvdPalettesActive(),
 ): LayerDescriptor[] {
   const out: LayerDescriptor[] = [];
   const s = data.screening;
@@ -134,7 +166,7 @@ export function buildScreeningLayers(
         description: "Official environmental zoning for renewable energy (MITECO). Class 0 = maximum sensitivity (not recommended).",
         source: { name: "MITECO · Zonificación ambiental para energías renovables (fotovoltaica)" },
         resolution: "As published by MITECO (rasterised)",
-        url: mitecoImageUrl(img.file),
+        url: mitecoImageUrl(colorblind ? mitecoCvdFile(img.file) : img.file),
         science: {
           variable: "environmental_sensitivity_class",
           units: "class 0–4",
@@ -149,7 +181,11 @@ export function buildScreeningLayers(
   }
 
   if (s) {
-    out.push(cellLayer("good", s.cells, s.period), cellLayer("mixed", s.cells, s.period), cellLayer("avoid", s.cells, s.period));
+    out.push(
+      cellLayer("good", s.cells, s.period, colorblind),
+      cellLayer("mixed", s.cells, s.period, colorblind),
+      cellLayer("avoid", s.cells, s.period, colorblind),
+    );
     if (selectedCell) {
       out.push({
         id: SCREENING_LAYER_IDS.selected,

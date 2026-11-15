@@ -1,0 +1,63 @@
+WEBVTT
+Kind: descriptions
+Language: en
+
+NOTE
+Captions / audio description for judge-path-run1-1440x900.webm (49.96 s, 800x500 VP9, recorded by
+Playwright on 2026-11-15). The video has NO audio track (verified with ffprobe: one video stream,
+no audio stream), so there is no speech to transcribe. These cues describe what is SHOWN on screen,
+for blind, low-vision, deaf and hard-of-hearing viewers. Numbers are the values displayed by the app
+(source: apps/web/public/data/evidence-cards.json, NASA POWER and NASA MERRA-2). Timings are
+approximate (frames sampled every 2.5 s). Full text: judge-path-run1-1440x900.transcript.md
+
+1
+00:00:00.000 --> 00:00:04.000
+[No audio] AETHRA opens on /explore. Dark screen with a spinner: "Preparing Spain…". Left: map controls (Temperature, year 2025).
+
+2
+00:00:04.000 --> 00:00:08.000
+The 3D globe appears with weather-station dots. The "Study findings" panel opens on the right.
+
+3
+00:00:08.000 --> 00:00:13.000
+Research question: "Are days when solar and wind resources are both low becoming more frequent in Spain (2001–2025)?"
+
+4
+00:00:13.000 --> 00:00:18.000
+Answer: Insufficient evidence (5/5 regions). No detectable trend in joint low-resource days. Not generation.
+
+5
+00:00:18.000 --> 00:00:20.000
+Contrast: air temperature, NASA MERRA-2 — Supported increase, +0.60 °C per decade (95% CI +0.31 to +0.87), 2000–2025.
+
+6
+00:00:20.000 --> 00:00:24.000
+The user selects Castilla y León. "Research cases" panel: case study 003, verdict "Insufficient evidence".
+
+7
+00:00:24.000 --> 00:00:31.000
+The camera flies to Castilla y León, outlined in yellow. Chart: joint-low days per year, 2001–2025, with a dashed Theil–Sen trend line that stays flat.
+
+8
+00:00:31.000 --> 00:00:34.000
+Context: about 43% as many joint-low days as independence would suggest. 652 registered plants are context only, not NASA evidence.
+
+9
+00:00:34.000 --> 00:00:39.000
+EvidenceCard opens: Castilla y León, solar + wind joint lows. ±0.00 days per decade, 95% CI −1.55 to +1.67. Insufficient evidence.
+
+10
+00:00:39.000 --> 00:00:44.000
+The card explains What, Where, When and Evidence, and warns: "Do not conclude: not electricity generation, not grid reliability, not site suitability, not a forecast." Sources & provenance are expanded.
+
+11
+00:00:44.000 --> 00:00:47.000
+Panel closed. The globe shows Castilla y León. Hint: "Drag to orbit · Scroll to zoom · Click a station".
+
+12
+00:00:47.000 --> 00:00:49.000
+"This place": Castilla y León air temperature — Supported increase, +0.61 °C per decade, 2000–2025. 2025: 12.3 °C observed.
+
+13
+00:00:49.000 --> 00:00:50.000
+The view returns to "Study findings". End of recording. [No audio]

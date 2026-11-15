@@ -135,3 +135,57 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Inclusive mode · colour-blind safe colours (html[data-a11y-colorblind="on"], see lib/a11y).
+   Map palettes switch in JS (climate.ts CVD_PALETTES, screening-layers.ts CVD_* colours). The rules
+   below are a fallback for UI swatches that inline the default verdict colours (#22c55e / #f59e0b /
+   #ef4444, serialised by the browser as rgba(34, 197, 94 …)): they are repainted with the Okabe–Ito
+   blue / orange / vermillion used on the map, so panel legends and map always agree. Meaning is
+   still carried by the ✓ ~ ✕ symbols and text.
+   --------------------------------------------------------------------------------------------- */
+/* verdict good: solid swatch (alpha cc) and tinted card (alpha 1f) */
+html[data-a11y-colorblind="on"] [style*="rgba(34, 197, 94, 0.8)"] {
+  background-color: rgb(0 114 178 / 0.85) !important;
+  box-shadow: inset 0 0 0 1px #0072b2 !important;
+  color: #fff !important;
+}
+html[data-a11y-colorblind="on"] [style*="rgba(34, 197, 94, 0.12)"] {
+  background-color: rgb(0 114 178 / 0.14) !important;
+  box-shadow: inset 0 0 0 1px rgb(0 114 178 / 0.55) !important;
+}
+/* verdict mixed: solid swatch (alpha cc) and tinted card (alpha 1f) */
+html[data-a11y-colorblind="on"] [style*="rgba(245, 158, 11, 0.8)"] {
+  background-color: rgb(230 159 0 / 0.85) !important;
+  box-shadow: inset 0 0 0 1px #e69f00 !important;
+  color: #000 !important;
+}
+html[data-a11y-colorblind="on"] [style*="rgba(245, 158, 11, 0.12)"] {
+  background-color: rgb(230 159 0 / 0.14) !important;
+  box-shadow: inset 0 0 0 1px rgb(230 159 0 / 0.55) !important;
+}
+/* verdict avoid: solid swatch (alpha cc) and tinted card (alpha 1f) */
+html[data-a11y-colorblind="on"] [style*="rgba(239, 68, 68, 0.8)"] {
+  background-color: rgb(213 94 0 / 0.85) !important;
+  box-shadow: inset 0 0 0 1px #d55e00 !important;
+  color: #000 !important;
+}
+html[data-a11y-colorblind="on"] [style*="rgba(239, 68, 68, 0.12)"] {
+  background-color: rgb(213 94 0 / 0.14) !important;
+  box-shadow: inset 0 0 0 1px rgb(213 94 0 / 0.55) !important;
+}
+/* MITECO class swatches (JSON + fallback colours) -> CVD_MITECO_COLORS, same as the -cvd PNG overlay */
+html[data-a11y-colorblind="on"] [style*="background: rgb(215, 48, 31)"] { background: #d55e00 !important; } /* class 0 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(215, 25, 28)"] { background: #d55e00 !important; } /* class 0 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(252, 141, 89)"] { background: #e69f00 !important; } /* class 1 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(253, 141, 60)"] { background: #e69f00 !important; } /* class 1 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(254, 224, 139)"] { background: #f0e442 !important; } /* class 2 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(254, 204, 92)"] { background: #f0e442 !important; } /* class 2 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(166, 217, 106)"] { background: #56b4e9 !important; } /* class 3 */
+html[data-a11y-colorblind="on"] [style*="background: rgb(26, 150, 65)"] { background: #0072b2 !important; } /* class 4 */
+/* Stronger, colour-independent focus indicator (thick + offset, not hue-only). */
+html[data-a11y-colorblind="on"] .focus-ring:focus-visible {
+  outline: 3px solid #f5f1e9;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #03050a;
+}

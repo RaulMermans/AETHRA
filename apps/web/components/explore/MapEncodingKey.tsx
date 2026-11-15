@@ -7,7 +7,9 @@
  */
 
 import { gridHasFdrLabels, mapEncodingFor, type ActiveClimateConfig, type ClimateBundle } from "@/lib/globe/climate";
+import { a11yCopy } from "@/lib/i18n/a11y-copy";
 import { useLocale } from "@/lib/i18n/locale";
+import { useColorblindMode } from "./AccessibilityMenu";
 
 function Swatch({ kind }: { kind: "dotted" | "plain" | "hatched" | "grey-box" | "filled" | "ring" | "insufficient" }) {
   switch (kind) {
@@ -62,7 +64,8 @@ export function MapEncodingKey({
   mapVisible: boolean;
   stationsVisible: boolean;
 }) {
-  const { m } = useLocale();
+  const { m, locale } = useLocale();
+  const colorblind = useColorblindMode();
   if (!bundle) return null;
   const k = m.mapKey;
   const encoding = mapEncodingFor(config.dimension);
@@ -121,7 +124,8 @@ export function MapEncodingKey({
     );
   }
 
-  if (rows.length === 0 && notes.length === 0) return null;
+  if (rows.length === 0 && notes.length === 0 && !colorblind) return null;
+  const cvd = a11yCopy(locale);
 
   return (
     <aside className="panel pointer-events-auto max-w-[17rem] px-2.5 py-2" aria-label={k.aria}>
@@ -137,6 +141,26 @@ export function MapEncodingKey({
             <Item key={r.text} swatch={r.swatch} text={r.text} />
           ))}
         </ul>
+      )}
+      {colorblind && (
+        <div className="mt-1.5 border-t border-line pt-1.5" data-testid="cvd-map-key">
+          <p className="text-[9px] tracking-[0.16em] text-faint uppercase">◐ {cvd.cvdLegendTitle}</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-ink">
+            {trend ? (
+              <>
+                <span aria-hidden>▼ </span>
+                {cvd.divergingNote}
+                <span aria-hidden> ▲</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden>▁▃▅▇ </span>
+                {cvd.sequentialNote}
+              </>
+            )}
+          </p>
+          <p className="mt-0.5 text-[9.5px] leading-snug text-faint">{cvd.cvdLegendNote}</p>
+        </div>
       )}
     </aside>
   );

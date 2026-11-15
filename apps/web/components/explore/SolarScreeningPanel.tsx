@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale";
+import { ReadAloudButton } from "@/components/a11y/ReadAloudButton";
+import { usePanelFocus } from "@/components/a11y/usePanelFocus";
+import { blindCopy } from "@/lib/i18n/a11y-blind-copy";
 import { ExecutiveSummary } from "./ExecutiveSummary";
 import { formatScreeningNumber, screeningCopy, type Bullet } from "@/lib/i18n/screening-copy";
 import { plantsUpToYear, screeningPlants, type ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
@@ -26,6 +29,9 @@ export function SunGlyph({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+/** Heading of the open zone card: focused when a zone is chosen from "Map in words". */
+export const ZONE_CARD_HEADING_ID = "solar-zone-card-heading";
 
 const VERDICT_MARK: Record<PvVerdict, string> = { good: "✓", mixed: "~", avoid: "✕", no_data: "–" };
 
@@ -96,6 +102,7 @@ export function SolarScreeningPanel({
   onClearSelection,
   onSelectFeatured,
   onClose,
+  selectedCellName,
 }: {
   data: PvScreeningData | null;
   loading: boolean;
@@ -108,9 +115,18 @@ export function SolarScreeningPanel({
   onClearSelection: () => void;
   onSelectFeatured: (cellId: string) => void;
   onClose: () => void;
+  /** Plain-language place of the selected zone (province), read aloud with its card. */
+  selectedCellName?: string | null;
 }) {
   const { locale } = useLocale();
   const t = screeningCopy(locale);
+  const headingId = useId();
+  const { panelRef, headingRef, onKeyDown } = usePanelFocus<HTMLElement>(onClose);
+  // "Back to summary" removes the card that held focus: keep keyboard users in the panel.
+  const backToSummary = () => {
+    onClearSelection();
+    window.setTimeout(() => headingRef.current?.focus({ preventScroll: true }), 0);
+  };
   const s = data?.screening ?? null;
   const featuredCase = s?.featured_case;
   const featuredCell = s?.cells.find((cell) => cell.id === featuredCase?.cell_id);
@@ -119,12 +135,15 @@ export function SolarScreeningPanel({
 
   return (
     <section
-      aria-label={t.title}
+      ref={panelRef}
+      aria-labelledby={headingId}
+      onKeyDown={onKeyDown}
+      data-testid="solar-panel"
       className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden p-4"
     >
       <div className="flex shrink-0 items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-sm text-ink">
+          <h2 id={headingId} ref={headingRef} tabIndex={-1} className="focus-ring flex items-center gap-2 rounded-sm text-sm text-ink">
             <SunGlyph className="size-4 text-amber-300" />
             {t.title}
           </h2>
@@ -163,9 +182,9 @@ export function SolarScreeningPanel({
             <p className="mt-1 text-[11px] leading-snug text-faint">{t.notAvailableHint}</p>
           </div>
         ) : selectedPlant ? (
-          <PlantCard plant={selectedPlant} t={t} mitecoColor={mitecoColor} onBack={onClearSelection} />
+          <PlantCard plant={selectedPlant} t={t} mitecoColor={mitecoColor} onBack={backToSummary} />
         ) : selectedCell && s ? (
-          <CellCard cell={selectedCell} pvCase={data?.sevillaCase ?? null} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
+          <CellCard cell={selectedCell} pvCase={data?.sevillaCase ?? null} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={backToSummary} zoneName={selectedCellName ?? null} />
         ) : s ? (
           <div className="space-y-1.5 text-[13px] leading-snug text-ink">
             {data && <ExecutiveSummary data={data} locale={locale} />}
@@ -477,6 +496,7 @@ function CellCard({
   method,
   sources,
   onBack,
+  zoneName,
 }: {
   cell: PvCell;
   pvCase: PvCaseFile | null;
@@ -488,8 +508,17 @@ function CellCard({
   method?: string;
   sources: { id: string; label: string; doi?: string; url?: string }[];
   onBack: () => void;
+  zoneName: string | null;
 }) {
   const v = cell.verdict;
+  const b = blindCopy(locale);
+  const speech = () =>
+    [
+      t.verdictSentence[v],
+      zoneName ?? t.cellLabel(cell),
+      ...(v !== "no_data" ? t.bullets(cell).map((x) => x.text) : []),
+      `${t.meansHeading}: ${t.means[v]}`,
+    ].join(" ");
   const color = v === "no_data" ? "#64748b" : VERDICT_COLORS[v];
   return (
     <article aria-live="polite">
@@ -497,8 +526,12 @@ function CellCard({
       <div className="rounded-lg p-3" style={{ background: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}66` }}>
         <div className="flex items-center gap-2">
           <VerdictSwatch verdict={v} size="size-5" />
-          <p className="text-[15px] font-medium text-ink">{t.verdictSentence[v]}</p>
+          <h3 id={ZONE_CARD_HEADING_ID} tabIndex={-1} className="focus-ring min-w-0 flex-1 rounded-sm text-[15px] font-medium text-ink">
+            {t.verdictSentence[v]}
+          </h3>
+          <ReadAloudButton text={speech} what={b.zoneCard} />
         </div>
+        {zoneName && <p className="mt-1 text-[12px] text-ink">{zoneName}</p>}
         <p className="mt-1 text-[10px] text-faint">{t.cellLabel(cell)}</p>
       </div>
 

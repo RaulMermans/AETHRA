@@ -5,6 +5,7 @@ import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import { ILLUSTRATIVE_TURBINE_HEIGHT_M } from "@/lib/globe/cesium/illustrative-model";
 import { ENERGY_RESEARCH_CASES, type EnergyResearchCase } from "@/lib/globe/energy-research-cases";
 import { useLocale } from "@/lib/i18n/locale";
+import { usePanelFocus } from "@/components/a11y/usePanelFocus";
 import type { Locale, Messages } from "@/lib/i18n/messages";
 import {
   caseNarrative,
@@ -103,6 +104,7 @@ export function EnergyCasePanel({
 }) {
   const { locale, m } = useLocale();
   const c = m.casePanel;
+  const casePanel = usePanelFocus<HTMLElement>(onClose);
   const story = caseNarrative(study, locale);
   const t = study.primary;
   const cmp = study.complementarityPrimary;
@@ -135,11 +137,13 @@ export function EnergyCasePanel({
 
   return (
     <section
+      ref={casePanel.panelRef}
+      onKeyDown={casePanel.onKeyDown}
       aria-label={c.aria}
       className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-y-auto p-4"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-mono text-[12px] tracking-[0.16em] text-nav uppercase">{c.title}</h2>
+        <h2 ref={casePanel.headingRef} tabIndex={-1} className="focus-ring rounded-sm font-mono text-[12px] tracking-[0.16em] text-nav uppercase">{c.title}</h2>
         <button
           type="button"
           onClick={onClose}

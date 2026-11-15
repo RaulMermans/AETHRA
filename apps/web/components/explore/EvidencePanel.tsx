@@ -2,6 +2,7 @@
 
 import { formatDegrees } from "@/lib/format";
 import { useLocale } from "@/lib/i18n/locale";
+import { usePanelFocus } from "@/components/a11y/usePanelFocus";
 import type { Messages } from "@/lib/i18n/messages";
 import { type ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import {
@@ -292,6 +293,7 @@ export function EvidencePanel({
   onOpenStationCatalog,
 }: EvidencePanelProps) {
   const { m } = useLocale();
+  const { panelRef, headingRef, onKeyDown } = usePanelFocus<HTMLElement>(onClose);
   if (!open) return null;
 
   const evidence = bundle ? queryClimateAtLocation(bundle, config, selected, resolvedScope) : null;
@@ -308,6 +310,8 @@ export function EvidencePanel({
   return (
     <aside
       id="evidence-panel"
+      ref={panelRef}
+      onKeyDown={onKeyDown}
       aria-label={m.evidence.aria}
       className="panel pointer-events-auto flex h-full max-h-full w-full flex-col overflow-hidden"
     >
@@ -316,7 +320,7 @@ export function EvidencePanel({
           <p className="text-[12px] font-medium tracking-[0.14em] text-muted uppercase">
             {(evidence ? m.dimensions[evidence.dimensionMeta.id].short : m.evidence.trend)} · {levelLabel}
           </p>
-          <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-ink">
+          <h2 ref={headingRef} tabIndex={-1} className="focus-ring mt-0.5 truncate rounded-sm text-lg font-semibold tracking-tight text-ink">
             {evidence ? placeLabel(evidence.locationLabel, m) : m.evidence.spain}
           </h2>
           <p className="truncate text-[14px] text-muted">

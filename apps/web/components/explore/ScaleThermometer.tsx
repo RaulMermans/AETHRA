@@ -1,6 +1,7 @@
 "use client";
 
 import { paletteGradientCss, type PaletteId } from "@/lib/globe/climate";
+import { useColorblindMode } from "./AccessibilityMenu";
 
 function tickLabel(n: number, decimals?: number): string {
   const d = decimals ?? (Math.abs(n) >= 10 ? 0 : 1);
@@ -30,6 +31,8 @@ export function ScaleThermometer({
   height?: number;
   thin?: boolean;
 }) {
+  // Subscribing re-renders the gradient as soon as colour-blind mode toggles (palette tables are global).
+  const colorblind = useColorblindMode();
   const [lo, hi] = domain;
   const span = hi - lo || 1;
   const t = value === undefined ? undefined : clamp01((value - lo) / span);
@@ -73,6 +76,7 @@ export function ScaleThermometer({
                 : "relative mx-auto h-full w-3.5 overflow-hidden rounded-full border border-white/30 bg-white/10"
             }
             role="img"
+            data-palette={colorblind ? "cvd" : "default"}
             aria-label={`${label ?? "Scale"} ${tickLabel(lo)} to ${tickLabel(hi)} ${units}${
               value !== undefined ? `, ${tickLabel(value, 1)} ${units}` : ""
             }`}

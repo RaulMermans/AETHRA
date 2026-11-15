@@ -6,6 +6,7 @@
  */
 
 import { useLocale } from "@/lib/i18n/locale";
+import { useColorblindMode } from "./AccessibilityMenu";
 
 export function MapMarkerLegend({
   stationsVisible,
@@ -15,6 +16,9 @@ export function MapMarkerLegend({
   energyVisible: boolean;
 }) {
   const { m } = useLocale();
+  // Markers already differ by shape; in colour-blind mode the shape is also written next to the name.
+  const colorblind = useColorblindMode();
+  const glyph = (g: string) => (colorblind ? <span aria-hidden className="mr-1 text-faint">{g}</span> : null);
   if (!stationsVisible && !energyVisible) return null;
 
   return (
@@ -25,7 +29,7 @@ export function MapMarkerLegend({
           <li className="flex items-start gap-2">
             <span className="mt-0.5 size-2.5 shrink-0 rounded-full bg-sky-300 ring-1 ring-white/70" aria-hidden />
             <span>
-              <span className="font-medium">{m.legend.station}</span>
+              <span className="font-medium">{glyph("●")}{m.legend.station}</span>
               <span className="block text-[10px] leading-snug text-muted">{m.legend.stationHint}</span>
             </span>
           </li>
@@ -38,21 +42,21 @@ export function MapMarkerLegend({
                 aria-hidden
               />
               <span>
-                <span className="font-medium">{m.legend.wind}</span>
+                <span className="font-medium">{glyph("▲")}{m.legend.wind}</span>
                 <span className="block text-[10px] leading-snug text-muted">{m.legend.windHint}</span>
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 size-2.5 shrink-0 rounded-[3px] bg-amber-400 ring-1 ring-black/40" aria-hidden />
               <span>
-                <span className="font-medium">{m.legend.solar}</span>
+                <span className="font-medium">{glyph("■")}{m.legend.solar}</span>
                 <span className="block text-[10px] leading-snug text-muted">{m.legend.solarHint}</span>
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 size-2.5 shrink-0 rounded-full border border-dashed border-sky-400/70" aria-hidden />
               <span>
-                <span className="font-medium text-muted">{m.legend.hydro}</span>
+                <span className="font-medium text-muted">{glyph("◌")}{m.legend.hydro}</span>
                 <span className="block text-[10px] leading-snug text-muted">{m.legend.hydroHint}</span>
               </span>
             </li>

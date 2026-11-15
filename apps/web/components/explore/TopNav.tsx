@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { useLocale } from "@/lib/i18n/locale";
 import type { Locale } from "@/lib/i18n/messages";
+import { AccessibilityMenu } from "./AccessibilityMenu";
 import { BrandStoryDialog } from "./BrandStoryDialog";
 
 export function TopNav({ center }: { center?: ReactNode }) {
@@ -15,7 +16,7 @@ export function TopNav({ center }: { center?: ReactNode }) {
       <button
         type="button"
         aria-pressed={active}
-        aria-label={name}
+        aria-label={`${label} · ${name}`}
         lang={id}
         onClick={() => setLocale(id)}
         className={`focus-ring rounded-md px-2 py-1 text-[11px] font-medium tracking-wide ${
@@ -41,13 +42,16 @@ export function TopNav({ center }: { center?: ReactNode }) {
           <BrandWordmark />
         </button>
         <div className="pointer-events-auto justify-self-center">{center}</div>
-        <div
-          role="group"
-          aria-label={m.lang.group}
-          className="pointer-events-auto flex shrink-0 justify-self-end rounded-md border border-line bg-atlantic/70 p-0.5 backdrop-blur-md"
-        >
-          {option("es", "ES", "Español")}
-          {option("en", "EN", "English")}
+        <div className="pointer-events-auto flex shrink-0 items-center gap-1.5 justify-self-end">
+          <AccessibilityMenu />
+          <div
+            role="group"
+            aria-label={m.lang.group}
+            className="flex shrink-0 rounded-md border border-line bg-atlantic/70 p-0.5 backdrop-blur-md"
+          >
+            {option("es", "ES", "Español")}
+            {option("en", "EN", "English")}
+          </div>
         </div>
       </header>
       <BrandStoryDialog open={storyOpen} onClose={() => setStoryOpen(false)} />

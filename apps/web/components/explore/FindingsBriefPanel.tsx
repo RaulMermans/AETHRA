@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { ReadAloudButton } from "@/components/a11y/ReadAloudButton";
+import { usePanelFocus } from "@/components/a11y/usePanelFocus";
+import { blindCopy } from "@/lib/i18n/a11y-blind-copy";
 import { cardById, parseEvidenceCatalog, type EvidenceCard } from "@/lib/agent/cards";
 import { PV_SCREENING_URL, type PvScreeningFile, type PvSummary } from "@/lib/globe/pv-screening";
 import { useLocale } from "@/lib/i18n/locale";
@@ -32,10 +35,13 @@ function VerdictBadge({ verdict, label }: { verdict: Verdict; label: string }) {
   );
 }
 
-function Finding({ question, answer, badge, means, meansLabel, className }: { question: string; answer: ReactNode; badge: ReactNode; means: string; meansLabel: string; className: string }) {
+function Finding({ question, answer, badge, means, meansLabel, className, readWhat }: { question: string; answer: string; badge: ReactNode; means: string; meansLabel: string; className: string; readWhat: string }) {
   return (
     <article className={`rounded-md border p-2.5 ${className}`}>
-      <p className="text-[14px] leading-snug font-medium text-ink">{question}</p>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-[14px] leading-snug font-medium text-ink">{question}</h3>
+        <ReadAloudButton text={`${question} ${answer} ${meansLabel}: ${means}`} what={readWhat} />
+      </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
         {badge}
         <p className="text-[14px] leading-snug text-ink">{answer}</p>
@@ -130,6 +136,9 @@ export function FindingsBriefPanel({
   const { locale, m } = useLocale();
   const f = m.findings;
   const c = pvCopy(locale);
+  const b = blindCopy(locale);
+  const headingId = useId();
+  const { panelRef, headingRef, onKeyDown } = usePanelFocus<HTMLElement>(onClose);
 
   useEffect(() => {
     let active = true;
@@ -199,9 +208,17 @@ export function FindingsBriefPanel({
   const whereReady = pv && pv.operating_mw_in_good_pct !== undefined;
 
   return (
-    <section aria-label={c.aria} className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden">
+    <section
+      ref={panelRef}
+      aria-labelledby={headingId}
+      onKeyDown={onKeyDown}
+      data-testid="findings-panel"
+      className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden"
+    >
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1">
-        <h2 className="text-[14px] font-medium tracking-wide text-ink">{c.title}</h2>
+        <h2 id={headingId} ref={headingRef} tabIndex={-1} className="focus-ring rounded-sm text-[14px] font-medium tracking-wide text-ink">
+          {c.title}
+        </h2>
         <button
           type="button"
           onClick={onClose}
@@ -234,6 +251,7 @@ export function FindingsBriefPanel({
         {whereReady && (
           <Finding
             question={c.qWhere}
+            readWhat={b.findingsCard(c.qWhere)}
             answer={c.aWhere(pv.cells_good, dec(String(pv.operating_mw_in_good_pct)))}
             badge={<VerdictBadge verdict="where" label={c.where} />}
             means={c.mWhere}
@@ -245,6 +263,7 @@ export function FindingsBriefPanel({
         {sunReady && (
           <Finding
             question={c.qSun}
+            readWhat={b.findingsCard(c.qSun)}
             answer={c.aSun(tested, signed(pv.irr_trend_pct_decade_median ?? 0))}
             badge={<VerdictBadge verdict={sunStable ? "stable" : "supported"} label={sunStable ? c.stable : c.supported} />}
             means={c.mSun}
@@ -256,6 +275,7 @@ export function FindingsBriefPanel({
         {heatReady && (
           <Finding
             question={c.qHeat}
+            readWhat={b.findingsCard(c.qHeat)}
             answer={c.aHeat(pv.t_cells_significant_up ?? 0, tested, signed(pv.t_trend_c_decade_median ?? 0), signed(pv.heat_penalty_pct_decade_median ?? 0))}
             badge={<VerdictBadge verdict="supported" label={c.supported} />}
             means={c.mHeat}
@@ -267,6 +287,7 @@ export function FindingsBriefPanel({
         {temp && temp.outcome === "supported_increase" && (
           <Finding
             question={c.qWarm}
+            readWhat={b.findingsCard(c.qWarm)}
             answer={c.aWarm(signed(temp.how_much.slope_per_decade, 1))}
             badge={<VerdictBadge verdict="supported" label={c.supported} />}
             means={c.mWarm}
