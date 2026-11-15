@@ -134,6 +134,35 @@ export const DETAIL_BASE_IMAGERY = {
 
 export function buildLayerCatalog(): LayerDescriptor[] {
   return [
+    ...([
+      ["ign-rivers", "Rivers", "HY.Network", "Official Spanish hydrographic network; cartographic context, not river-discharge measurements."],
+      ["ign-waterbodies", "Lakes and reservoirs", "HY.PhysicalWaters.Waterbodies", "Official Spanish water-body map; polygon area is not current water storage."],
+      ["ign-catchments", "Watersheds", "HY.PhysicalWaters.Catchments", "Official Spanish catchment map; boundaries are geographic context, not an analysed basin result."],
+    ] as const).map(([id, title, layers, description]) => ({
+      id,
+      kind: "wms" as const,
+      group: "reference" as const,
+      title,
+      description,
+      source: { name: "Instituto Geográfico Nacional (Spain)", url: "https://www.ign.es/web/seccion-hidrografia", product: layers },
+      url: "https://servicios.idee.es/wms-inspire/hidrografia",
+      layers,
+      bounds: { west: -18.5, south: 27, east: 5, north: 44.5 },
+      credit: "Hydrography © Instituto Geográfico Nacional (Spain) · WMS INSPIRE",
+    })),
+    {
+      id: "nasa-modis-truecolor",
+      kind: "wms",
+      group: "reference",
+      title: "MODIS Terra true color",
+      description: "NASA GIBS satellite visualization for 1 August 2024. Imagery only; it is not a trend result.",
+      source: { name: "NASA GIBS", product: "MODIS_Terra_CorrectedReflectance_TrueColor", url: "https://nasa-gibs.github.io/gibs-api-docs/" },
+      url: "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi",
+      layers: "MODIS_Terra_CorrectedReflectance_TrueColor",
+      bounds: { west: -180, south: -85, east: 180, north: 85 },
+      time: { default: "2024-08-01", step: "P1D", locked: true },
+      credit: "MODIS Terra true color · 2024-08-01 · NASA GIBS",
+    },
     {
       id: "spain-boundary",
       kind: "geojson",
@@ -158,8 +187,8 @@ export function initialLayerStates(layers: LayerDescriptor[]): LayerStateMap {
       l.id,
       {
         visible: l.id === "spain-boundary",
-        opacity: l.kind === "imagery" ? 0.9 : 1,
-        time: l.kind === "imagery" ? l.time?.default : undefined,
+        opacity: l.kind === "wms" ? 0.7 : l.kind === "imagery" ? 0.9 : 1,
+        time: l.kind === "imagery" || l.kind === "wms" ? l.time?.default : undefined,
       },
     ]),
   );

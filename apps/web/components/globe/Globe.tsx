@@ -58,6 +58,7 @@ export interface GlobeProps {
   onOverlayHover?: (feature: OverlayFeature | null) => void;
   onSelect?: (coordinate: GeoCoordinate | null) => void;
   onStatus?: (status: GlobeStatus) => void;
+  onLayerError?: (layerId: string, message: string) => void;
   onReady?: (controller: GlobeController | null) => void;
   /** Element that receives imagery/terrain attribution. */
   creditContainer?: HTMLElement | null;
@@ -420,9 +421,10 @@ export default function Globe(props: GlobeProps) {
         });
       });
 
-      layers = new CesiumLayerManager(Cesium, v, (id, err) =>
-        console.warn(`[globe] layer "${id}" failed`, err),
-      );
+      layers = new CesiumLayerManager(Cesium, v, (id, err) => {
+        console.warn(`[globe] layer "${id}" failed`, err);
+        propsRef.current.onLayerError?.(id, err instanceof Error ? err.message : String(err));
+      });
       const measureSource = new Cesium.CustomDataSource("measure");
       const illustrativeSource = new Cesium.CustomDataSource("illustrative-infra");
       void v.dataSources.add(measureSource);

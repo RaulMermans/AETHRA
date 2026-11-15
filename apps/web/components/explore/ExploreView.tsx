@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
+import { EarthLayersPanel } from "@/components/explore/EarthLayersPanel";
 import {
   DEFAULT_ADMIN_SCOPE,
   loadAdminBundle,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/globe/admin-scope";
 import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
 import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
+import { IGN_HYDRO_LAYERS, queryIgnHydroFeature, type IgnHydroFeature } from "@/lib/globe/ign-hydro";
 import type { IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
 import {
   DESTINATIONS,
@@ -153,6 +155,12 @@ export function ExploreView() {
   }));
   const mapLayerVisible = layerStates["climate-heatmap"]?.visible ?? true;
   const stationsLayerVisible = layerStates["climate-overlay"]?.visible ?? true;
+  const [selectedHydro, setSelectedHydro] = useState<IgnHydroFeature | null>(null);
+  const [hydroSelectionStatus, setHydroSelectionStatus] = useState<"idle" | "loading" | "empty" | "error">("idle");
+  const [layerErrors, setLayerErrors] = useState<Record<string, string>>({});
+  const hydroRequest = useRef<AbortController | null>(null);
+  const lastHydroClick = useRef("");
+  useEffect(() => () => hydroRequest.current?.abort(), []);
   const [hover, setHover] = useState<GeoCoordinate | null>(null);
   const [stationPreview, setStationPreview] = useState<PreviewPoint[]>([]);
   const [overlayHover, setOverlayHover] = useState<OverlayFeature | null>(null);
@@ -731,7 +739,18 @@ export function ExploreView() {
     [infraFile, selectedInstallationId],
   );
   const globeLayers = useMemo<LayerDescriptor[]>(() => {
-    if (!infraFile || !energyLayerOn) return allLayers;
+    const hydrologySelection: LayerDescriptor[] = selectedHydro ? [{
+      id: "ign-selected-feature",
+      kind: "geojson",
+      group: "reference",
+      title: "Selected IGN feature",
+      description: "Selected source geometry for geographic context only.",
+      cacheKey: `${selectedHydro.layerId}:${selectedHydro.id}`,
+      source: { name: "Instituto Geográfico Nacional (Spain)", url: "https://www.ign.es/web/seccion-hidrografia" },
+      data: { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: selectedHydro.geometry }] },
+      style: { stroke: "#67e8f9", fill: "#67e8f933", strokeWidth: 4 },
+    }] : [];
+    if (!infraFile || !energyLayerOn) return [...allLayers, ...hydrologySelection];
     const infraLayer: LayerDescriptor = {
       id: "energy-infrastructure",
       kind: "point-values",
@@ -755,8 +774,8 @@ export function ExploreView() {
         missingData: { policy: "hide" },
       },
     };
-    return [...allLayers, infraLayer];
-  }, [allLayers, infraFile, energyLayerOn, selectedInstallation]);
+    return [...allLayers, infraLayer, ...hydrologySelection];
+  }, [allLayers, infraFile, energyLayerOn, selectedInstallation, selectedHydro]);
   const globeLayerStates = useMemo<LayerStateMap>(() => {
     const heat = layerStates["climate-heatmap"] ?? { visible: true, opacity: 0.62 };
     const blending = Boolean(urlB) && playing;
@@ -773,8 +792,9 @@ export function ExploreView() {
         opacity: opacityB,
       },
       "energy-infrastructure": { visible: energyLayerOn, opacity: 1 },
+      "ign-selected-feature": { visible: selectedHydro !== null, opacity: 1 },
     };
-  }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA]);
+  }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA, selectedHydro]);
 
   // --- Relationship maps tool (D74): while open, the globe shows the chosen relationship ------
   // Judge mode (D75): unreachable even if state is set some other way, not just hidden in the toolbar.
@@ -991,6 +1011,40 @@ export function ExploreView() {
 
   const handleSelectLocation = useCallback(
     (coord: GeoCoordinate | null) => {
+      if (coord) {
+        const clickKey = `${coord.longitude.toFixed(6)},${coord.latitude.toFixed(6)}`;
+        if (lastHydroClick.current !== clickKey) {
+          lastHydroClick.current = clickKey;
+          hydroRequest.current?.abort();
+          const visibleLayers = IGN_HYDRO_LAYERS.filter((id) => layerStates[id]?.visible);
+          setSelectedHydro(null);
+          setHydroSelectionStatus(visibleLayers.length ? "loading" : "idle");
+          if (visibleLayers.length) {
+            const request = new AbortController();
+            hydroRequest.current = request;
+            void (async () => {
+              try {
+                for (const id of visibleLayers) {
+                  const feature = await queryIgnHydroFeature(coord, id, request.signal);
+                  if (feature) {
+                    if (!request.signal.aborted) {
+                      setSelectedHydro(feature);
+                      setHydroSelectionStatus("idle");
+                    }
+                    return;
+                  }
+                }
+                if (!request.signal.aborted) setHydroSelectionStatus("empty");
+              } catch (error) {
+                if (!request.signal.aborted) {
+                  console.warn("IGN feature lookup failed", error);
+                  setHydroSelectionStatus("error");
+                }
+              }
+            })();
+          }
+        }
+      }
       // A click on an installation marker selects the installation (exact marker coordinates).
       if (coord && infraOpen && infraFile) {
         const hit = infraFile.installations.find(
@@ -1024,7 +1078,7 @@ export function ExploreView() {
         }
       }
     },
-    [workspaceMode, evaluatedEnergySites, infraOpen, infraFile, selectedInstallationId, selectInstallation],
+    [workspaceMode, evaluatedEnergySites, infraOpen, infraFile, selectedInstallationId, selectInstallation, layerStates],
   );
 
   const inspectStation = useCallback(
@@ -1101,6 +1155,8 @@ export function ExploreView() {
 
   const updateLayer = useCallback((id: string, patch: Partial<LayerState>) => {
     setLayerStates((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+    if (patch.visible === true) setLayerErrors((prev) => ({ ...prev, [id]: "" }));
+    if (patch.visible === false) setSelectedHydro((feature) => feature?.layerId === id ? null : feature);
   }, []);
 
   const ready = status?.phase === "ready";
@@ -1123,6 +1179,7 @@ export function ExploreView() {
           onOverlayHover={setOverlayHover}
           onSelect={handleSelectLocation}
           onStatus={setStatus}
+          onLayerError={(id, message) => setLayerErrors((prev) => ({ ...prev, [id]: message }))}
           onReady={setController}
           creditContainer={creditEl}
           illustrativeAsset={illustrativeAsset}
@@ -1172,6 +1229,8 @@ export function ExploreView() {
           />
         }
       />
+
+      <EarthLayersPanel layers={baseLayers} states={layerStates} onChange={updateLayer} selectedFeature={selectedHydro} selectionStatus={hydroSelectionStatus} errors={layerErrors} />
 
       <div
         className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-9rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 ${
