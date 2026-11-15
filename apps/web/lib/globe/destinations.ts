@@ -250,9 +250,12 @@ export function destinationById(id: string): GeographicDestination | undefined {
   return DESTINATIONS.find((d) => d.id === id);
 }
 
-/** Judge mode: landmarks + research cases. Plant 3D / register destinations stay exploratory. */
+/**
+ * Judge mode: landmarks only. Plant 3D / register destinations stay exploratory, and since the PV pivot
+ * (15 Nov) the joint solar + wind low cases (Gate B) are off the judge path; their results stay in data/results.
+ */
 export function destinationAllowedInJudgeMode(dest: GeographicDestination): boolean {
-  return dest.type !== "existing_energy_installation";
+  return dest.type !== "existing_energy_installation" && dest.type !== "scientific_case_study_region";
 }
 
 export function destinationsOfType(type: DestinationType): readonly GeographicDestination[] {

@@ -2,23 +2,24 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { cardById, parseEvidenceCatalog, type EvidenceCard } from "@/lib/agent/cards";
-import { ENERGY_RESEARCH_CASES } from "@/lib/globe/energy-research-cases";
+import { PV_SCREENING_URL, type PvScreeningFile, type PvSummary } from "@/lib/globe/pv-screening";
 import { useLocale } from "@/lib/i18n/locale";
 import { localizeCardFace } from "@/lib/i18n/science-copy";
+import type { Locale } from "@/lib/i18n/messages";
 import { Icon, type IconName } from "./Icon";
 
 /**
- * Plain-language briefing of published findings only: question → answer → what it means → what we can't say.
- * Does not compute correlations or new slopes. Temperature numbers come from evidence-cards.json;
- * joint-low numbers are quoted in energy-research-cases.ts (D62-tested against Python).
+ * Study findings for the solar PV use case: "where should a PV plant go, and is the climate behind it changing?"
+ * Render-only (ADR-002): every number is read from pv-screening.json (scripts/build_pv_screening.py) or
+ * evidence-cards.json (Gate A). Verdicts follow the pipeline's significance flags, never the size of a number.
  */
 
-type Verdict = "proven" | "notYet" | "outside";
+type Verdict = "supported" | "stable" | "where";
 
 const VERDICT_STYLE: Record<Verdict, { icon: IconName; cls: string }> = {
-  proven: { icon: "check", cls: "border-amber-300/50 bg-amber-400/15 text-amber-100" },
-  notYet: { icon: "search", cls: "border-sky-300/40 bg-sky-400/10 text-sky-100" },
-  outside: { icon: "close", cls: "border-white/30 bg-white/5 text-ink" },
+  supported: { icon: "check", cls: "border-amber-300/50 bg-amber-400/15 text-amber-100" },
+  stable: { icon: "check", cls: "border-emerald-300/45 bg-emerald-400/12 text-emerald-100" },
+  where: { icon: "globe", cls: "border-sky-300/40 bg-sky-400/10 text-sky-100" },
 };
 
 function VerdictBadge({ verdict, label }: { verdict: Verdict; label: string }) {
@@ -31,22 +32,7 @@ function VerdictBadge({ verdict, label }: { verdict: Verdict; label: string }) {
   );
 }
 
-function Meaning({ means, cant, meansLabel, cantLabel }: { means: string; cant: string; meansLabel: string; cantLabel: string }) {
-  return (
-    <dl className="mt-2 space-y-1.5 text-[13px] leading-snug">
-      <div>
-        <dt className="text-[12px] font-medium text-ink">{meansLabel}</dt>
-        <dd className="text-muted">{means}</dd>
-      </div>
-      <div>
-        <dt className="text-[12px] font-medium text-faint">{cantLabel}</dt>
-        <dd className="text-faint">{cant}</dd>
-      </div>
-    </dl>
-  );
-}
-
-function Finding({ question, answer, badge, children, className }: { question: string; answer: ReactNode; badge: ReactNode; children: ReactNode; className: string }) {
+function Finding({ question, answer, badge, means, meansLabel, className }: { question: string; answer: ReactNode; badge: ReactNode; means: string; meansLabel: string; className: string }) {
   return (
     <article className={`rounded-md border p-2.5 ${className}`}>
       <p className="text-[14px] leading-snug font-medium text-ink">{question}</p>
@@ -54,28 +40,96 @@ function Finding({ question, answer, badge, children, className }: { question: s
         {badge}
         <p className="text-[14px] leading-snug text-ink">{answer}</p>
       </div>
-      {children}
+      <p className="mt-2 text-[13px] leading-snug text-muted">
+        <span className="font-medium text-ink">{meansLabel}: </span>
+        {means}
+      </p>
     </article>
   );
+}
+
+type Num = (n: number, digits?: number) => string;
+
+function pvCopy(locale: Locale) {
+  if (locale === "es") {
+    return {
+      aria: "Hallazgos del estudio: fotovoltaica en España",
+      title: "Fotovoltaica en España: lo que dicen los datos NASA",
+      intro: "Cuatro preguntas que se hace quien va a construir una planta solar, respondidas con tendencias de NASA 2000–2025.",
+      meansLabel: "Para tu proyecto",
+      supported: "Tendencia significativa",
+      stable: "Recurso estable",
+      where: "Mapa de decisión",
+      qWhere: "¿Dónde construir?",
+      aWhere: (good: number, pct: string) => `${good} zonas reúnen mucho sol y bajo conflicto ambiental. Ahí está ya el ${pct} % de la potencia solar en operación.`,
+      mWhere: "Empieza por las celdas verdes del mapa (sur, Murcia, La Mancha) y descarta las rojas: poco sol o zona ambientalmente sensible según MITECO.",
+      qSun: "¿Se está perdiendo el sol?",
+      aSun: (tested: number, median: string) => `No. Ninguna de las ${tested} celdas muestra una caída significativa (mediana ${median} % por década).`,
+      mSun: "La radiación de los últimos 25 años es una base fiable para estimar producción: no hay tendencia que la invalide.",
+      qHeat: "¿El calor resta rendimiento?",
+      aHeat: (sig: number, tested: number, t: string, pen: string) => `Sí: los veranos suben ${t} °C por década (significativo en ${sig} de ${tested} celdas). Con el coeficiente típico de −0,4 %/°C, unos ${pen} % de rendimiento por década.`,
+      mHeat: "Ten en cuenta la temperatura de módulo en el diseño: ventilación, separación de filas y módulos con mejor coeficiente térmico.",
+      qWarm: "¿Se calienta España en conjunto?",
+      aWarm: (s: string) => `Sí: ${s} °C por década desde 2000 (Península y Baleares).`,
+      mWarm: "Confirma la tendencia de calor con otra serie NASA y 64 estaciones NOAA de referencia.",
+      openSolar: "Abrir el mapa solar",
+      showNumbers: "Ver cifras y método",
+      method: "Método: Theil–Sen + Mann–Kendall por celda de MERRA-2 (0,5° × 0,625°), corrección FDR entre celdas, años completos 2000–2025.",
+      penaltyNote: "La pérdida por calor es indicativa: aplica un coeficiente estándar de módulo a la tendencia de temperatura; no es producción medida.",
+      sourcePv: "Fuentes: NASA MERRA-2 (radiación SWGDN y temperatura T2M), MITECO zonificación ambiental FV 2024, Global Energy Monitor (plantas).",
+      loading: "Cargando resultados…",
+      missing: "Resultados no disponibles. No se muestra ningún valor inventado.",
+    };
+  }
+  return {
+    aria: "Study findings: solar PV in Spain",
+    title: "Solar PV in Spain: what NASA data say",
+    intro: "Four questions a solar developer asks, answered with NASA trends 2000–2025.",
+    meansLabel: "For your project",
+    supported: "Significant trend",
+    stable: "Stable resource",
+    where: "Decision map",
+    qWhere: "Where to build?",
+    aWhere: (good: number, pct: string) => `${good} areas combine strong sun and low environmental conflict. ${pct}% of operating solar capacity already sits there.`,
+    mWhere: "Start from the green cells on the map (south, Murcia, La Mancha) and drop the red ones: weak sun or environmentally sensitive land per MITECO.",
+    qSun: "Is the sun fading?",
+    aSun: (tested: number, median: string) => `No. None of ${tested} cells shows a significant decline (median ${median}% per decade).`,
+    mSun: "The last 25 years of irradiance are a sound baseline for yield estimates: no trend undermines them.",
+    qHeat: "Is heat costing output?",
+    aHeat: (sig: number, tested: number, t: string, pen: string) => `Yes: summers warm by ${t} °C per decade (significant in ${sig} of ${tested} cells). With the typical −0.4%/°C module coefficient, about ${pen}% of output per decade.`,
+    mHeat: "Design for module temperature: ventilation, row spacing and modules with a better temperature coefficient.",
+    qWarm: "Is Spain warming overall?",
+    aWarm: (s: string) => `Yes: ${s} °C per decade since 2000 (Peninsula + Balearics).`,
+    mWarm: "Confirms the heat trend with a separate NASA series and 64 NOAA reference stations.",
+    openSolar: "Open the solar map",
+    showNumbers: "Show numbers and method",
+    method: "Method: Theil–Sen + Mann–Kendall per MERRA-2 cell (0.5° × 0.625°), FDR correction across cells, complete years 2000–2025.",
+    penaltyNote: "The heat loss is indicative: a standard module coefficient applied to the temperature trend, not measured generation.",
+    sourcePv: "Sources: NASA MERRA-2 (SWGDN irradiance, T2M temperature), MITECO 2024 PV environmental zoning, Global Energy Monitor (plants).",
+    loading: "Loading results…",
+    missing: "Results not available. No value is invented.",
+  };
 }
 
 export function FindingsBriefPanel({
   onClose,
   onOpenCard,
-  onOpenCase,
+  onOpenSolar,
   onStartProof,
   canStartProof,
 }: {
   onClose: () => void;
   onOpenCard: () => void;
-  onOpenCase: (caseId: string) => void;
+  onOpenSolar: () => void;
   onStartProof: (card: EvidenceCard) => void;
   canStartProof: boolean;
 }) {
   const [temp, setTemp] = useState<EvidenceCard | null>(null);
+  const [pv, setPv] = useState<PvSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { locale, m } = useLocale();
   const f = m.findings;
+  const c = pvCopy(locale);
 
   useEffect(() => {
     let active = true;
@@ -91,8 +145,18 @@ export function FindingsBriefPanel({
         setTemp(card);
       })
       .catch((err: unknown) => {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : String(err));
+        if (active) setError(err instanceof Error ? err.message : String(err));
+      });
+    fetch(PV_SCREENING_URL)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`pv-screening.json HTTP ${res.status}`);
+        return (await res.json()) as PvScreeningFile;
+      })
+      .then((file) => {
+        if (active) setPv(file.summary ?? null);
+      })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof Error ? err.message : String(err));
       });
     return () => {
       active = false;
@@ -101,7 +165,7 @@ export function FindingsBriefPanel({
 
   /** Spanish uses a decimal comma; the value itself is unchanged. */
   const dec = (s: string) => (locale === "es" ? s.replace(/(\d)\.(\d)/g, "$1,$2") : s);
-  const signed = (n: number, digits = 2): string => {
+  const signed: Num = (n, digits = 2) => {
     const mag = Math.abs(n).toFixed(digits);
     return dec(n > 0 ? `+${mag}` : n < 0 ? `−${mag}` : mag);
   };
@@ -128,19 +192,16 @@ export function FindingsBriefPanel({
       )
     : null;
 
-  // Verdicts are keyed on the pipeline outcomes, never on the size of a number.
-  const jointVerdict: Verdict = ENERGY_RESEARCH_CASES.every((c) => c.primary.outcomeLabel === "Insufficient evidence") ? "notYet" : "proven";
-  const tempVerdict: Verdict = temp?.outcome === "supported_increase" ? "proven" : "notYet";
-  const verdictLabel = (v: Verdict) => (v === "proven" ? f.verdictProven : f.verdictNotYet);
-  const caseUnits = locale === "es" ? "días por década" : null;
+  const tested = pv?.irr_cells_tested ?? null;
+  const sunReady = pv && tested !== null && pv.irr_cells_significant_down !== undefined && pv.irr_trend_pct_decade_median !== undefined;
+  const sunStable = sunReady && pv.irr_cells_significant_down === 0;
+  const heatReady = pv && tested !== null && pv.t_cells_significant_up !== undefined && pv.t_trend_c_decade_median !== undefined && pv.heat_penalty_pct_decade_median !== undefined;
+  const whereReady = pv && pv.operating_mw_in_good_pct !== undefined;
 
   return (
-    <section
-      aria-label={f.aria}
-      className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden"
-    >
-      <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <h2 className="text-[14px] font-medium tracking-wide text-ink">{f.title}</h2>
+    <section aria-label={c.aria} className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1">
+        <h2 className="text-[14px] font-medium tracking-wide text-ink">{c.title}</h2>
         <button
           type="button"
           onClick={onClose}
@@ -150,11 +211,7 @@ export function FindingsBriefPanel({
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
-      {/* D75: separate the active study from whatever climate layer the globe is showing. */}
-      <p className="mx-3 mb-2 flex gap-1.5 text-[12px] leading-snug text-faint">
-        <Icon name="globe" className="mt-0.5 size-3 shrink-0" />
-        <span>{f.mapNote}</span>
-      </p>
+      <p className="mx-3 mb-2 text-[12px] leading-snug text-faint">{c.intro}</p>
       {temp && (
         <button
           type="button"
@@ -169,73 +226,68 @@ export function FindingsBriefPanel({
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3">
         {error ? (
           <p role="alert" className="text-[14px] text-amber-100">
-            {error}. {f.invented}
+            {error}. {c.missing}
           </p>
         ) : null}
+        {!pv && !error ? <p className="text-[13px] text-muted" role="status">{c.loading}</p> : null}
 
-        <Finding
-          question={f.question}
-          answer={f.answerJoint}
-          badge={<VerdictBadge verdict={jointVerdict} label={verdictLabel(jointVerdict)} />}
-          className="border-sky-300/30 bg-sky-400/5"
+        {whereReady && (
+          <Finding
+            question={c.qWhere}
+            answer={c.aWhere(pv.cells_good, dec(String(pv.operating_mw_in_good_pct)))}
+            badge={<VerdictBadge verdict="where" label={c.where} />}
+            means={c.mWhere}
+            meansLabel={c.meansLabel}
+            className="border-sky-300/30 bg-sky-400/5"
+          />
+        )}
+
+        {sunReady && (
+          <Finding
+            question={c.qSun}
+            answer={c.aSun(tested, signed(pv.irr_trend_pct_decade_median ?? 0))}
+            badge={<VerdictBadge verdict={sunStable ? "stable" : "supported"} label={sunStable ? c.stable : c.supported} />}
+            means={c.mSun}
+            meansLabel={c.meansLabel}
+            className="border-emerald-300/30 bg-emerald-400/5"
+          />
+        )}
+
+        {heatReady && (
+          <Finding
+            question={c.qHeat}
+            answer={c.aHeat(pv.t_cells_significant_up ?? 0, tested, signed(pv.t_trend_c_decade_median ?? 0), signed(pv.heat_penalty_pct_decade_median ?? 0))}
+            badge={<VerdictBadge verdict="supported" label={c.supported} />}
+            means={c.mHeat}
+            meansLabel={c.meansLabel}
+            className="border-amber-300/35 bg-amber-400/8"
+          />
+        )}
+
+        {temp && temp.outcome === "supported_increase" && (
+          <Finding
+            question={c.qWarm}
+            answer={c.aWarm(signed(temp.how_much.slope_per_decade, 1))}
+            badge={<VerdictBadge verdict="supported" label={c.supported} />}
+            means={c.mWarm}
+            meansLabel={c.meansLabel}
+            className="border-amber-300/25 bg-amber-400/5"
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={onOpenSolar}
+          className="focus-ring w-full rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1.5 text-[14px] font-medium text-amber-100 hover:bg-amber-400/15"
         >
-          <Meaning means={f.meansJoint} cant={f.cantJoint} meansLabel={f.meansLabel} cantLabel={f.cantLabel} />
-          <div className="mt-2 flex flex-wrap items-center gap-1">
-            <span className="mr-0.5 text-[12px] text-faint">{f.regionsLabel}:</span>
-            {ENERGY_RESEARCH_CASES.map((study) => (
-              <button
-                key={study.id}
-                type="button"
-                onClick={() => onOpenCase(study.id)}
-                className="focus-ring rounded-full border border-line px-2 py-0.5 text-[12px] text-ink hover:bg-white/8"
-              >
-                {study.regionName}
-              </button>
-            ))}
-          </div>
-        </Finding>
-
-        <Finding
-          question={f.finding1}
-          answer={temp ? f.answerWarm(signed(temp.how_much.slope_per_decade, 1)) : f.loadingGate}
-          badge={temp ? <VerdictBadge verdict={tempVerdict} label={verdictLabel(tempVerdict)} /> : null}
-          className="border-amber-300/35 bg-amber-400/8"
-        >
-          <Meaning means={f.meansWarm} cant={f.cantWarm} meansLabel={f.meansLabel} cantLabel={f.cantLabel} />
-        </Finding>
-
-        {/* Claim C of the Claim Test (D76): a boundary, not a third study. No estimate is produced. */}
-        <article className="rounded-md border border-dashed border-white/30 bg-black/25 p-2.5" aria-label={f.boundary}>
-          <p className="text-[14px] leading-snug font-medium text-ink">{f.boundary}</p>
-          <p className="mt-0.5 text-[13px] text-muted italic">{f.boundaryClaim}</p>
-          <div className="mt-1">
-            <VerdictBadge verdict="outside" label={m.findings.boundaryVerdict} />
-          </div>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{f.boundaryBody}</p>
-        </article>
+          {c.openSolar}
+        </button>
 
         <details className="rounded-md border border-line bg-black/20 p-2.5 text-[12px] leading-snug text-muted">
-          <summary className="focus-ring cursor-pointer text-[13px] text-ink">{f.showNumbers} · {f.howWeKnow}</summary>
-
-          <p className="mt-2 font-medium text-ink">{f.numbersJoint}</p>
-          <ul className="mt-1 space-y-1 font-mono">
-            {ENERGY_RESEARCH_CASES.map((study) => (
-              <li key={`${study.id}-n`}>
-                <span className="font-sans text-ink">{study.regionName}</span>{" "}
-                {f.regionRow(
-                  signed(study.primary.slopePerDecade),
-                  caseUnits ?? study.primary.units,
-                  m.cards.ci(signed(study.primary.ciLow), signed(study.primary.ciHigh)),
-                  dec(String(study.primary.p)),
-                  study.primary.nYears,
-                )}{" "}
-                · {f.chanceRow(dec(study.complementarityPrimary.ratio.toFixed(2)))}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1 text-faint">{f.chanceNote}</p>
-          <p className="mt-1 text-muted">{f.unitsNote}</p>
-          <p className="mt-1 text-faint">{f.sourceJoint}</p>
+          <summary className="focus-ring cursor-pointer text-[13px] text-ink">{c.showNumbers}</summary>
+          <p className="mt-2">{c.method}</p>
+          <p className="mt-1 text-faint">{c.penaltyNote}</p>
+          <p className="mt-1 text-faint">{c.sourcePv}</p>
 
           <p className="mt-3 font-medium text-ink">{f.numbersWarm}</p>
           {temp && face ? (
@@ -261,12 +313,7 @@ export function FindingsBriefPanel({
           ) : (
             <p className="mt-1 text-faint">{f.loadingGate}</p>
           )}
-
-          <p className="mt-3 text-faint">{f.notPresentableBody}</p>
-          <p className="mt-1 text-faint">{f.banner}</p>
         </details>
-
-        <p className="text-[13px] leading-snug text-muted">{f.solarHint}</p>
 
         <button
           type="button"

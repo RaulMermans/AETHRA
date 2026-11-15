@@ -219,7 +219,8 @@ export function ExploreView() {
   const [trendTab, setTrendTab] = useState<"series" | "findings">("findings");
   useEffect(() => {
     // Wide screens only: below 1200 px the open panel hides the left controls (see inspectorOpen).
-    if (window.matchMedia("(min-width: 1200px)").matches) setEvidenceOpen(true);
+    // First view = the solar PV decision map (PV pivot, 15 Nov): where to build, with NASA trends.
+    if (window.matchMedia("(min-width: 1200px)").matches) setScreeningOpen(true);
     // Phones: start with the map controls folded so Spain is visible (summary chip stays on screen).
     if (window.matchMedia("(max-width: 639px)").matches) setControlsOpen(false);
   }, []);
@@ -1862,10 +1863,7 @@ export function ExploreView() {
                             setEvidenceTopic("temperature");
                             setActiveTool("evidence");
                           }}
-                          onOpenCase={(id) => {
-                            const dest = DESTINATIONS.find((d) => d.id === id && d.caseStudyId === id);
-                            if (dest) handleSelectDestination(dest);
-                          }}
+                          onOpenSolar={toggleScreening}
                         />
                       )}
                     </div>
