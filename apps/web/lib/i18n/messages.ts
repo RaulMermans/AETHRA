@@ -419,6 +419,9 @@ type Copy = {
   taro: {
     aria: string;
     close: string;
+    newChat: string;
+    prevTurn: string;
+    nextTurn: string;
     ready: string;
     investigating: string;
     insufficient: string;
@@ -975,7 +978,10 @@ export const messages: Record<Locale, Copy> = {
     },
     taro: {
       aria: "TARO",
-      close: "Close TARO",
+      close: "Minimize TARO",
+      newChat: "New chat",
+      prevTurn: "Previous question",
+      nextTurn: "Next question",
       ready: "Ready",
       investigating: "Investigating",
       insufficient: "Insufficient evidence",
@@ -1563,7 +1569,10 @@ export const messages: Record<Locale, Copy> = {
     },
     taro: {
       aria: "TARO",
-      close: "Cerrar TARO",
+      close: "Minimizar TARO",
+      newChat: "Nuevo chat",
+      prevTurn: "Pregunta anterior",
+      nextTurn: "Siguiente pregunta",
       ready: "Listo",
       investigating: "Investigando",
       insufficient: "Evidencia insuficiente",
