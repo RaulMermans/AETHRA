@@ -58,6 +58,9 @@ export interface ScreeningCopy {
   placeReferenceNote: string;
   placeSource: string;
   featuredEnvLabel: string;
+  featuredSunMeaning: string;
+  featuredEnvMeaning: string;
+  checkSeparately: string;
   featuredNarrative: (place: string, moreSun: number, moreLand: number, both: number, total: number) => string;
   featuredAction: string;
   featuredLimit: string;
@@ -129,15 +132,15 @@ function sunBullet(locale: Locale, c: PvCell): Bullet | null {
   if (p >= 50) {
     const top = Math.max(1, Math.round(100 - p));
     text = es
-      ? `Entre el ${top} % de zonas más soleadas de España (${val} al día)`
-      : `Among the sunniest ${top}% of Spain (${val} per day)`;
+      ? `Entre el ${top} % de zonas más soleadas de España (${val} al día de energía solar por metro cuadrado): más sol = más producción`
+      : `Among the sunniest ${top}% of Spain (${val} per day of solar energy per square metre): more sun = more output`;
   } else if (p < 25) {
     const bottom = Math.max(1, Math.round(p));
     text = es
-      ? `Entre el ${bottom} % de zonas con menos sol de España (${val} al día)`
-      : `Among the least sunny ${bottom}% of Spain (${val} per day)`;
+      ? `Entre el ${bottom} % de zonas con menos sol de España (${val} al día por metro cuadrado): producirá menos que el sur`
+      : `Among the least sunny ${bottom}% of Spain (${val} per day per square metre): expect lower output than the south`;
   } else {
-    text = es ? `Sol algo por debajo de la media española (${val} al día)` : `Sunshine a bit below the Spanish middle (${val} per day)`;
+    text = es ? `Sol algo por debajo de la media española (${val} al día por metro cuadrado): viable, pero hay zonas mejores` : `Sunshine a bit below the Spanish middle (${val} per day per square metre): workable, but better zones exist`;
   }
   return { icon: "sun", text };
 }
@@ -146,18 +149,18 @@ function trendBullet(locale: Locale, c: PvCell): Bullet {
   const es = locale === "es";
   const t = c.irr_trend_pct_decade;
   if (t === null || c.irr_significant === null) {
-    return { icon: "trend", text: es ? "Sin datos suficientes: la zona es casi toda mar o queda fuera de España" : "Not enough data: the zone is mostly sea or outside Spain" };
+    return { icon: "trend", text: es ? "Zona casi toda de mar o fuera de España: usa otra fuente para ella" : "Zone is mostly sea or outside Spain: use another source for it" };
   }
   const v = `${fmt(locale, t, 1, true)} % ${es ? "por década" : "per decade"}`;
   if (c.irr_significant && t > 0)
-    return { icon: "trend", text: es ? `El sol ha aumentado y la subida está probada (${v})` : `Sunshine has risen and the rise is proven (${v})` };
+    return { icon: "trend", text: es ? `El sol sube (comprobado): ${v}, es decir, cuánto cambia cada 10 años. Planifica con la media histórica; la subida es un extra` : `Sunshine is rising (confirmed): ${v}, i.e. how much it changes every 10 years. Plan on the historical average; the rise is a bonus` };
   if (c.irr_significant && t < 0)
-    return { icon: "trend", text: es ? `El sol ha bajado y la bajada está probada (${v})` : `Sunshine has dropped and the drop is proven (${v})` };
+    return { icon: "trend", text: es ? `El sol baja (comprobado): ${v}, es decir, cuánto cambia cada 10 años. Resta esa caída en las previsiones de producción` : `Sunshine is falling (confirmed): ${v}, i.e. how much it changes every 10 years. Subtract that fall from yield forecasts` };
   if (t > 0)
-    return { icon: "trend", text: es ? `Sol estable: una ligera subida (${v}) que no se distingue de las variaciones normales entre años` : `Sunshine is stable: a slight rise (${v}) that cannot be told apart from normal year-to-year swings` };
+    return { icon: "trend", text: es ? `Sol estable: planifica con la media histórica (variación de ${v}, dentro de lo normal entre años)` : `Stable sunshine: plan with the historical average (change of ${v}, within normal year-to-year swings)` };
   if (t < 0)
-    return { icon: "trend", text: es ? `Sol estable: una ligera bajada (${v}) que no se distingue de las variaciones normales entre años` : `Sunshine is stable: a slight drop (${v}) that cannot be told apart from normal year-to-year swings` };
-  return { icon: "trend", text: es ? "El sol se mantiene estable" : "Sunshine is holding steady" };
+    return { icon: "trend", text: es ? `Sol estable: planifica con la media histórica (variación de ${v}, dentro de lo normal entre años)` : `Stable sunshine: plan with the historical average (change of ${v}, within normal year-to-year swings)` };
+  return { icon: "trend", text: es ? "Sol estable: planifica con la media histórica" : "Stable sunshine: plan with the historical average" };
 }
 
 function heatBullet(locale: Locale, c: PvCell): Bullet | null {
@@ -169,13 +172,13 @@ function heatBullet(locale: Locale, c: PvCell): Bullet | null {
   const pv = `${fmt(locale, Math.abs(pen), 1)} %`;
   const proven = c.t_significant === true;
   if (t <= 0) {
-    return { icon: "heat", text: es ? `Temperatura de verano: ${tv}; no hay subida probada, pero eso no demuestra que no se caliente` : `Summer temperature: ${tv}; no proven rise, but that does not show it is not warming` };
+    return { icon: "heat", text: es ? `Verano sin subida de temperatura (${tv}, grados que cambian cada 10 años): no hace falta prever pérdida extra de los paneles por calor` : `No summer warming here (${tv}, degrees changed every 10 years): no extra heat loss to budget for the panels` };
   }
   return {
     icon: "heat",
     text: es
-      ? `${proven ? "Los veranos se calientan (subida probada)" : "Los veranos parecen calentarse, pero aquí aún no está probado"} (${tv}). Con más calor, los paneles solares rinden ≈ ${pv} menos por década (regla orientativa, no producción calculada).`
-      : `${proven ? "Summers are warming (proven rise)" : "Summers seem to be warming, but it is not proven here yet"} (${tv}). Hotter solar panels produce ≈ ${pv} less per decade (rule of thumb, not calculated output).`,
+      ? `${proven ? `Los veranos se calientan (comprobado): ${tv}, grados que suben cada 10 años` : `Calor de verano: ${tv} (grados cada 10 años), dentro de lo normal entre años aquí`}. Por prudencia, cuenta con que los paneles rindan ≈ ${pv} menos por década por el calor (regla orientativa).`
+      : `${proven ? `Summers are warming (confirmed): ${tv}, degrees added every 10 years` : `Summer heat: ${tv} (degrees every 10 years), within normal year-to-year swings here`}. To be safe, budget ≈ ${pv} less panel output per decade from heat (rule of thumb).`,
   };
 }
 
@@ -188,14 +191,14 @@ function envBullet(locale: Locale, c: PvCell): Bullet | null {
     return {
       icon: "leaf",
       text: es
-        ? `Solo el ${pct} de la superficie clasificada tiene sensibilidad baja o moderada; predomina el suelo con sensibilidad alta a máxima (mapa oficial del MITECO)`
-        : `Only ${pct} of the classified area has low or moderate sensitivity; most land is high to maximum sensitivity (official MITECO map)`,
+        ? `Solo el ${pct} del suelo tiene sensibilidad ambiental baja o moderada (mapa oficial del MITECO): encontrar parcela será difícil`
+        : `Only ${pct} of the land has low or moderate environmental sensitivity (official MITECO map): finding a plot will be hard`,
     };
   return {
     icon: "leaf",
     text: es
-      ? `El ${pct} del suelo de esta zona tiene sensibilidad ambiental baja o moderada, es decir, pocas restricciones ambientales (mapa oficial del MITECO)`
-      : `${pct} of this zone's land has low or moderate environmental sensitivity, i.e. few environmental constraints (official MITECO map)`,
+      ? `El ${pct} del suelo de esta zona tiene sensibilidad ambiental baja o moderada (mapa oficial del MITECO): hay margen para buscar parcela con pocas trabas ambientales`
+      : `${pct} of this zone's land has low or moderate environmental sensitivity (official MITECO map): room to find a plot with few environmental hurdles`,
   };
 }
 
@@ -223,6 +226,8 @@ function detailRows(locale: Locale, c: PvCell, period: [number, number]) {
     { label: es ? "Cambio neto de los paneles (orientativo)" : "Net panel change (indicative)", value: `${num(c.net_pv_trend_pct_decade, 2, true)} %/${es ? "déc (derivado)" : "dec (derived)"}` },
     { label: es ? "Suelo sensibilidad baja/moderada (MITECO)" : "Land at low/moderate sensitivity (MITECO)", value: c.miteco_low_moderate_pct === null ? "—" : `${Math.round(c.miteco_low_moderate_pct)} %` },
     { label: es ? "Motivos (regla)" : "Reasons (rule)", value: c.verdict_reasons.join(", ") || "—" },
+    { label: es ? "p (qué es)" : "p (what it is)", value: es ? "probabilidad de que el cambio sea casualidad; < 5 % (0,05) = comprobado" : "chance the change is a fluke; < 5% (0.05) = confirmed" },
+    { label: es ? "Estado de revisión" : "Review status", value: es ? "Exploratorio — regla fijada antes de ver los datos; pendiente de segunda revisión" : "Exploratory — rule fixed before seeing the data; pending a second review" },
   ];
 }
 
@@ -257,6 +262,9 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   featuredSunLabel: "Average sunshine reaching the ground · 2000–2025",
   featuredSunUnit: "kWh/m²/day",
   featuredEnvLabel: "Land with low/moderate environmental sensitivity · MITECO 2024",
+  featuredSunMeaning: "kWh/m²/day = solar energy reaching each square metre per day; more = more electricity from the same panels. For your decision: this zone has sun to spare.",
+  featuredEnvMeaning: "For your decision: most of the zone's land has few environmental hurdles, so plot searches start with good odds.",
+  checkSeparately: "Check separately: grid connection, permits, prices.",
   featuredNarrative: (place, moreSun, moreLand, both, total) =>
     `Jaén–Granada is a strong case to investigate among ${total} green zones. ${moreSun} get more sunshine and ${moreLand} have more low-sensitivity land, but ${both} match or beat it on both. This compares ~50 km map zones, not individual plots of land.`,
   featuredCenter: "Centre of the ~50 km zone (not a proposed plot)",
@@ -264,10 +272,10 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   placeReferenceNote: "Survey markers from Spain's national mapping agency (IGN) help locate the Jaén–Granada area. They are landmarks, not land assessed for solar panels.",
   placeSource: "IGN record",
   featuredAction: "Centre map here",
-  featuredLimit: "Not yet checked: dirt on panels, grid connection capacity, land ownership, permits and site surveys.",
+  featuredLimit: "Check separately: grid connection, permits, prices.",
   environmentalMeaning: "Spain's environment ministry (MITECO) published a 2024 map that grades how sensitive the land is to large solar-panel plants: 0 = maximum (not recommended), 1 = very high, 2 = high, 3 = moderate, 4 = low (fewest environmental constraints). The percentage is the share of ~1 km map squares in classes 3 or 4 inside this ~50 km zone. It does not mean that land is free or approved for building; each plot still needs checks.",
   dustHeading: "Dust in the air · NASA MERRA-2 (context only)",
-  dustMeaning: (meanAot, years) => `Average amount of dust in the air above this zone: ${meanAot} on a unitless haze index (0 = perfectly clear air), over ${years} complete years. It comes from a NASA weather model, not from measuring panels, so it cannot say how dirty panels get or how much output is lost. It does not change the green rating. (Technical: dust aerosol optical thickness at 550 nm; monthly values weighted by days; no uncertainty estimated.)`,
+  dustMeaning: (meanAot, years) => `Average dust in the air above this zone: ${meanAot} on a haze index (0 = perfectly clear air), over ${years} complete years. For your decision: it does not change the green rating; budget panel cleaning and measure soiling on site. (Technical: NASA model output, not panel measurements; dust aerosol optical thickness at 550 nm; monthly values weighted by days; no uncertainty estimated.)`,
   dustSource: "MERRA-2 M2TMNXAER v5.12.4 · DUEXTTAU · 0.5° × 0.625° · DOI",
   dustUnavailable: "Dust values could not be loaded; the solar verdict does not use them.",
   historyHeading: "Solar plants recorded over time in the Jaén–Granada zone",
@@ -282,8 +290,8 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   historyExplicit: "Solar panels (confirmed)",
   historyAssumed: "Probably solar panels (type not confirmed)",
   historyLimit: "Source: Global Energy Monitor plant register (Global Solar Power Tracker), February 2026: operating plants of at least 1 MW, by start year, located inside this zone. It leaves out small systems such as rooftops and may miss closed plants. The count is exact for these records; it is not electricity output.",
-  historyOutcome: "More plants are registered; the real building speed cannot be measured from this list",
-  historyOutcomeMeaning: "Why: the register only lists plants that exist today, not a year-by-year census, so a growth rate from it would mislead. The national building trend is in the executive summary (official Eurostat statistics).",
+  historyOutcome: "Builders are already active in this zone: registered plants keep growing",
+  historyOutcomeMeaning: "For your decision: there is a track record of projects here. For building speed use the national Eurostat figure in the executive summary (this register lists today's plants, not a yearly census).",
   loading: "Loading screening results…",
   notAvailable: "Screening results are not published yet.",
   notAvailableHint: "The map appears as soon as the data pipeline writes its results. Nothing here is estimated by the browser.",
@@ -292,7 +300,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   summaryGood: (n, where) => `${n} zones look promising${where ? `, mostly in ${where}` : ""}.`,
   summaryRest: (mixed, avoid) => `${mixed} are mixed and ${avoid} are not a priority.`,
   summaryMw: (g, a) =>
-    `${Math.round(g)}% of today's operating solar capacity (MW) already sits in green zones${a !== undefined ? ` (${Math.round(a)}% in red ones)` : ""}.`,
+    `${Math.round(g)}% of today's operating solar capacity (MW = installed power: what the panels can give at full sun) already sits in green zones${a !== undefined ? ` (${Math.round(a)}% in red ones)` : ""}: the industry already builds where the evidence points.`,
   summaryBasis: (from, to) => `Based on NASA sunshine and summer heat ${from}–${to} plus MITECO's environmental map.`,
   clickHint: "Click any coloured square on the map to see why.",
   verdictTitle: { good: "Promising", mixed: "Mixed", avoid: "Not a priority", no_data: "No data" },
@@ -300,7 +308,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     good: "Promising place to look first.",
     mixed: "Mixed: possible, but something holds it back.",
     avoid: "Not a priority here.",
-    no_data: "Not enough data for this area (mostly sea or outside Spain).",
+    no_data: "Mostly sea or outside Spain: not part of this screen.",
   },
   meansHeading: "What this means for you",
   means: {
@@ -309,8 +317,8 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     avoid: "Spend your time elsewhere first: the sun is weak or most of the land is environmentally sensitive.",
     no_data: "Use another source for this area.",
   },
-  cannotHeading: "What we cannot tell you",
-  cannot: "Electricity output (MWh), prices, grid capacity or permits: there is no consistent public nationwide data for them, and they depend on each plot. A screening aid, not investment advice.",
+  cannotHeading: "Scope of this screen",
+  cannot: "Electricity output (MWh), prices, grid capacity and permits are not in these datasets: there is no consistent public nationwide data for them, and they depend on each plot. A screening aid, not investment advice.",
   details: "Details & sources",
   method: "Method",
   sources: "Sources",
@@ -325,7 +333,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   plantMiteco: "Environmental sensitivity at the site (MITECO map)",
   plantMitecoUnknown: "Not available",
   plantNote: "Real plant from the Global Energy Monitor plant register. Installed power (MW) is not electricity produced.",
-  mitecoClass: (v) => `${v} · ${MITECO_EN[v] ?? "Unknown"}`,
+  mitecoClass: (v) => `${v} · ${MITECO_EN[v] ?? "—"}`,
   plantsInCell: (n, mw) => `${n} operating plants here today (${Math.round(mw)} MW).`,
 };
 
@@ -360,6 +368,9 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   featuredSunLabel: "Sol medio que llega al suelo · 2000–2025",
   featuredSunUnit: "kWh/m²/día",
   featuredEnvLabel: "Suelo con sensibilidad ambiental baja/moderada · MITECO 2024",
+  featuredSunMeaning: "kWh/m²/día = energía solar que llega a cada metro cuadrado al día; más = más electricidad con los mismos paneles. Para tu decisión: a esta zona le sobra sol.",
+  featuredEnvMeaning: "Para tu decisión: la mayor parte del suelo tiene pocas trabas ambientales, así que la búsqueda de parcela parte con buenas opciones.",
+  checkSeparately: "Comprobar aparte: conexión a red, permisos, precios.",
   featuredNarrative: (place, moreSun, moreLand, both, total) =>
     `Jaén–Granada destaca entre ${total} zonas verdes. ${moreSun} reciben más sol y ${moreLand} tienen más suelo poco sensible, pero ${both} la igualan o superan en ambas cosas. Se comparan zonas de ~50 km, no parcelas.`,
   featuredCenter: "Centro de la zona de ~50 km (no es una parcela propuesta)",
@@ -367,10 +378,10 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   placeReferenceNote: "Los vértices geodésicos del Instituto Geográfico Nacional (IGN) sitúan la zona Jaén–Granada. Son hitos de referencia, no terrenos evaluados para paneles solares.",
   placeSource: "Ficha IGN",
   featuredAction: "Centrar mapa aquí",
-  featuredLimit: "Falta comprobar: suciedad en paneles, capacidad de conexión a red, propiedad del suelo, permisos y estudio del terreno.",
+  featuredLimit: "Comprobar aparte: conexión a red, permisos, precios.",
   environmentalMeaning: "El Ministerio para la Transición Ecológica (MITECO) publicó en 2024 un mapa que gradúa lo sensible que es el suelo a grandes plantas de paneles solares: 0 = máxima (no recomendada), 1 = muy alta, 2 = alta, 3 = moderada, 4 = baja (menos restricciones ambientales). El porcentaje es la parte de cuadros de ~1 km en las clases 3 o 4 dentro de esta zona de ~50 km. No significa que ese suelo esté libre ni autorizado: hay que estudiar cada parcela.",
   dustHeading: "Polvo en el aire · NASA MERRA-2 (solo contexto)",
-  dustMeaning: (meanAot, years) => `Cantidad media de polvo en el aire sobre esta zona: ${meanAot} en un índice de turbidez sin unidades (0 = aire totalmente limpio), durante ${years} años completos. Sale de un modelo meteorológico de la NASA, no de medir paneles, así que no dice cuánto se ensucian ni cuánta producción se pierde. No cambia el color verde. (Técnico: espesor óptico del polvo a 550 nm; medias mensuales ponderadas por días; sin incertidumbre estimada.)`,
+  dustMeaning: (meanAot, years) => `Polvo medio en el aire sobre esta zona: ${meanAot} en un índice de turbidez (0 = aire totalmente limpio), durante ${years} años completos. Para tu decisión: no cambia el color verde; presupuesta limpieza de paneles y mide la suciedad en el emplazamiento. (Técnico: dato de un modelo de la NASA, no medido en paneles; espesor óptico del polvo a 550 nm; medias mensuales ponderadas por días; sin incertidumbre estimada.)`,
   dustSource: "MERRA-2 M2TMNXAER v5.12.4 · DUEXTTAU · 0,5° × 0,625° · DOI",
   dustUnavailable: "No se han podido cargar los valores de polvo; el veredicto solar no los utiliza.",
   historyHeading: "Plantas solares registradas a lo largo del tiempo en la zona Jaén–Granada",
@@ -385,8 +396,8 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   historyExplicit: "Paneles solares (confirmado)",
   historyAssumed: "Probablemente paneles solares (tipo sin confirmar)",
   historyLimit: "Fuente: registro de plantas de Global Energy Monitor (Global Solar Power Tracker), febrero de 2026: plantas en operación de al menos 1 MW, por año de inicio, situadas dentro de esta zona. Deja fuera instalaciones pequeñas como tejados y puede omitir plantas cerradas. El recuento es exacto para estas fichas; no es producción eléctrica.",
-  historyOutcome: "Hay más plantas registradas; la velocidad real de construcción no se puede medir con esta lista",
-  historyOutcomeMeaning: "Por qué: el registro solo lista las plantas que existen hoy, no un censo año a año, así que una tasa de crecimiento sacada de él engañaría. La tendencia nacional de construcción está en el resumen ejecutivo (estadística oficial de Eurostat).",
+  historyOutcome: "El sector ya construye en esta zona: las plantas registradas no paran de crecer",
+  historyOutcomeMeaning: "Para tu decisión: hay historial de proyectos aquí. Para la velocidad de construcción usa la cifra nacional de Eurostat del resumen ejecutivo (este registro lista las plantas de hoy, no un censo anual).",
   loading: "Cargando resultados del cribado…",
   notAvailable: "Los resultados del cribado aún no están publicados.",
   notAvailableHint: "El mapa aparecerá en cuanto el proceso de datos escriba sus resultados. El navegador no estima nada.",
@@ -395,7 +406,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   summaryGood: (n, where) => `${n} zonas parecen prometedoras${where ? `, sobre todo en ${where}` : ""}.`,
   summaryRest: (mixed, avoid) => `${mixed} son mixtas y ${avoid} no son prioritarias.`,
   summaryMw: (g, a) =>
-    `El ${Math.round(g)} % de la potencia solar en operación (MW) ya está en zonas verdes${a !== undefined ? ` (${Math.round(a)} % en rojas)` : ""}.`,
+    `El ${Math.round(g)} % de la potencia solar en operación (MW = potencia instalada: lo que pueden dar las placas a pleno sol) ya está en zonas verdes${a !== undefined ? ` (${Math.round(a)} % en rojas)` : ""}: el sector ya construye donde apunta la evidencia.`,
   summaryBasis: (from, to) => `Basado en el sol y el calor de verano de la NASA ${from}–${to} y en el mapa ambiental del MITECO.`,
   clickHint: "Pulsa cualquier cuadro de color del mapa para ver por qué.",
   verdictTitle: { good: "Prometedora", mixed: "Mixta", avoid: "No prioritaria", no_data: "Sin datos" },
@@ -403,7 +414,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     good: "Buen sitio para mirar primero.",
     mixed: "Mixta: posible, pero algo la frena.",
     avoid: "Aquí no es prioritario.",
-    no_data: "No hay datos suficientes para esta zona (casi todo mar o fuera de España).",
+    no_data: "Casi todo mar o fuera de España: no entra en este cribado.",
   },
   meansHeading: "Qué significa para ti",
   means: {
@@ -412,8 +423,8 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     avoid: "Dedica antes tu tiempo a otras zonas: hay poco sol o casi todo el suelo es ambientalmente sensible.",
     no_data: "Usa otra fuente para esta zona.",
   },
-  cannotHeading: "Lo que no podemos decirte",
-  cannot: "Ni electricidad producida (MWh), ni precios, ni capacidad de red, ni permisos: no hay datos públicos nacionales homogéneos y dependen de cada parcela. Es una ayuda para cribar, no un consejo de inversión.",
+  cannotHeading: "Alcance de este cribado",
+  cannot: "La electricidad producida (MWh), los precios, la capacidad de red y los permisos no están en estos datos: no hay datos públicos nacionales homogéneos y dependen de cada parcela. Es una ayuda para cribar, no un consejo de inversión.",
   details: "Detalles y fuentes",
   method: "Método",
   sources: "Fuentes",
@@ -428,7 +439,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   plantMiteco: "Sensibilidad ambiental en el emplazamiento (mapa MITECO)",
   plantMitecoUnknown: "No disponible",
   plantNote: "Planta real del registro de plantas de Global Energy Monitor. La potencia instalada (MW) no es electricidad producida.",
-  mitecoClass: (v) => `${v} · ${MITECO_ES[v] ?? "Desconocida"}`,
+  mitecoClass: (v) => `${v} · ${MITECO_ES[v] ?? "—"}`,
   plantsInCell: (n, mw) => `${n} plantas en operación aquí hoy (${Math.round(mw)} MW).`,
 };
 

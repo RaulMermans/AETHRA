@@ -215,7 +215,7 @@ export function FindingsBriefPanel({
         </article>
 
         <details className="rounded-md border border-line bg-black/20 p-2.5 text-[12px] leading-snug text-muted">
-          <summary className="focus-ring cursor-pointer text-[13px] text-ink">{f.showNumbers}</summary>
+          <summary className="focus-ring cursor-pointer text-[13px] text-ink">{f.showNumbers} · {f.howWeKnow}</summary>
 
           <p className="mt-2 font-medium text-ink">{f.numbersJoint}</p>
           <ul className="mt-1 space-y-1 font-mono">
@@ -234,6 +234,7 @@ export function FindingsBriefPanel({
             ))}
           </ul>
           <p className="mt-1 text-faint">{f.chanceNote}</p>
+          <p className="mt-1 text-muted">{f.unitsNote}</p>
           <p className="mt-1 text-faint">{f.sourceJoint}</p>
 
           <p className="mt-3 font-medium text-ink">{f.numbersWarm}</p>

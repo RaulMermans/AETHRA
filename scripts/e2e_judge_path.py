@@ -70,7 +70,7 @@ def judge_path(page: Page, base: str, rec: Recorder, run: int) -> None:
     page.get_by_text("Castilla y León", exact=True).first.click()
     page.wait_for_timeout(4500)
     body = visible_text(page)
-    rec.check(f"B/{s}", "case sheet shows insufficient evidence", "Insufficient evidence" in body)
+    rec.check(f"B/{s}", "case sheet shows the stable (no-rise) verdict", "Stable since 2001" in body)
     rec.check(f"B/{s}", "no 2040 / 2032 on the judge case chart", "2040" not in body and "2032" not in body)
     rec.check(f"B/{s}", "history-only caption", "the chart ends at the last observed year" in body)
     rec.shot(page, f"{s}-B-castilla-y-leon")

@@ -332,6 +332,8 @@ type Copy = {
     sourceWarm: (source: string) => string;
     notPresentableBody: string;
     banner: string;
+    howWeKnow: string;
+    unitsNote: string;
     solarHint: string;
     openCards: string;
   };
@@ -463,6 +465,10 @@ type Copy = {
     banner: string;
     verdict: string;
     insufficient: string;
+    verdictMeans: string;
+    trendMeans: string;
+    howWeKnow: string;
+    checkSeparately: string;
     seriesError: (error: string) => string;
     loading: string;
     trend: string;
@@ -770,8 +776,8 @@ export const messages: Record<Locale, Copy> = {
       increase: "Supported increase",
       decrease: "Supported decrease",
       exploratory: "EXPLORATORY — multiplicity unadjusted",
-      noRobust: "No robust trend detected",
-      insufficient: "Insufficient evidence",
+      noRobust: "Stable: no significant change → plan with the historical average",
+      insufficient: "No trend calculated for this view",
       supportedTrend: "supported trend",
       noRobustShort: "no robust trend detected",
     },
@@ -836,23 +842,23 @@ export const messages: Record<Locale, Copy> = {
       loadingGate: "Loading the temperature result…",
       invented: "No finding was invented.",
       verdictProven: "Proven",
-      verdictNotYet: "Not proven yet",
+      verdictNotYet: "No rise",
       meansLabel: "What it means for you",
-      cantLabel: "What we can't say",
+      cantLabel: "Check separately",
       meansJoint:
-        "Don't size extra backup on the idea that dark, windless days are rising. Keep it as an open question for plant or station data. Bonus: in these data, sun and wind lows land on the same day less often than chance.",
+        "No increase in days with both low sun and low wind since 2001 → no need to plan extra backup for this. Bonus: sun and wind lows land on the same day less often than chance would give, so the two sources partly cover each other.",
       cantJoint:
-        "That nothing is changing: 25 years can only spot changes of about 2–3 days per decade. This is weather, not power output.",
+        "plant output and grid backup needs (these are weather data, not power output).",
       meansWarm:
         "Put warmer air into your design assumptions: panel heat losses, cooling and equipment temperature ratings.",
-      cantWarm: "Why it is warming, what comes next, or how much output a plant loses.",
+      cantWarm: "the output loss for your specific panels (use the maker's heat coefficient).",
       regionsLabel: "Open a region",
       mapNote: "The globe shows the climate layer picked on the left as context. These answers are for 5 regions, not a map layer.",
-      boundary: "A question we can't answer",
+      boundary: "A question for a different study",
       boundaryClaim: "“So this hybrid plant will be less profitable in 2040.”",
-      boundaryVerdict: "Outside our data",
+      boundaryVerdict: "Needs plant and price data",
       boundaryBody:
-        "We have no plant output, prices, grid or 2040 analysis, so we give no estimate. Use the answers above to choose your next study, not to judge profit.",
+        "Profit depends on plant output, prices and grid access, which these climate data don't measure. Use the answers above to pick the next study; check separately: plant output, prices, grid.",
       showNumbers: "Show the numbers",
       numbersJoint: "Sun + wind lows: trend in days per year with both low",
       numbersWarm: "Air temperature",
@@ -864,6 +870,9 @@ export const messages: Record<Locale, Copy> = {
       notPresentableBody:
         "Rain (GPM) and modelled river runoff (GLDAS) are on the map but did not pass our multiple-testing check, so they are not findings here.",
       banner: "Precomputed by our Python pipeline and shown as published. Exploratory until independent human review.",
+      howWeKnow: "How we know",
+      unitsNote:
+        "How to read: “days per decade” = how many more (+) or fewer (−) both-low days per year every 10 years. CI = the range the true trend likely sits in; if it includes 0 there is no proven change. p = chance the trend is just luck (< 5 % = proven). n = years of data. For your decision: every region's range includes 0, so plan with the historical average.",
       solarHint: "Want to see where solar looks promising? Open the solar screening tool.",
       openCards: "Open Evidence cards",
     },
@@ -915,8 +924,8 @@ export const messages: Record<Locale, Copy> = {
       verdictMeaning: {
         supported_increase: "The trend met the pre-registered support rule: its 95% interval lies entirely above zero (rule in Method).",
         supported_decrease: "The trend met the pre-registered support rule: its 95% interval lies entirely below zero (rule in Method).",
-        no_robust_trend: "The trend did not meet the pre-registered support rule (see Method). This is not proof that nothing changed.",
-        insufficient_evidence: "The trend did not meet the pre-registered support rule (see Method), and the record is too short to rule out small changes. This is not proof of stability.",
+        no_robust_trend: "For your decision: no proven change, so plan with the historical average. Statistically: the trend did not meet the pre-registered support rule (see Method); small changes cannot be ruled out.",
+        insufficient_evidence: "For your decision: no proven change, so plan with the historical average. Statistically: the trend did not meet the pre-registered support rule (see Method), and the record is too short to rule out small changes.",
       },
       ciMeaning: "The 95% interval is the range of trends compatible with the data. The wider it is, the less precise the estimate.",
       period: "Period",
@@ -1024,9 +1033,14 @@ export const messages: Record<Locale, Copy> = {
       historical: (nuts) => `Historical NASA evidence · Regional investigation · ${nuts}`,
       nationalNuts: "Peninsula + Balearics",
       nuts: (code) => `NUTS-2 ${code}`,
-      banner: "EXPLORATORY · quotes Python · 5/5 regions insufficient evidence",
+      banner: "EXPLORATORY · quotes Python · 5/5 regions: no robust trend (insufficient evidence)",
       verdict: "Verdict",
-      insufficient: "Insufficient evidence",
+      insufficient: "Stable since 2001: no rise in days with both low sun and low wind",
+      verdictMeans: "For your decision: no need to plan extra backup for this; plan with the historical median shown below.",
+      trendMeans:
+        "How to read: “days per decade” = more (+) or fewer (−) both-low days per year every 10 years. CI = likely range of the true trend; it includes 0, so no proven change. p = chance the trend is luck (< 0.05 = proven). n = years of data; median = typical both-low days per year to plan with.",
+      howWeKnow: "How we know (status, significance, limits)",
+      checkSeparately: "Check separately: plant output, grid connection, permits and prices.",
       seriesError: (error) => `Series not loaded: ${error}`,
       loading: "Loading observed series…",
       trend: "Trend",
@@ -1347,8 +1361,8 @@ export const messages: Record<Locale, Copy> = {
       increase: "Aumento respaldado",
       decrease: "Descenso respaldado",
       exploratory: "EXPLORATORIO — multiplicidad sin ajustar",
-      noRobust: "No se detecta una tendencia robusta",
-      insufficient: "Evidencia insuficiente",
+      noRobust: "Estable: sin cambio significativo → planifica con la media histórica",
+      insufficient: "Sin tendencia calculada para esta vista",
       supportedTrend: "tendencia respaldada",
       noRobustShort: "no se detecta una tendencia robusta",
     },
@@ -1414,23 +1428,23 @@ export const messages: Record<Locale, Copy> = {
       loadingGate: "Cargando el resultado de temperatura…",
       invented: "No se ha inventado ningún resultado.",
       verdictProven: "Demostrado",
-      verdictNotYet: "Aún sin demostrar",
+      verdictNotYet: "Sin aumento",
       meansLabel: "Qué significa para ti",
-      cantLabel: "Qué no podemos decir",
+      cantLabel: "Comprobar aparte",
       meansJoint:
-        "No dimensiones más respaldo pensando que aumentan los días sin sol ni viento. Déjalo como pregunta abierta para datos de planta o de estaciones. Además, en estos datos el sol y el viento flojean el mismo día menos de lo que daría el azar.",
+        "Desde 2001 no aumentan los días con poco sol y poco viento a la vez → no hace falta prever más respaldo por esto. Además, el sol y el viento flojean el mismo día menos de lo que daría el azar: una fuente cubre en parte a la otra.",
       cantJoint:
-        "Que no esté cambiando nada: con 25 años solo se detectan cambios de unos 2–3 días por década. Esto es tiempo atmosférico, no producción eléctrica.",
+        "producción de la planta y necesidades de respaldo de la red (son datos de tiempo atmosférico, no de producción).",
       meansWarm:
         "Incluye un aire más caliente en tus hipótesis de diseño: pérdidas de los paneles por calor, refrigeración y temperatura nominal de los equipos.",
-      cantWarm: "Por qué se calienta, qué pasará después ni cuánta producción pierde una planta.",
+      cantWarm: "la pérdida de producción de tus paneles concretos (usa el coeficiente de temperatura del fabricante).",
       regionsLabel: "Abrir una región",
       mapNote: "El globo muestra como contexto la capa climática elegida a la izquierda. Estas respuestas son de 5 regiones, no una capa del mapa.",
-      boundary: "Una pregunta que no podemos responder",
+      boundary: "Una pregunta para otro estudio",
       boundaryClaim: "«Así que esta planta híbrida será menos rentable en 2040».",
-      boundaryVerdict: "Fuera de nuestros datos",
+      boundaryVerdict: "Requiere datos de planta y precios",
       boundaryBody:
-        "No tenemos producción por planta, precios, red ni análisis de 2040, así que no damos ninguna estimación. Usa las respuestas de arriba para elegir tu siguiente estudio, no para juzgar la rentabilidad.",
+        "La rentabilidad depende de la producción de la planta, los precios y el acceso a red, que estos datos climáticos no miden. Usa las respuestas de arriba para elegir el siguiente estudio; comprobar aparte: producción, precios, red.",
       showNumbers: "Ver los números",
       numbersJoint: "Poco sol + poco viento: tendencia en días al año con ambos bajos",
       numbersWarm: "Temperatura del aire",
@@ -1442,6 +1456,9 @@ export const messages: Record<Locale, Copy> = {
       notPresentableBody:
         "La lluvia (GPM) y la escorrentía modelada de ríos (GLDAS) están en el mapa, pero no superan nuestro ajuste por comparaciones múltiples, así que aquí no son resultados.",
       banner: "Calculado de antemano por nuestra cadena de Python y mostrado tal cual se publicó. Exploratorio hasta la revisión humana independiente.",
+      howWeKnow: "Cómo lo sabemos",
+      unitsNote:
+        "Cómo leerlo: «días por década» = cuántos días al año con ambos bajos hay de más (+) o de menos (−) cada 10 años. IC = el rango donde probablemente está la tendencia real; si incluye el 0, no hay cambio comprobado. p = probabilidad de que la tendencia sea casualidad (< 5 % = comprobado). n = años de datos. Para tu decisión: en todas las regiones el rango incluye el 0, así que planifica con la media histórica.",
       solarHint: "¿Quieres ver dónde el solar parece prometedor? Abre la herramienta de cribado solar.",
       openCards: "Abrir las fichas de evidencia",
     },
@@ -1495,8 +1512,8 @@ export const messages: Record<Locale, Copy> = {
       verdictMeaning: {
         supported_increase: "La tendencia cumplió la regla de respaldo prerregistrada: su intervalo del 95 % está por completo por encima de cero (regla en Método).",
         supported_decrease: "La tendencia cumplió la regla de respaldo prerregistrada: su intervalo del 95 % está por completo por debajo de cero (regla en Método).",
-        no_robust_trend: "La tendencia no cumplió la regla de respaldo prerregistrada (ver Método). No es prueba de que nada haya cambiado.",
-        insufficient_evidence: "La tendencia no cumplió la regla de respaldo prerregistrada (ver Método) y el registro es demasiado corto para descartar cambios pequeños. No es prueba de estabilidad.",
+        no_robust_trend: "Para tu decisión: no hay cambio comprobado, así que planifica con la media histórica. En estadística: la tendencia no cumplió la regla de respaldo prerregistrada (ver Método); no se descartan cambios pequeños.",
+        insufficient_evidence: "Para tu decisión: no hay cambio comprobado, así que planifica con la media histórica. En estadística: la tendencia no cumplió la regla de respaldo prerregistrada (ver Método) y el registro es demasiado corto para descartar cambios pequeños.",
       },
       ciMeaning: "El intervalo del 95 % es el rango de tendencias compatibles con los datos. Cuanto más ancho, menos precisa es la estimación.",
       period: "Periodo",
@@ -1608,9 +1625,14 @@ export const messages: Record<Locale, Copy> = {
       historical: (nuts) => `Evidencia NASA histórica · Investigación regional · ${nuts}`,
       nationalNuts: "Península y Baleares",
       nuts: (code) => `NUTS-2 ${code}`,
-      banner: "EXPLORATORIO · cita a Python · evidencia insuficiente en 5/5 regiones",
+      banner: "EXPLORATORIO · cita a Python · 5/5 regiones: sin tendencia robusta (evidencia insuficiente)",
       verdict: "Veredicto",
-      insufficient: "Evidencia insuficiente",
+      insufficient: "Estable desde 2001: no aumentan los días con poco sol y poco viento a la vez",
+      verdictMeans: "Para tu decisión: no hace falta prever más respaldo por esto; planifica con la mediana histórica que se ve abajo.",
+      trendMeans:
+        "Cómo leerlo: «días por década» = días al año con ambos bajos de más (+) o de menos (−) cada 10 años. IC = rango probable de la tendencia real; incluye el 0, así que no hay cambio comprobado. p = probabilidad de que sea casualidad (< 0,05 = comprobado). n = años de datos; mediana = días típicos al año con ambos bajos para planificar.",
+      howWeKnow: "Cómo lo sabemos (estado, significación, límites)",
+      checkSeparately: "Comprobar aparte: producción de la planta, conexión a red, permisos y precios.",
       seriesError: (error) => `No se ha cargado la serie: ${error}`,
       loading: "Cargando la serie observada…",
       trend: "Tendencia",

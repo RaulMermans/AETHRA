@@ -122,9 +122,6 @@ export function SolarScreeningPanel({
             <SunGlyph className="size-4 text-amber-300" />
             {t.title}
           </h2>
-          <p className="mt-0.5 text-[10px] tracking-[0.1em] text-faint uppercase" title={t.exploratoryHint}>
-            {t.exploratory}
-          </p>
         </div>
         <button
           type="button"
@@ -174,6 +171,8 @@ export function SolarScreeningPanel({
                   <div><dt className="text-[10px] leading-tight text-faint">{t.featuredSunLabel}</dt><dd className="mt-1 font-mono text-base tabular-nums text-ink">{featuredCell.irr_mean_kwh_m2_day === null ? "—" : `${formatScreeningNumber(locale, featuredCell.irr_mean_kwh_m2_day, 2)} ${t.featuredSunUnit}`}</dd></div>
                   <div><dt className="text-[10px] leading-tight text-faint">{t.featuredEnvLabel}</dt><dd className="mt-1 font-mono text-base tabular-nums text-ink">{featuredCell.miteco_low_moderate_pct === null ? "—" : `${formatScreeningNumber(locale, featuredCell.miteco_low_moderate_pct, 1)}%`}</dd></div>
                 </dl>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-muted">{t.featuredSunMeaning}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted">{t.featuredEnvMeaning}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink">
                   {t.featuredNarrative(
                     featuredCase.place,
@@ -415,14 +414,14 @@ function CellCard({
           <p className="text-[10px] tracking-[0.1em] text-faint uppercase">{t.meansHeading}</p>
           <p className="mt-0.5 text-[13px] leading-snug text-ink">{t.means[v]}</p>
         </div>
-        <div className="rounded-md border border-line px-2.5 py-2">
-          <p className="text-[10px] tracking-[0.1em] text-faint uppercase">{t.cannotHeading}</p>
-          <p className="mt-0.5 text-xs leading-snug text-muted">{t.cannot}</p>
-        </div>
       </div>
 
       <details className="mt-3 rounded-md border border-line px-2.5 py-2 text-xs">
         <summary className="focus-ring cursor-pointer text-muted hover:text-ink">{t.details}</summary>
+        <p className="mt-2 text-[11px] text-muted">
+          <span className="text-faint">{t.cannotHeading}: </span>
+          {t.cannot}
+        </p>
         <dl className="mt-2 space-y-1">
           {t.detailRows(cell, period).map((r, i) => (
             <div key={`${r.label}-${i}`} className="grid grid-cols-[8.5rem_1fr] gap-2">
@@ -466,6 +465,7 @@ function CellCard({
           </div>
         )}
       </details>
+      <p className="mt-2 text-[11px] text-faint">{t.checkSeparately}</p>
     </article>
   );
 }

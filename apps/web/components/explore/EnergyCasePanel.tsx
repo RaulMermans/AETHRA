@@ -177,10 +177,6 @@ export function EnergyCasePanel({
         {c.historical(study.nuts2 === "R0" ? c.nationalNuts : c.nuts(study.nuts2))} · {t.cardId}
       </p>
 
-      <p className="mt-2 rounded-md border border-amber-300/25 bg-amber-400/10 px-2 py-1 text-[12px] tracking-wide text-amber-100 uppercase">
-        {c.banner}
-      </p>
-
       <div className="mt-2 rounded-md border border-white/20 bg-white/8 px-2 py-2">
         <p className="text-[12px] tracking-[0.12em] text-faint uppercase">{c.verdict}</p>
         <p className="text-sm text-ink">
@@ -189,7 +185,7 @@ export function EnergyCasePanel({
           </span>
           {c.insufficient}
         </p>
-        <p className="mt-1 text-[13px] leading-relaxed text-muted">{story.significanceNote}</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">{c.verdictMeans}</p>
       </div>
 
       <p className="mt-2 text-[13px] leading-relaxed text-ink">{story.techFrameNote}</p>
@@ -211,6 +207,7 @@ export function EnergyCasePanel({
         <Row label={c.e0Solar}>{localizeResourceContext(study.solarContext, locale)}</Row>
         <Row label={c.e0Wind}>{localizeResourceContext(study.windContext, locale)}</Row>
       </dl>
+      <p className="mt-1 text-[12px] leading-relaxed text-muted">{c.trendMeans}</p>
 
       <ComplementarityBars observed={cmp.observed} expected={cmp.expectedMean} ratio={cmp.ratio} c={c} />
 
@@ -225,12 +222,18 @@ export function EnergyCasePanel({
       </Section>
       {/* D75: the 2032–2040 planning horizon is research-build only; judges see history only. */}
       {EXPLORATORY_FEATURES_ENABLED && <Section title={c.horizon}>{story.futureHorizon}</Section>}
-      <p className="mt-2 text-[12px] leading-relaxed text-faint">{story.doNotConclude}</p>
-      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[12px] text-faint">
-        {story.limitations.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
+      <p className="mt-2 text-[12px] leading-relaxed text-muted">{c.checkSeparately}</p>
+      <details className="mt-2 rounded-md border border-line bg-black/20 px-2 py-1.5 text-[12px] leading-relaxed text-faint">
+        <summary className="focus-ring cursor-pointer text-[13px] text-ink">{c.howWeKnow}</summary>
+        <p className="mt-1 tracking-wide text-amber-100 uppercase">{c.banner}</p>
+        <p className="mt-1 text-muted">{story.significanceNote}</p>
+        <p className="mt-1">{story.doNotConclude}</p>
+        <ul className="mt-1 list-disc space-y-0.5 pl-4">
+          {story.limitations.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </details>
 
       <p className="mt-2 text-[12px] text-muted">
         {c.reference(localizeRegionName(study.comparisonName, locale))}

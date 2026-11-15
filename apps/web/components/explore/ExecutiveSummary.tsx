@@ -125,7 +125,9 @@ export function ExecutiveSummary({ data, locale }: { data: PvScreeningData; loca
             </div>
           ))}
         </dl>
+        <p className="mt-1.5 text-faint">{copy.status}</p>
       </details>
+      <p className="mt-2 text-[11px] text-muted">{copy.checkSeparately}</p>
     </section>
   );
 }
