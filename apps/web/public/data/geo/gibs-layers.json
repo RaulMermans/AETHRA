@@ -1,0 +1,397 @@
+{
+ "schema_version": 1,
+ "role": "visualization only (rendered imagery); never an analysis input",
+ "capturedAt": "2026-11-15T09:46Z",
+ "capabilitiesUrl": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml",
+ "projection": "EPSG:3857 (GoogleMapsCompatible tile matrix sets)",
+ "attribution": "NASA EOSDIS Global Imagery Browse Services (GIBS)",
+ "docs": "https://nasa-gibs.github.io/gibs-api-docs/available-visualizations/",
+ "layers": [
+  {
+   "id": "MODIS_Terra_CorrectedReflectance_TrueColor",
+   "title": "Corrected Reflectance (True Color, MODIS, Terra)",
+   "category": "surface-imagery",
+   "product": "MODIS Terra corrected reflectance, true colour (daily)",
+   "units": null,
+   "note": "Daily true-colour image. Clouds, swath gaps and polar night are part of the image.",
+   "tileMatrixSet": "GoogleMapsCompatible_Level9",
+   "maximumLevel": 9,
+   "format": "image/jpeg",
+   "urlTemplate": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg",
+   "legendUrl": null,
+   "defaultDate": "2026-11-15",
+   "intervals": [
+    {
+     "start": "2000-02-24",
+     "end": "2000-04-25",
+     "period": "P1D"
+    },
+    {
+     "start": "2000-04-28",
+     "end": "2000-08-06",
+     "period": "P1D"
+    },
+    {
+     "start": "2000-08-18",
+     "end": "2001-06-15",
+     "period": "P1D"
+    },
+    {
+     "start": "2001-07-03",
+     "end": "2002-03-19",
+     "period": "P1D"
+    },
+    {
+     "start": "2002-03-28",
+     "end": "2003-12-16",
+     "period": "P1D"
+    },
+    {
+     "start": "2003-12-24",
+     "end": "2008-12-20",
+     "period": "P1D"
+    },
+    {
+     "start": "2008-12-23",
+     "end": "2016-02-18",
+     "period": "P1D"
+    },
+    {
+     "start": "2016-02-27",
+     "end": "2022-10-10",
+     "period": "P1D"
+    },
+    {
+     "start": "2022-10-23",
+     "end": "2025-08-08",
+     "period": "P1D"
+    },
+    {
+     "start": "2025-08-10",
+     "end": "2025-11-08",
+     "period": "P1D"
+    },
+    {
+     "start": "2025-11-10",
+     "end": "2026-11-15",
+     "period": "P1D"
+    }
+   ],
+   "intervalsTotal": 11
+  },
+  {
+   "id": "MODIS_Terra_L3_NDVI_16Day",
+   "title": "Vegetation Index (16-Day, MODIS, Terra)",
+   "category": "vegetation",
+   "product": "MODIS Terra Level 3 vegetation index, NDVI (16-day composite)",
+   "units": "NDVI (unitless)",
+   "note": "Rendered colour of a 16-day NDVI composite. Colour is not an NDVI value; see the legend.",
+   "tileMatrixSet": "GoogleMapsCompatible_Level9",
+   "maximumLevel": 9,
+   "format": "image/png",
+   "urlTemplate": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_L3_NDVI_16Day/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
+   "legendUrl": "https://gibs.earthdata.nasa.gov/legends/MODIS_L3_NDVI_H.svg",
+   "defaultDate": "2026-10-16",
+   "intervals": [
+    {
+     "start": "2000-03-05",
+     "end": "2000-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2001-01-01",
+     "end": "2001-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2002-01-01",
+     "end": "2002-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2003-01-01",
+     "end": "2003-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2004-01-01",
+     "end": "2004-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2005-01-01",
+     "end": "2005-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2006-01-01",
+     "end": "2006-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2007-01-01",
+     "end": "2007-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2008-01-01",
+     "end": "2008-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2009-01-01",
+     "end": "2009-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2010-01-01",
+     "end": "2010-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2011-01-01",
+     "end": "2011-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2012-01-01",
+     "end": "2012-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2013-01-01",
+     "end": "2013-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2014-01-01",
+     "end": "2014-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2015-01-01",
+     "end": "2015-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2016-01-01",
+     "end": "2016-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2017-01-01",
+     "end": "2017-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2018-01-01",
+     "end": "2018-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2019-01-01",
+     "end": "2019-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2020-01-01",
+     "end": "2020-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2021-01-01",
+     "end": "2021-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2022-01-01",
+     "end": "2022-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2023-01-01",
+     "end": "2023-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2024-01-01",
+     "end": "2024-12-18",
+     "period": "P16D"
+    },
+    {
+     "start": "2025-01-01",
+     "end": "2025-12-19",
+     "period": "P16D"
+    },
+    {
+     "start": "2026-01-01",
+     "end": "2026-10-16",
+     "period": "P16D"
+    }
+   ],
+   "intervalsTotal": 27
+  },
+  {
+   "id": "MODIS_Terra_L3_Land_Surface_Temp_8Day_Day",
+   "title": "Land Surface Temperature (8-Day, Day, MODIS, Terra)",
+   "category": "land-surface-temperature",
+   "product": "MODIS Terra Level 3 daytime land surface temperature (8-day composite)",
+   "units": "K (legend)",
+   "note": "Clear-sky skin temperature of the land surface, not 2 m air temperature.",
+   "tileMatrixSet": "GoogleMapsCompatible_Level7",
+   "maximumLevel": 7,
+   "format": "image/png",
+   "urlTemplate": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_L3_Land_Surface_Temp_8Day_Day/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
+   "legendUrl": "https://gibs.earthdata.nasa.gov/legends/MODIS_Land_Surface_Temp_H.svg",
+   "defaultDate": "2026-11-01",
+   "intervals": [
+    {
+     "start": "2000-02-26",
+     "end": "2000-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2001-01-01",
+     "end": "2001-06-10",
+     "period": "P8D"
+    },
+    {
+     "start": "2001-06-26",
+     "end": "2001-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2002-01-01",
+     "end": "2002-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2003-01-01",
+     "end": "2003-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2004-01-01",
+     "end": "2004-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2005-01-01",
+     "end": "2005-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2006-01-01",
+     "end": "2006-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2007-01-01",
+     "end": "2007-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2008-01-01",
+     "end": "2008-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2009-01-01",
+     "end": "2009-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2010-01-01",
+     "end": "2010-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2011-01-01",
+     "end": "2011-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2012-01-01",
+     "end": "2012-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2013-01-01",
+     "end": "2013-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2014-01-01",
+     "end": "2014-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2015-01-01",
+     "end": "2015-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2016-01-01",
+     "end": "2016-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2017-01-01",
+     "end": "2017-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2018-01-01",
+     "end": "2018-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2019-01-01",
+     "end": "2019-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2020-01-01",
+     "end": "2020-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2021-01-01",
+     "end": "2021-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2022-01-01",
+     "end": "2022-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2023-01-01",
+     "end": "2023-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2024-01-01",
+     "end": "2024-12-26",
+     "period": "P8D"
+    },
+    {
+     "start": "2025-01-01",
+     "end": "2025-11-25",
+     "period": "P8D"
+    },
+    {
+     "start": "2025-12-11",
+     "end": "2025-12-27",
+     "period": "P8D"
+    },
+    {
+     "start": "2026-01-09",
+     "end": "2026-11-01",
+     "period": "P8D"
+    }
+   ],
+   "intervalsTotal": 29
+  }
+ ]
+}
