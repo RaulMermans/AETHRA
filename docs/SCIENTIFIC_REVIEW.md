@@ -60,10 +60,16 @@ identical years.
 | Mean offset | cell 1.05 °C cooler than station (median): expected from elevation/support/definition |
 | Largest disagreements | Sevilla San Pablo, Ibiza, Menorca Mahón, Daroca, Córdoba Aeropuerto: stations warm 0.4–0.6 °C/decade less than their cells. Not explained here (possible station changes, coastal/island cells); stations are not homogenized |
 
-Reading: MERRA-2 and independent stations agree on direction everywhere and on magnitude for most
+Reading: MERRA-2 and NOAA stations agree on direction everywhere and on magnitude for most
 pairs. This supports, but does not prove, the Gate A result. NOAA is a check, not exact ground truth
-for a 50 km cell. (As far as we know MERRA-2 does not assimilate land 2 m temperature, which is what
-makes the station check independent — **a reviewer should confirm this in the MERRA-2 documentation**.)
+for a 50 km cell. **Call it an external station comparison, not an independent check (D75).** The
+primary GMAO input-observation report (McCarty et al. 2016, NASA/TM–2016-104606 Vol. 46, §2.1) lists
+"land surface (e.g. meteorological aviation reports, or METAR)" observations among MERRA-2's
+conventional inputs without stating which variables are assimilated. Secondary descriptions say only
+surface pressure from land stations is used and that 2 m temperature is not, but that was not
+confirmed from a primary source on 15 Nov. GMAO Office Note No. 9 (MERRA-2 File Specification) also
+states that MERRA-2 forces its land surface with observation-based precipitation. Until a reviewer
+confirms the variable list, the station comparison may share some observational input with MERRA-2.
 Figure: `data/results/noaa_validation/slopes.svg`.
 
 ## 4. Regional labels in the Trend panel — `scripts/check_scope_multiplicity.py`
@@ -77,8 +83,11 @@ The Trend panel tests each of ~72 regions separately (p < 0.05 and CI excludes 0
 | Rain anomaly (GPM) | 72 | 6 | 0 |
 | Modelled runoff (GLDAS) | 54 | 17 | 1 |
 
-Labels are **unchanged** (changing the significance rule is a team decision, AGENTS.md rule 1/7). The
-panel now shows an EXPLORATORY caveat on every non-temperature result. **Decision needed** (D53).
+Re-run on the D64 bundle (15 Nov): temperature 72/72/72; rain 72/6/0; rain anomaly 72/**7**/0;
+runoff 52/17/**0** (`scope_bh.json`; pre-D64 file kept in `data/results/scope_multiplicity/history/`).
+
+Python labels are **unchanged**. **D53 is closed** (15 Nov, D75): the judge build never shows a
+non-temperature regional label as "Supported"; it renders "EXPLORATORY — multiplicity unadjusted".
 
 ## 5. Human sign-off — all PENDING
 
@@ -90,7 +99,7 @@ Reviewer must not be the person who ran the analysis. Tick only after doing the 
 - [ ] **PENDING** Gate B: read `ENERGY_RESEARCH.md` §0 + §11 (amendments A1–A3) and the bundle; agree that "insufficient evidence" is the right outcome and that nothing else was tried
 - [ ] **PENDING** Gate B: read `independence_check.json`; agree the complementarity sentence is descriptive and correctly worded
 - [ ] **PENDING** NOAA: look at `slopes.svg` and the five largest disagreements; agree with the reading in §3
-- [ ] **PENDING** Decide D53 (regional multiplicity: keep caveat / apply BH in the pipeline / temperature-only judge view)
+- [x] **DECIDED (owner authorization, D53/D75)** D53: temperature-only "Supported" in the judge view; rain/runoff regional labels EXPLORATORY. A reviewer may still disagree and reopen it
 - [ ] **PENDING** Click through `/explore` once yourself (judge build)
 
 Reviewer: ________ Date/time: ________
@@ -105,3 +114,24 @@ projection.
 The reviewer, if asked later, only confirms that cases **quote** `energy-gap-*` cards and
 independence ratios without new statistics or a CyL-vs-Aragón significance claim. 3D geometry is
 not a scientific product. Judge mode (D61) hides plant overlay and 3D.
+
+## 7. Automated technical review (15 Nov 2026) — not a human sign-off
+
+Performed by a coding agent during the recovery sprint. **It does not replace §5**: the reviewer must
+not be the person (or tool) that ran the analysis, and no box in §5 except D53 is ticked by this.
+
+| Item (§5) | What was executed / checked | Result |
+|---|---|---|
+| Tests | `.venv/bin/python -m pytest -q packages/science tests` | 68 passed (incl. new `test_release_guards.py`, `test_relationship_maps.py`) |
+| Gate A estimand + numbers | `analyze_gate_a_temperature.py` re-run to a scratch dir with current code | Every analysis field identical; `annual_series.csv` byte-identical (`reproduction_2026-11-15.json`) |
+| Gate A independence | GMAO TM-2016-104606 Vol. 46 §2.1; GMAO Office Note 9 | **Not confirmed** from primary docs → wording changed to "external station comparison" |
+| Gate B | Raw manifest SHA-256 and `analyze_energy_gap.py` hash match the bundle; CCAA polygons identical to the pre-D64 file | Not re-executed unless the POWER re-download matches (see `FINAL_RELEASE_VALIDATION.md`) |
+| Complementarity | Cards and Study findings say "descriptive", "not a trend", "not grid reliability" | Wording consistent with `independence_check.json` |
+| NOAA disagreements | Values in §3 match `noaa_validation/analysis_bundle.json` (test `test_noaa_validation_summary_matches_pairs`) | Consistent; physical explanation still open |
+| Judge build | Browser e2e `scripts/e2e_judge_path.py` (3 full runs, URL attacks, 3 viewports, data-down) | See `FINAL_RELEASE_VALIDATION.md` |
+
+**Still requires an independent human:** the Gate A estimand and claim wording, the GMAO variable
+list for land stations, the Gate B "insufficient evidence" reading and A1–A3 amendments, the
+complementarity sentence, the NOAA disagreement reading, and one click-through on the judge build.
+Until then every finding stays **EXPLORATORY** in UI, slides and project page.
+

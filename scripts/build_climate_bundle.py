@@ -107,6 +107,15 @@ def add_bh(stats_list: list[dict | None], alpha: float = 0.05) -> float:
     return float(np.mean(q < alpha))
 
 
+def significant_fdr(s: dict | None, alpha: float = 0.05) -> bool:
+    """Robust after multiple testing: `significant` (p < 0.05, CI excludes 0) AND BH q < alpha.
+
+    Same rule for map cells and the station network, so the map stippling and station symbols
+    in /explore read one pipeline label instead of thresholding q in the browser.
+    """
+    return bool(s and s["significant"] and s.get("q_value_bh", 1.0) < alpha)
+
+
 def series_dict(years, values, nd=2) -> dict:
     return {str(y): (round(float(v), nd) if np.isfinite(v) else None) for y, v in zip(years, values)}
 
@@ -177,6 +186,7 @@ def build_merra2() -> tuple[dict, dict, tuple]:
         "cell_ci_high_decade": [c["ci_high_decade"] for c in cell],
         "cell_p_value": [c["p_value"] for c in cell],
         "cell_q_value": [c["q_value_bh"] for c in cell],
+        "cell_significant_fdr": [significant_fdr(c) for c in cell],
         "cell_intercept_2000": [c["intercept_2000"] for c in cell],
         "cell_share_q_lt_0_05": round(share, 3),
         "spain_region": R.R0_LABEL,
@@ -246,6 +256,15 @@ def build_gpm() -> tuple[dict, dict, dict, np.ndarray]:
         "cell_slope_decade": [c["slope_decade"] for c in cell],
         "cell_p_value": [c["p_value"] for c in cell],
         "cell_q_value": [c["q_value_bh"] for c in cell],
+        "cell_significant_fdr": [significant_fdr(c) for c in cell],
+        # Precipitation slope in units of the cell's 2000–2024 SD (σ/decade) for the dry/wet
+        # anomaly trend map. Dividing by a per-cell constant leaves p, q and the label unchanged.
+        "cell_anomaly_slope_decade": [
+            round(c["slope_decade"] / float(clim_std[::step, ::step].ravel()[i]), 3)
+            if float(clim_std[::step, ::step].ravel()[i]) > 0
+            else None
+            for c, i in zip(cell, valid_indices)
+        ],
         "cell_intercept_2000": [c["intercept_2000"] for c in cell],
         "cell_max_slope_decade": [c["slope_decade"] for c in cell_mx],
         "cell_max_intercept_2000": [c["intercept_2000"] for c in cell_mx],
@@ -394,7 +413,7 @@ def build_noaa_stations() -> dict:
         fdr[m] = round(add_bh(fam), 3)
         for s in fam:
             if s:
-                s["significant_fdr"] = bool(s["q_value_bh"] < 0.05 and s["significant"])
+                s["significant_fdr"] = significant_fdr(s)
     print(f"  {len(stations)} stations with at least one complete year")
     return {
         "dataset": "NOAA GHCN-Daily (Global Historical Climatology Network)",

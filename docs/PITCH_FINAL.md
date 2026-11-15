@@ -39,8 +39,8 @@ decade, interval minus 1.5 to plus 1.7. Insufficient evidence, in all five regio
 change is not proof of stability: 25 years can only reveal trends of about two days a decade."
 
 **Contrast (1:15–1:35)** *(live: Study findings)*. "Same tool, same rules, air temperature from MERRA-2:
-a supported increase of about 0.6 °C per decade, 2000 to 2025, interval 0.31 to 0.87, and 64
-independent NOAA stations warmed too. Two questions, two different scientific outcomes, both visible."
+a supported increase of about 0.6 °C per decade, 2000 to 2025, interval 0.31 to 0.87, and all 64
+NOAA weather stations we compared warmed too. Two questions, two different scientific outcomes, both visible."
 
 **Why it matters (1:35–2:00).** "So the analyst's answer is precise: the 'more joint lows' assumption is
 not supported and stays a hypothesis; the next step is a study with observed generation, not a

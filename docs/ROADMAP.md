@@ -55,7 +55,7 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
   0.34 (2000–2020) to 0.74 (2005–2025) °C/decade, residual lag-1 r ≈ 0.03.* Accept: the claim
   states the range, not a single value with false precision.
 - [x] **P0-S5 Independent check.** *Computed 14 Nov (D52, `scripts/validate_merra2_vs_noaa.py`): 64 paired stations, 64/64 same sign, median slope difference +0.004 °C/decade, median r 0.93; 5 disagreements documented. Second-person review PENDING (`docs/SCIENTIFIC_REVIEW.md`).*
-- [x] **P0-S6 Map multiplicity.** *Done: maps show slope only (legend says so); `cell_q_value` stored (MERRA-2 99.6 % of cells q < 0.05; GPM 0 %); station catalog uses BH q.*
+- [x] **P0-S6 Map multiplicity.** *Done: `cell_q_value` stored (MERRA-2 99.6 % of cells q < 0.05; GPM 0 %); station catalog uses BH q. Since D73 trend maps stipple cells / ring stations that are not robust after FDR, from the pipeline label `cell_significant_fdr` / `significant_fdr`.*
 - [x] **P0-S7 Period.** *Decided by default: 2000–2025 (data on disk). 1980 extension not done; D37 stays OPEN for after submission.*
 
 ### Backend & contracts (owner: unassigned)
@@ -80,6 +80,8 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 - [ ] **P0-P3** Rehearsed demo ≤ 2:00 with a fallback screen recording.
 
 **15 Nov 02:00:** MVP alignment audit, readiness and submission docs written: `MVP_ALIGNMENT_AUDIT.md`, `JUDGING_READINESS.md` (release checklist), `JUDGE_EXPERIENCE.md`, `PITCH_FINAL.md`. New blocker found: province-scope results predate the D64 boundary change (audit §4.3).
+
+**15 Nov morning (recovery sprint, D75):** D53 closed (conservative judge policy); D64 province scopes rebuilt and dependent artifacts regenerated; Gate A reproduced with current code; NOAA check reworded "external station comparison"; judge-mode gates extended (relationship maps, 2040 horizon); browser e2e of the full judge path passes 3×. Record: `docs/FINAL_RELEASE_VALIDATION.md`. Still human-only: `SCIENTIFIC_REVIEW.md` §5, venue rehearsal, deployment credentials, submission.
 
 **Immediate next action (updated 14 Nov, late evening):** a named second team member works through the
 PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and **decides D53** (Python significance

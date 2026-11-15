@@ -61,6 +61,8 @@ type Copy = {
     evidenceHint: string;
     infrastructure: string;
     infrastructureHint: string;
+    relationships: string;
+    relationshipsHint: string;
     screenshot: string;
     screenshotHint: string;
     share: string;
@@ -141,6 +143,58 @@ type Copy = {
     hydroHint: string;
     mw: string;
   };
+  relations: {
+    title: string;
+    loading: string;
+    error: string;
+    exploratory: string;
+    choose: string;
+    maps: Record<"agreement" | "trend-gap" | "temp-precip" | "heat-drought", { tab: string; title: string; question: string }>;
+    scaleLow: Record<"agreement" | "trend-gap" | "temp-precip" | "heat-drought", string>;
+    scaleHigh: Record<"agreement" | "trend-gap" | "temp-precip" | "heat-drought", string>;
+    agreementSummary: (n: number, r: string, sign: number) => string;
+    trendGapSummary: (n: number, diff: string) => string;
+    couplingSummary: (tested: number, neg: number, robust: number, qMin: string, rho: string) => string;
+    compoundSummary: (tested: number, pos: number, robust: number, qMin: string, rho: string) => string;
+    noRobust: string;
+    signNote: string;
+    cellsKey: string;
+    dottedKey: string;
+    blankKey: string;
+    filledKey: string;
+    ringKey: string;
+    greyKey: string;
+    agreementPoint: (r: string, n: number) => string;
+    trendGapPoint: (diff: string, cell: string, station: string) => string;
+    robustPoint: string;
+    notRobustPoint: string;
+    insufficientPoint: string;
+    data: string;
+    period: string;
+    method: string;
+    design: string;
+    doNot: string;
+    whyDetrend: string;
+    activeHint: string;
+  };
+  mapKey: {
+    aria: string;
+    title: string;
+    cells: (resolution: string) => string;
+    cellsRobust: string;
+    cellsDotted: string;
+    cellsNoFdr: string;
+    basinsValue: string;
+    basinsRobust: string;
+    basinsHatched: string;
+    basinsNone: string;
+    stationsValue: (year: number) => string;
+    stationsNoField: string;
+    stationRobust: string;
+    stationRing: string;
+    stationInsufficient: string;
+    symbolRobust: string;
+  };
   coords: {
     selection: string;
     point: string;
@@ -181,6 +235,8 @@ type Copy = {
     noSeries: string;
     observed: (units: string) => string;
     senLine: string;
+    wetBar: string;
+    dryBar: string;
     globeSlope: string;
     chartAria: (title: string, from: number, to: number, units: string) => string;
     corrected: string;
@@ -240,6 +296,7 @@ type Copy = {
     independence: string;
     notPresentable: string;
     notPresentableBody: string;
+    mapNote: string;
     openCards: string;
   };
   cards: {
@@ -380,6 +437,7 @@ type Copy = {
     conceptual: string;
     frames: Record<"hybrid" | "wind_focus" | "solar_focus", string>;
     chartCaption: (label: string, units: string, year: number) => string;
+    chartCaptionHistorical: (label: string, units: string, year: number) => string;
     complementarity: string;
     complementarityNote: string;
     observed: string;
@@ -395,6 +453,7 @@ type Copy = {
     returnSpain: string;
     noProjection: string;
     chartAria: (label: string, from: number, to: number) => string;
+    chartAriaHistorical: (label: string, from: number, to: number) => string;
     illustrativeDisclaimer: string;
     conceptualDisclaimer: string;
   };
@@ -466,6 +525,8 @@ export const messages: Record<Locale, Copy> = {
       evidenceHint: "Trend results with method, uncertainty, sources and limits (EvidenceCards)",
       infrastructure: "Energy infrastructure",
       infrastructureHint: "Registered wind and solar installations (Castilla y León register) and their NASA analysis region",
+      relationships: "Relationship maps",
+      relationshipsHint: "Maps that cross two variables: reanalysis vs stations, warm vs dry years, hot days vs dry spells",
       screenshot: "Screenshot",
       screenshotHint: "Download a PNG of the current view",
       share: "Copy link",
@@ -511,7 +572,7 @@ export const messages: Record<Locale, Copy> = {
       nextTrend: (from, to) =>
         `Next: Theil–Sen slope map for ${from}–${to} — not a new year, not a forecast.`,
       slopeNote: (from, to) =>
-        `Theil–Sen slope per decade, complete years ${from}–${to}. Colour shows slope only, not significance. Not a forecast.`,
+        `Theil–Sen slope per decade, complete years ${from}–${to}. Colour shows the slope; dots, hatching and rings mark trends that are not robust (see map key). Not a forecast.`,
       pilot: "Pilot",
     },
     dimensions: {
@@ -554,6 +615,63 @@ export const messages: Record<Locale, Copy> = {
       hydroHint: "Not in this register. This layer is wind + solar PV only, Castilla y León only.",
       mw: "Registered MW ≠ electricity produced. Points sit inside official perimeters.",
     },
+  relations: {
+      title: "Relationship maps",
+      loading: "Loading relationship maps…",
+      error: "Could not load relationship-maps.json.",
+      exploratory: "EXPLORATORY",
+      choose: "Choose a relationship",
+      maps: {
+        agreement: { tab: "Agreement", title: "Reanalysis vs stations: year-to-year agreement", question: "Do MERRA-2 cells and NOAA stations rise and fall together year to year?" },
+        "trend-gap": { tab: "Trend gap", title: "Reanalysis vs stations: trend difference", question: "Does the MERRA-2 cell warm faster or slower than the station inside it?" },
+        "temp-precip": { tab: "Warm × dry", title: "Are warm years also dry years?", question: "Year-to-year link between annual temperature (MERRA-2) and annual rainfall (GPM), trends removed." },
+        "heat-drought": { tab: "Heat × drought", title: "Hot days and dry spells at stations", question: "Do years with more days above 35 °C also have longer dry spells? Trends removed." },
+      },
+      scaleLow: { agreement: "r 0.5 (weak)", "trend-gap": "cell warms slower", "temp-precip": "warm years drier", "heat-drought": "opposite years" },
+      scaleHigh: { agreement: "r 1 (identical)", "trend-gap": "cell warms faster", "temp-precip": "warm years wetter", "heat-drought": "heat with dry spells" },
+      agreementSummary: (n, r, sign) => `${n} paired stations. Median year-to-year r = ${r}. Same trend sign at ${sign} of ${n}.`,
+      trendGapSummary: (n, diff) => `${n} paired stations. Median difference (cell − station) ${diff} °C/decade.`,
+      couplingSummary: (tested, neg, robust, qMin, rho) => `${tested} cells tested. ${neg} have a negative rank correlation (Spearman rho, median ${rho}), but ${robust} pass FDR (lowest q = ${qMin}).`,
+      compoundSummary: (tested, pos, robust, qMin, rho) => `${tested} stations tested. ${pos} have a positive rank correlation (Spearman rho, median ${rho}), but ${robust} pass FDR (lowest q = ${qMin}).`,
+      noRobust: "No robust relationship detected",
+      signNote: "Neighbouring cells and stations are not independent, so the sign count is descriptive, not a test.",
+      cellsKey: "Each square is one MERRA-2 cell (0.5° × 0.625°); colour = Spearman rho.",
+      dottedKey: "Dotted: not robust after FDR (q ≥ 0.05)",
+      blankKey: "Blank: insufficient GPM coverage (< 50 % of the cell)",
+      filledKey: "Filled: robust after FDR",
+      ringKey: "Ring: no robust relationship detected",
+      greyKey: "Small grey: insufficient evidence (< 15 paired years)",
+      agreementPoint: (r, n) => `r ${r} · ${n} years`,
+      trendGapPoint: (diff, cell, station) => `Δ ${diff} °C/decade (cell ${cell}, station ${station})`,
+      robustPoint: "Robust after FDR",
+      notRobustPoint: "No robust relationship detected",
+      insufficientPoint: "Insufficient evidence",
+      data: "Data",
+      period: "Period",
+      method: "Method",
+      design: "Design fixed before computing: docs/RELATIONSHIP_MAPS.md",
+      doNot: "Year-to-year co-variability only. Not causation, not a trend, not a forecast.",
+      whyDetrend: "Each series is detrended first: two series that both trend would otherwise look related.",
+      activeHint: "The globe shows this relationship while the panel is open. Close it to return to the climate map.",
+    },
+    mapKey: {
+      aria: "How to read the map",
+      title: "How to read the map",
+      cells: (resolution) => `Each square is one native cell (${resolution}). No smoothing between cells.`,
+      cellsRobust: "Plain cell: trend holds after FDR across map cells",
+      cellsDotted: "Dotted cell: no robust trend detected (FDR, q ≥ 0.05)",
+      cellsNoFdr: "Slopes only: this bundle has no per-cell FDR label.",
+      basinsValue: "One flat colour per basin bounding box (GPM mean), not the watershed.",
+      basinsRobust: "EXPLORATORY: p < 0.05 and CI excludes 0 (not adjusted for 8 basins)",
+      basinsHatched: "Hatched: no robust trend detected",
+      basinsNone: "Grey: insufficient evidence (GPM covers < 95 % of the box)",
+      stationsValue: (year) => `Colour and size: value observed at the station in ${year}.`,
+      stationsNoField: "Nothing is drawn between stations: there is no data there.",
+      stationRobust: "Filled: trend holds after FDR across stations",
+      stationRing: "Ring: no robust trend detected",
+      stationInsufficient: "Small grey: insufficient evidence (< 15 complete years)",
+      symbolRobust: "Trend holds after FDR (map family)",
+    },
     coords: {
       selection: "Selection",
       point: "Point",
@@ -594,6 +712,8 @@ export const messages: Record<Locale, Copy> = {
       noSeries: "No observed series for this place.",
       observed: (units) => `Observed (${units})`,
       senLine: "Theil–Sen line, fitted period only",
+      wetBar: "Wetter than 2000–2024 (above 0)",
+      dryBar: "Drier than 2000–2024 (below 0)",
       globeSlope: "Globe shows the slope field, not a later year.",
       chartAria: (title, from, to, units) => `${title}, observed ${from}–${to}, ${units}`,
       corrected: " (autocorrelation-corrected)",
@@ -608,7 +728,7 @@ export const messages: Record<Locale, Copy> = {
         "Theil–Sen slope with 95% CI; Mann–Kendall test (ties-corrected, autocorrelation-checked). Supported = p < 0.05 and CI excludes 0. Complete calendar years only.",
       doNot: "Do not conclude: not a forecast, not a cause, not energy production or site suitability.",
       multiplicity:
-        "EXPLORATORY: each region is tested on its own, without adjustment for the ~72 regions offered here. After a Benjamini–Hochberg adjustment, none of the regional rain or rain-anomaly labels and only 1 of 17 modelled-runoff labels stay supported. Temperature labels are unaffected.",
+        "EXPLORATORY: each region is tested on its own, without adjustment for the ~72 regions offered here. After a Benjamini–Hochberg adjustment, none of the regional rain or rain-anomaly labels and only 0 of 17 modelled-runoff labels stay supported. Temperature labels are unaffected.",
       basins: "Basin bounding boxes",
       box: "box",
       stations: "Stations",
@@ -660,6 +780,8 @@ export const messages: Record<Locale, Copy> = {
       notPresentable: "Not a presentable finding",
       notPresentableBody:
         "GPM rain and GLDAS modelled runoff exist on the map, but their regional “Supported” labels do not survive a multiple-testing adjustment, so we do not present them as findings. They are not linked to either question here.",
+      mapNote:
+        "The globe shows the climate map selected on the left (air temperature by default) as context. Joint solar + wind lows are results for five regions, not a map layer.",
       openCards: "Open Evidence cards",
     },
     cards: {
@@ -833,6 +955,8 @@ export const messages: Record<Locale, Copy> = {
       },
       chartCaption: (label, units, year) =>
         `${label} (${units}). Solid: observed years. Dashed: Theil–Sen on 2001–${year} only. Hatched 2026–2040: no validated projection — not a forecast.`,
+      chartCaptionHistorical: (label, units, year) =>
+        `${label} (${units}). Solid: observed years. Dashed: Theil–Sen fitted on 2001–${year} only; the chart ends at the last observed year.`,
       complementarity: "Complementarity (descriptive)",
       complementarityNote: "Joint-low days 2001–2025 vs year-shift independence. Not a trend.",
       observed: "Observed",
@@ -849,6 +973,7 @@ export const messages: Record<Locale, Copy> = {
       returnSpain: "Return to Spain",
       noProjection: "No validated projection",
       chartAria: (label, from, to) => `${label}, observed ${from}–${to}, no projection after ${to}`,
+      chartAriaHistorical: (label, from, to) => `${label}, observed ${from}–${to}, with the fitted historical trend`,
       illustrativeDisclaimer: ILLUSTRATIVE_DISCLAIMER,
       conceptualDisclaimer: CONCEPTUAL_DISCLAIMER,
     },
@@ -924,6 +1049,8 @@ export const messages: Record<Locale, Copy> = {
       infrastructure: "Infraestructura energética",
       infrastructureHint:
         "Instalaciones eólicas y solares registradas (registro de Castilla y León) y su región de análisis NASA",
+      relationships: "Mapas de relación",
+      relationshipsHint: "Mapas que cruzan dos variables: reanálisis frente a estaciones, años cálidos frente a secos, días de calor frente a rachas secas",
       screenshot: "Captura",
       screenshotHint: "Descargar un PNG de la vista actual",
       share: "Copiar enlace",
@@ -969,7 +1096,7 @@ export const messages: Record<Locale, Copy> = {
       nextTrend: (from, to) =>
         `Siguiente: mapa de pendiente Theil–Sen de ${from}–${to}. No es un año nuevo ni un pronóstico.`,
       slopeNote: (from, to) =>
-        `Pendiente Theil–Sen por década, años completos ${from}–${to}. El color muestra solo la pendiente, no la significación. No es un pronóstico.`,
+        `Pendiente Theil–Sen por década, años completos ${from}–${to}. El color muestra la pendiente; puntos, rayado y anillos marcan las tendencias no robustas (ver la clave del mapa). No es un pronóstico.`,
       pilot: "Piloto",
     },
     dimensions: {
@@ -1012,6 +1139,63 @@ export const messages: Record<Locale, Copy> = {
       hydroHint: "No está en este registro. Esta capa solo incluye eólica y fotovoltaica, y solo en Castilla y León.",
       mw: "Los MW registrados no son electricidad producida. Los puntos están dentro de los perímetros oficiales.",
     },
+  relations: {
+      title: "Mapas de relación",
+      loading: "Cargando mapas de relación…",
+      error: "No se pudo cargar relationship-maps.json.",
+      exploratory: "EXPLORATORIO",
+      choose: "Elige una relación",
+      maps: {
+        agreement: { tab: "Acuerdo", title: "Reanálisis frente a estaciones: acuerdo año a año", question: "¿Suben y bajan a la vez las celdas MERRA-2 y las estaciones NOAA de un año a otro?" },
+        "trend-gap": { tab: "Brecha", title: "Reanálisis frente a estaciones: diferencia de tendencia", question: "¿La celda MERRA-2 se calienta más rápido o más lento que la estación que contiene?" },
+        "temp-precip": { tab: "Calor × seco", title: "¿Los años cálidos son también secos?", question: "Relación año a año entre la temperatura anual (MERRA-2) y la lluvia anual (GPM), sin tendencias." },
+        "heat-drought": { tab: "Calor × sequía", title: "Días de calor y rachas secas en estaciones", question: "¿Los años con más días por encima de 35 °C tienen también rachas secas más largas? Sin tendencias." },
+      },
+      scaleLow: { agreement: "r 0,5 (débil)", "trend-gap": "la celda se calienta menos", "temp-precip": "años cálidos más secos", "heat-drought": "años opuestos" },
+      scaleHigh: { agreement: "r 1 (idéntico)", "trend-gap": "la celda se calienta más", "temp-precip": "años cálidos más húmedos", "heat-drought": "calor con rachas secas" },
+      agreementSummary: (n, r, sign) => `${n} estaciones emparejadas. r año a año mediana = ${r}. Mismo signo de tendencia en ${sign} de ${n}.`,
+      trendGapSummary: (n, diff) => `${n} estaciones emparejadas. Diferencia mediana (celda − estación) ${diff} °C/década.`,
+      couplingSummary: (tested, neg, robust, qMin, rho) => `${tested} celdas analizadas. ${neg} tienen correlación de rangos negativa (rho de Spearman, mediana ${rho}), pero ${robust} superan FDR (q mínima = ${qMin}).`,
+      compoundSummary: (tested, pos, robust, qMin, rho) => `${tested} estaciones analizadas. ${pos} tienen correlación de rangos positiva (rho de Spearman, mediana ${rho}), pero ${robust} superan FDR (q mínima = ${qMin}).`,
+      noRobust: "No se detecta una relación robusta",
+      signNote: "Las celdas y estaciones vecinas no son independientes: el recuento de signos es descriptivo, no un test.",
+      cellsKey: "Cada cuadrado es una celda MERRA-2 (0,5° × 0,625°); color = rho de Spearman.",
+      dottedKey: "Punteado: no robusta tras FDR (q ≥ 0,05)",
+      blankKey: "En blanco: cobertura GPM insuficiente (< 50 % de la celda)",
+      filledKey: "Relleno: robusta tras FDR",
+      ringKey: "Anillo: no se detecta una relación robusta",
+      greyKey: "Gris pequeño: evidencia insuficiente (< 15 años emparejados)",
+      agreementPoint: (r, n) => `r ${r} · ${n} años`,
+      trendGapPoint: (diff, cell, station) => `Δ ${diff} °C/década (celda ${cell}, estación ${station})`,
+      robustPoint: "Robusta tras FDR",
+      notRobustPoint: "No se detecta una relación robusta",
+      insufficientPoint: "Evidencia insuficiente",
+      data: "Datos",
+      period: "Periodo",
+      method: "Método",
+      design: "Diseño fijado antes de calcular: docs/RELATIONSHIP_MAPS.md",
+      doNot: "Solo covariación año a año. No es causalidad, ni tendencia, ni pronóstico.",
+      whyDetrend: "A cada serie se le quita antes su propia tendencia: dos series que crecen a la vez parecerían relacionadas.",
+      activeHint: "El globo muestra esta relación mientras el panel está abierto. Ciérralo para volver al mapa climático.",
+    },
+    mapKey: {
+      aria: "Cómo leer el mapa",
+      title: "Cómo leer el mapa",
+      cells: (resolution) => `Cada cuadrado es una celda nativa (${resolution}). Sin suavizado entre celdas.`,
+      cellsRobust: "Celda lisa: la tendencia se mantiene tras FDR entre celdas",
+      cellsDotted: "Celda punteada: no se detecta una tendencia robusta (FDR, q ≥ 0,05)",
+      cellsNoFdr: "Solo pendientes: este bundle no trae la etiqueta FDR por celda.",
+      basinsValue: "Un color plano por caja de cuenca (media GPM), no la cuenca hidrográfica real.",
+      basinsRobust: "EXPLORATORIO: p < 0,05 y el IC excluye 0 (sin ajustar por 8 cuencas)",
+      basinsHatched: "Rayado: no se detecta una tendencia robusta",
+      basinsNone: "Gris: evidencia insuficiente (GPM cubre < 95 % de la caja)",
+      stationsValue: (year) => `Color y tamaño: valor observado en la estación en ${year}.`,
+      stationsNoField: "No se pinta nada entre estaciones: ahí no hay datos.",
+      stationRobust: "Relleno: la tendencia se mantiene tras FDR entre estaciones",
+      stationRing: "Anillo: no se detecta una tendencia robusta",
+      stationInsufficient: "Gris pequeño: evidencia insuficiente (< 15 años completos)",
+      symbolRobust: "La tendencia se mantiene tras FDR (familia del mapa)",
+    },
     coords: {
       selection: "Selección",
       point: "Punto",
@@ -1052,6 +1236,8 @@ export const messages: Record<Locale, Copy> = {
       noSeries: "No hay serie observada para este lugar.",
       observed: (units) => `Observado (${units})`,
       senLine: "Recta de Theil–Sen, solo el periodo ajustado",
+      wetBar: "Más húmedo que 2000–2024 (sobre 0)",
+      dryBar: "Más seco que 2000–2024 (bajo 0)",
       globeSlope: "El globo muestra el campo de pendientes, no un año posterior.",
       chartAria: (title, from, to, units) => `${title}, observado ${from}–${to}, ${units}`,
       corrected: " (corregido por autocorrelación)",
@@ -1067,7 +1253,7 @@ export const messages: Record<Locale, Copy> = {
         "Pendiente de Theil–Sen con IC del 95 %; prueba de Mann–Kendall (corregida por empates y comprobada frente a la autocorrelación). Respaldado = p < 0,05 y el IC excluye 0. Solo años civiles completos.",
       doNot: "No concluyas: no es un pronóstico, ni una causa, ni producción energética, ni idoneidad de un emplazamiento.",
       multiplicity:
-        "EXPLORATORIO: cada región se contrasta por separado, sin ajuste por las ~72 regiones que se ofrecen aquí. Tras un ajuste de Benjamini–Hochberg, ninguna etiqueta regional de lluvia o de anomalía de lluvia y solo 1 de 17 etiquetas de escorrentía modelada siguen respaldadas. Las etiquetas de temperatura no cambian.",
+        "EXPLORATORIO: cada región se contrasta por separado, sin ajuste por las ~72 regiones que se ofrecen aquí. Tras un ajuste de Benjamini–Hochberg, ninguna etiqueta regional de lluvia o de anomalía de lluvia y solo 0 de 17 etiquetas de escorrentía modelada siguen respaldadas. Las etiquetas de temperatura no cambian.",
       basins: "Cajas de cuenca",
       box: "caja",
       stations: "Estaciones",
@@ -1120,6 +1306,8 @@ export const messages: Record<Locale, Copy> = {
       notPresentable: "No es un resultado presentable",
       notPresentableBody:
         "La lluvia GPM y la escorrentía modelada GLDAS están en el mapa, pero sus etiquetas regionales de «respaldado» no superan un ajuste por comparaciones múltiples, así que no las presentamos como resultados. Aquí no se vinculan con ninguna de las dos preguntas.",
+      mapNote:
+        "El globo muestra como contexto el mapa climático elegido a la izquierda (temperatura del aire por defecto). Las bajadas conjuntas de sol y viento son resultados de cinco regiones, no una capa del mapa.",
       openCards: "Abrir las fichas de evidencia",
     },
     cards: {
@@ -1299,6 +1487,8 @@ export const messages: Record<Locale, Copy> = {
       },
       chartCaption: (label, units, year) =>
         `${label} (${units}). Línea continua: años observados. Discontinua: Theil–Sen solo en 2001–${year}. Trama 2026–2040: no hay proyección validada. No es un pronóstico.`,
+      chartCaptionHistorical: (label, units, year) =>
+        `${label} (${units}). Línea continua: años observados. Discontinua: Theil–Sen ajustada solo en 2001–${year}; el gráfico termina en el último año observado.`,
       complementarity: "Complementariedad (descriptiva)",
       complementarityNote: "Días de mínimo conjunto 2001–2025 frente a la independencia por desplazamiento de año. No es una tendencia.",
       observed: "Observado",
@@ -1315,6 +1505,7 @@ export const messages: Record<Locale, Copy> = {
       returnSpain: "Volver a España",
       noProjection: "Sin proyección validada",
       chartAria: (label, from, to) => `${label}, observado ${from}–${to}, sin proyección después de ${to}`,
+      chartAriaHistorical: (label, from, to) => `${label}, observado ${from}–${to}, con la tendencia histórica ajustada`,
       illustrativeDisclaimer: "3D ilustrativo: no es una reconstrucción exacta. La altura está exagerada para que se vea.",
       conceptualDisclaimer: "Conceptual / No es un proyecto real. Solo es una vista previa de estilo, no una planta propuesta.",
     },

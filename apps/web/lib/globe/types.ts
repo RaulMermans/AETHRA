@@ -19,6 +19,20 @@ export interface GeoCoordinate {
   elevation?: Elevation;
 }
 
+/**
+ * Location preview drawn on the globe while browsing a list (e.g. the station catalog):
+ * position only, no values. `focus` marks the one item the list is pointing at (labelled).
+ */
+export interface PreviewPoint {
+  id: string;
+  latitude: number;
+  longitude: number;
+  /** Height above the ellipsoid in metres, before vertical exaggeration. */
+  heightMetres: number;
+  label: string;
+  focus: boolean;
+}
+
 /** Identified overlay under the cursor (NOAA station, basin hub, river, lake, reservoir, registered energy installation). */
 export interface OverlayFeature {
   kind: "station" | "basin-hub" | "river-line" | "lake" | "reservoir" | "lagoon" | "installation";
@@ -30,6 +44,8 @@ export interface OverlayFeature {
   basin?: string;
   /** Secondary line for the hover card (e.g. technology · municipality). */
   detail?: string;
+  /** Trend maps only: the pipeline's robustness label, shown as text next to the symbol. */
+  trendState?: "robust" | "not-robust" | "insufficient";
   latitude: number;
   longitude: number;
 }
@@ -195,7 +211,7 @@ export interface GlobeStatus {
 /** Map tools that take clicks on the globe. Add new ids here and in components/explore/ToolsBar.tsx. */
 export type ClickToolId = "distance" | "offset" | "area" | "radius" | "profile";
 /** Tools that only open a panel (no clicks on the globe). */
-export type PanelToolId = "stations" | "evidence" | "infrastructure";
+export type PanelToolId = "stations" | "evidence" | "relationships" | "infrastructure";
 /** Tools shown in the /explore Map tools bar (click tools are not exposed in the UI — see D45). */
 export type ToolId = PanelToolId;
 

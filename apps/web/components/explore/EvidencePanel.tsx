@@ -122,7 +122,7 @@ function ObservedChart({
 }) {
   const pts = evidence.series;
   if (pts.length < 2) {
-    return <p className="rounded-xl bg-black/30 p-3 text-[12px] text-muted">{copy.evidence.noSeries}</p>;
+    return <p className="rounded-xl bg-black/30 p-3 text-[14px] text-muted">{copy.evidence.noSeries}</p>;
   }
   const w = 360;
   const h = 168;
@@ -135,7 +135,9 @@ function ObservedChart({
   const x0 = pts[0].year;
   const x1 = pts[pts.length - 1].year;
 
-  const vals: number[] = [];
+  // Standardized anomalies (z-scores) read best as bars around 0: sign = dry vs wet year.
+  const anomalyBars = evidence.dimensionMeta.id === "drought";
+  const vals: number[] = anomalyBars ? [0] : [];
   for (const p of pts) {
     if (p.observed !== undefined) vals.push(p.observed);
     if (p.trend !== undefined) vals.push(p.trend);
@@ -172,11 +174,24 @@ function ObservedChart({
 
   return (
     <div className="rounded-xl bg-black/30 p-3">
-      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-        <span className="inline-flex items-center gap-1.5 text-ink">
-          <span className="h-0.5 w-4 rounded bg-[#7cc4ff]" />
-          {copy.evidence.observed(evidence.units)}
-        </span>
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+        {anomalyBars ? (
+          <>
+            <span className="inline-flex items-center gap-1.5 text-ink">
+              <span aria-hidden className="h-2.5 w-2 rounded-[1px] bg-[#5ab4ac]" />
+              {copy.evidence.wetBar}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-ink">
+              <span aria-hidden className="h-2.5 w-2 rounded-[1px] bg-[#d8b365]" />
+              {copy.evidence.dryBar}
+            </span>
+          </>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-ink">
+            <span className="h-0.5 w-4 rounded bg-[#7cc4ff]" />
+            {copy.evidence.observed(evidence.units)}
+          </span>
+        )}
         {trendPath && (
           <span className={`inline-flex items-center gap-1.5 ${mapShowsTrend ? "font-medium text-amber-100" : "text-amber-200"}`}>
             <span className="h-0 w-4 border-t-2 border-dashed border-amber-400" />
@@ -184,7 +199,7 @@ function ObservedChart({
           </span>
         )}
         {mapShowsTrend && (
-          <span className="text-[10px] text-faint">{copy.evidence.globeSlope}</span>
+          <span className="text-[12px] text-faint">{copy.evidence.globeSlope}</span>
         )}
       </div>
       <svg
@@ -203,12 +218,35 @@ function ObservedChart({
           const y = yOf(v) + 3;
           if (y > padT + innerH - 2) return null;
           return (
-            <text key={v} x={padL - 4} y={y} textAnchor="end" className="fill-white/45 text-[9px]">
+            <text key={v} x={padL - 4} y={y} textAnchor="end" className="fill-white/45 text-[11px]">
               {fmt(v)}
             </text>
           );
         })}
         <line x1={padL} y1={padT + innerH} x2={w - padR} y2={padT + innerH} stroke="rgba(255,255,255,0.15)" />
+        {anomalyBars &&
+          pts.map((p) => {
+            if (p.observed === undefined) return null; // missing year = gap, never a zero bar
+            const barW = Math.max(2, (innerW / Math.max(1, x1 - x0 + 1)) * 0.72);
+            const y0 = yOf(0);
+            const yv = yOf(p.observed);
+            return (
+              <rect
+                key={`bar-${p.year}`}
+                x={xOf(p.year) - barW / 2}
+                y={Math.min(y0, yv)}
+                width={barW}
+                height={Math.max(0.5, Math.abs(yv - y0))}
+                fill={p.observed >= 0 ? "#5ab4ac" : "#d8b365"}
+                opacity={p.year === selectedYear ? 1 : 0.82}
+                stroke={p.year === selectedYear ? "#ffffff" : "none"}
+                strokeWidth={1}
+              />
+            );
+          })}
+        {anomalyBars && (
+          <line x1={padL} y1={yOf(0)} x2={w - padR} y2={yOf(0)} stroke="rgba(255,255,255,0.45)" strokeWidth={1} />
+        )}
         {trendPath && (
           <path
             d={trendPath}
@@ -218,11 +256,10 @@ function ObservedChart({
             strokeDasharray="5 3"
           />
         )}
-        {segments.map((d) => (
-          <path key={d} d={d} fill="none" stroke="#7cc4ff" strokeWidth={2} />
-        ))}
+        {!anomalyBars &&
+          segments.map((d) => <path key={d} d={d} fill="none" stroke="#7cc4ff" strokeWidth={2} />)}
         {pts
-          .filter((p) => p.observed !== undefined)
+          .filter((p) => !anomalyBars && p.observed !== undefined)
           .map((p) => (
             <circle
               key={p.year}
@@ -233,7 +270,7 @@ function ObservedChart({
             />
           ))}
         {xTicks.map((yr) => (
-          <text key={yr} x={xOf(yr)} y={h - 4} textAnchor="middle" className="fill-white/45 text-[10px]">
+          <text key={yr} x={xOf(yr)} y={h - 4} textAnchor="middle" className="fill-white/45 text-[12px]">
             {yr}
           </text>
         ))}
@@ -276,13 +313,13 @@ export function EvidencePanel({
     >
       <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-medium tracking-[0.14em] text-muted uppercase">
+          <p className="text-[12px] font-medium tracking-[0.14em] text-muted uppercase">
             {(evidence ? m.dimensions[evidence.dimensionMeta.id].short : m.evidence.trend)} · {levelLabel}
           </p>
           <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-ink">
             {evidence ? placeLabel(evidence.locationLabel, m) : m.evidence.spain}
           </h2>
-          <p className="truncate text-[12px] text-muted">
+          <p className="truncate text-[14px] text-muted">
             {evidence
               ? subPlace(evidence.subLabel, m)
               : selected
@@ -298,7 +335,7 @@ export function EvidencePanel({
                 onSelectLocation(null);
                 onResetToNational?.();
               }}
-              className="focus-ring rounded-md px-2 py-1 text-[11px] text-muted hover:bg-white/8 hover:text-ink"
+              className="focus-ring rounded-md px-2 py-1 text-[13px] text-muted hover:bg-white/8 hover:text-ink"
             >
               {m.evidence.spain}
             </button>
@@ -320,7 +357,7 @@ export function EvidencePanel({
         </div>
       ) : (
         <div className="mt-1 min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
-          <div className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] ${view.tone}`}>
+          <div className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[15px] ${view.tone}`}>
             <span aria-hidden className="font-mono">{view.glyph}</span>
             <span className="font-semibold">{view.label}</span>
           </div>
@@ -330,14 +367,14 @@ export function EvidencePanel({
               <p className="font-mono text-xl font-semibold text-ink tabular-nums">
                 {signed(st.slope_decade)} {evidence.trendUnits}
               </p>
-              <p className="text-[12px] text-muted">
+              <p className="text-[14px] text-muted">
                 {m.cards.ci(signed(st.ci_low_decade), signed(st.ci_high_decade))} · {st.first_year ?? "?"}–{st.last_year ?? "?"} ·
                 n = {st.n} {m.cards.years} · Mann–Kendall p = {st.p_value}
                 {st.hamed_rao_applied ? m.evidence.corrected : ""}
               </p>
             </div>
           ) : (
-            <p className="text-[12px] leading-snug text-muted">{reasonLabel(evidence.notComputedReason, m)}</p>
+            <p className="text-[14px] leading-snug text-muted">{reasonLabel(evidence.notComputedReason, m)}</p>
           )}
 
           <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2">
@@ -352,7 +389,7 @@ export function EvidencePanel({
                   height={96}
                   thin
                 />
-                <p className="text-[12px] text-muted">
+                <p className="text-[14px] text-muted">
                   {m.evidence.mapSlope(
                     signed(st.slope_decade),
                     evidence.trendUnits,
@@ -374,7 +411,7 @@ export function EvidencePanel({
                     thin
                   />
                 ) : null}
-                <p className="text-[12px] text-muted">
+                <p className="text-[14px] text-muted">
                   {evidence.currentValue !== null
                     ? m.evidence.observedYear(evidence.currentYear, fmt(evidence.currentValue), evidence.units)
                     : m.evidence.noDataYear(evidence.currentYear)}
@@ -391,25 +428,25 @@ export function EvidencePanel({
             copy={m}
           />
 
-          <dl className="space-y-1.5 text-[12px] text-muted">
+          <dl className="space-y-1.5 text-[14px] text-muted">
             <div>
-              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.evidence.source}</dt>
+              <dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.evidence.source}</dt>
               <dd>{sourceLabel(evidence.statsSource, m)}</dd>
             </div>
             <div>
-              <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.evidence.method}</dt>
+              <dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.evidence.method}</dt>
               <dd>{m.evidence.methodBody}</dd>
             </div>
           </dl>
 
-          <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-[12px] text-amber-100">
+          <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-[14px] text-amber-100">
             {m.evidence.doNot}
           </p>
 
           {/* Review check (data/results/scope_multiplicity/scope_bh.json): non-temperature regional labels are
               not robust to testing ~72 regions. Labels are unchanged pending a team decision; the caveat is shown. */}
           {config.dimension !== "temperature" && st && (
-            <p className="rounded-md border border-white/20 bg-white/5 px-2 py-1.5 text-[11px] text-muted">
+            <p className="rounded-md border border-white/20 bg-white/5 px-2 py-1.5 text-[13px] text-muted">
               <span aria-hidden className="mr-1">⚠</span>
               {m.evidence.multiplicity}
             </p>
@@ -424,7 +461,7 @@ export function EvidencePanel({
                     key={b.id}
                     type="button"
                     onClick={() => onSelectLocation({ latitude: b.lat, longitude: b.lon })}
-                    className={`focus-ring rounded-full px-2 py-0.5 text-[11px] ${
+                    className={`focus-ring rounded-full px-2 py-0.5 text-[13px] ${
                       isCurr ? "bg-sky-400/25 font-medium text-sky-100" : "bg-white/6 text-muted hover:text-ink"
                     }`}
                   >
@@ -435,7 +472,7 @@ export function EvidencePanel({
             </div>
           )}
 
-          <details className="text-[12px] text-muted">
+          <details className="text-[14px] text-muted">
             <summary className="cursor-pointer text-ink/80">{m.evidence.stations}</summary>
             <div className="mt-2 space-y-2">
               {evidence.nearestStation && (
@@ -449,7 +486,7 @@ export function EvidencePanel({
               <button
                 type="button"
                 onClick={onOpenStationCatalog}
-                className="focus-ring flex w-full items-center justify-between text-left text-[11px] text-muted hover:text-ink"
+                className="focus-ring flex w-full items-center justify-between text-left text-[13px] text-muted hover:text-ink"
               >
                 {m.evidence.browse}
                 <Icon name="chevron" className="size-3.5" />

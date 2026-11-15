@@ -1,0 +1,43 @@
+{
+ "record": "Reproduction of the Gate A analysis with current code (recovery sprint, D75)",
+ "date_utc": "2026-11-15T07:50:41+00:00",
+ "command": "scripts/analyze_gate_a_temperature.py with OUT redirected to a scratch directory (committed artifact not overwritten)",
+ "result": "All analysis fields identical to analysis_bundle.json (only generated_utc and provenance differ); annual_series.csv byte-identical",
+ "historical_artifact": "analysis_bundle.json (generated 2026-11-14T19:16:43Z) is kept unchanged as the historical record",
+ "provenance_of_this_run": {
+  "input_files_sha256": {
+   "M2TMNXSLV_5.12.4_spain_2000.nc": "ab89b25a369091f76fceb5a0ab2bdcf8cbeaabc01c9f1a04827e879232b85758",
+   "M2TMNXSLV_5.12.4_spain_2001.nc": "06d6bb9b42e5088b057f3efef73f41745e53fd49e0e628609fbf989240d46b34",
+   "M2TMNXSLV_5.12.4_spain_2002.nc": "c1ec9f1309b11e91b5289fe299adcf9dc296c3bdeac199986143b659ffad0d9f",
+   "M2TMNXSLV_5.12.4_spain_2003.nc": "297017e7ab0fa59afa6b58e28f9bd13a3ce09c31a26629f951e9f7c22e38efac",
+   "M2TMNXSLV_5.12.4_spain_2004.nc": "587f11091ea36c8bd04a6128309bbe0ada51aacdbd71316099d2adaac41d4bfc",
+   "M2TMNXSLV_5.12.4_spain_2005.nc": "d1d9aa4b25370e31db58412542f5288fb82aed7e0db4e6a3fb17a0ecb984017e",
+   "M2TMNXSLV_5.12.4_spain_2006.nc": "d16ed78b357fae329f2326b3c4be5556cd2a3b7ed19a5738463ff9530eed8568",
+   "M2TMNXSLV_5.12.4_spain_2007.nc": "727e79b946a34e9b40617306466afdfe85cb8b8921989c327b704e3cf4a28a9d",
+   "M2TMNXSLV_5.12.4_spain_2008.nc": "06cf18a4b04c936122032984108055bd50fabf8ff06af5e8daf4122a23ea3432",
+   "M2TMNXSLV_5.12.4_spain_2009.nc": "3e7e47a0f03014e45dc432553aeb4fc37ffc66b797728dd53206f6bce6a40561",
+   "M2TMNXSLV_5.12.4_spain_2010.nc": "70a90d60f5a98488e222e65b8787b516ddf205ee3e527be10c3cbf78d2d91ae5",
+   "M2TMNXSLV_5.12.4_spain_2011.nc": "214decbb078b80992a72677f70eb405def081103462444382e50de2086242261",
+   "M2TMNXSLV_5.12.4_spain_2012.nc": "e2786c134db826828516c9c4ca36a1147e0a05e1ec019f8bed5ca28a970ee4e9",
+   "M2TMNXSLV_5.12.4_spain_2013.nc": "62471057947f237c8e2a5cc48eb7dd3ceac0a92cdc3fb70392feff04cc80d4e0",
+   "M2TMNXSLV_5.12.4_spain_2014.nc": "b93c4c3d892b84ff6d530007a639108ca5259f954c1d622694fd121afddd22fc",
+   "M2TMNXSLV_5.12.4_spain_2015.nc": "0e39b703c8c2c8acfaf2e09e2872cecee6599e3dfcfa94eba2a55c72d7b2de5a",
+   "M2TMNXSLV_5.12.4_spain_2016.nc": "637a628370e0e77ef2a863d26e25ff1f8870f2270abeb4173f775abfcf7b15af",
+   "M2TMNXSLV_5.12.4_spain_2017.nc": "c9df4d662089b92e69a0331056cf0f3ca64740530229da18dbb6901818544932",
+   "M2TMNXSLV_5.12.4_spain_2018.nc": "070eef05f90103d6e7ae95506b89f9441e354bb6b4cbaf215f13f75aa42da5f5",
+   "M2TMNXSLV_5.12.4_spain_2019.nc": "66eac580f653000faf66497ecd9f82276b7c08626cfacd5e094e02644249b098",
+   "M2TMNXSLV_5.12.4_spain_2020.nc": "efb0e83c648c42a7fc9bbb7f8cd45022c5328ce9db1ddf9118c98f2f1c212e25",
+   "M2TMNXSLV_5.12.4_spain_2021.nc": "f8bfc65fe5c9c67cdb75c344b963f0fd249c4f0205be2d0d1791c5b9f1850647",
+   "M2TMNXSLV_5.12.4_spain_2022.nc": "f2dc9c423f8c5873990a42816c47ac7b16966277cfbaf6eb7d5ea2514c428391",
+   "M2TMNXSLV_5.12.4_spain_2023.nc": "ee7cc33ee0912311f10e9d2248f066d07a4037c36e4f48f984c8a0d6b6a388e5",
+   "M2TMNXSLV_5.12.4_spain_2024.nc": "72111af9724b0739e679ca0394281bb17815f2ef80c07e92c19758e90f62dd5c",
+   "M2TMNXSLV_5.12.4_spain_2025.nc": "3edcd99e095034a95286879f25833900f3f3d6b6caf270a96d1907da54377806"
+  },
+  "code": {
+   "packages/science/trends.py": "2a92ed13a1f6e5b530a8e2a1909c7210a4e24318f2beff8950cc08b3aad17759",
+   "git": "f4c50f5995474b47aef981c4a330f86343a9592d+uncommitted",
+   "scripts/analyze_gate_a_temperature.py (repo file)": "de9f56caa3aeff2ba0f3edc8d13b962b6919e001a6f3a25c396f6e478a5f432b",
+   "scripts/analyze_gate_a_temperature.py (executed copy: only the ROOT and OUT lines changed)": "b02c0acba9e76e6e8695c93cbf39ee4537ed68905874abe3e843feb28c2c1569"
+  }
+ }
+}

@@ -1,4 +1,4 @@
-# Judging Readiness (15 Nov 2026, ~02:00)
+# Judging Readiness (15 Nov 2026, ~02:00; updated by the recovery sprint, see `FINAL_RELEASE_VALIDATION.md`)
 
 Qualitative self-assessment against the five official criteria. **Not a predicted score; no weights
 assumed.** Confidence = our confidence that the criterion is *ready to be judged*, not that we win.
@@ -47,10 +47,10 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
   stations not homogenized; MERRA-2 independence of the station check not yet confirmed in GMAO docs.
 - **Blocking risks (must be closed or disclosed):**
   1. `SCIENTIFIC_REVIEW.md` §5: **0/8 signed**. Slide 5 depends on it (non-negotiable 17).
-  2. D53: **OPEN**.
-  3. Provenance: `climate-bundle.json` and Gate B bundle record a pre-D64 `spain-admin.json` hash;
-     province-scope results are on old polygons; Gate A bundle records no boundary hash; Gate A/B
-     record an older `trends.py` hash. Headline unaffected (verified), provinces not presentable.
+  2. D53: **CLOSED 15 Nov** (conservative judge policy, D75).
+  3. Provenance: **resolved for the climate bundle** (rebuilt on D64 boundaries, 15 Nov); Gate A
+     reproduced with current code (all fields identical). Remaining limitation: the exact
+     `trends.py` (c43f59e1…) that produced Gate A/B was never committed (D75).
   4. Gate B CCAA regions not re-runnable on this machine (POWER raw data absent).
 - **Smallest acceptable improvement:** a teammate signs §5 and records D53 before 14:00; until then,
   everything is presented as EXPLORATORY. Re-run of `build_climate_bundle.py` is P1, not required for
@@ -82,9 +82,9 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
 ## Release check: what must be true before Submit for Judging
 
 - [ ] `SCIENTIFIC_REVIEW.md` §5 signed by a named teammate (or every result labelled EXPLORATORY in slides/page)
-- [ ] D53 recorded in `DECISIONS.md`
+- [x] D53 recorded in `DECISIONS.md` (closed 15 Nov, D75)
 - [ ] Judge build deployed; URL works in a private window; `/explore?lab=energy` shows no Energy Lab
-- [ ] Demo path in `JUDGE_EXPERIENCE.md` run 3× on the presenting machine; fallback recorded
+- [ ] Demo path in `JUDGE_EXPERIENCE.md` run 3× on the presenting machine; fallback recorded *(substitute: 3 automated browser runs on a dev machine passed 15 Nov; venue machine still pending; a 1440×900 recording of run 1 exists, see `FINAL_RELEASE_VALIDATION.md`)*
 - [ ] 7 slides built from `PITCH_FINAL.md`; every number checked against §6 of that file
 - [ ] Submission checklist in `DEMO_AND_SUBMISSION.md` ticked by a human
 - [ ] Submit for Judging pressed by 21:00; confirmation captured

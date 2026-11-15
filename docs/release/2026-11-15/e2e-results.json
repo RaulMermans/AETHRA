@@ -1,0 +1,392 @@
+[
+ {
+  "scenario": "A/run1",
+  "check": "page loads; globe ready",
+  "ok": true,
+  "detail": "13.7s"
+ },
+ {
+  "scenario": "A/run1",
+  "check": "Cesium canvas rendered",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run1",
+  "check": "research question visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run1",
+  "check": "no Energy Lab tab in judge build",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run1",
+  "check": "map-vs-study note visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run1",
+  "check": "case sheet shows insufficient evidence",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run1",
+  "check": "no 2040 / 2032 on the judge case chart",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run1",
+  "check": "history-only caption",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run1",
+  "check": "card is for Castilla y León",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run1",
+  "check": "slope and CI match the artifact",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run1",
+  "check": "n = 25 shown",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run1",
+  "check": "NASA POWER source listed",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run1",
+  "check": "temperature contrast +0.60 °C/decade, CI +0.31 to +0.87",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run1",
+  "check": "do-not-conclude line present",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A-D/run1",
+  "check": "no uncaught page errors on the judge path",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run2",
+  "check": "page loads; globe ready",
+  "ok": true,
+  "detail": "12.8s"
+ },
+ {
+  "scenario": "A/run2",
+  "check": "Cesium canvas rendered",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run2",
+  "check": "research question visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run2",
+  "check": "no Energy Lab tab in judge build",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run2",
+  "check": "map-vs-study note visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run2",
+  "check": "case sheet shows insufficient evidence",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run2",
+  "check": "no 2040 / 2032 on the judge case chart",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run2",
+  "check": "history-only caption",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run2",
+  "check": "card is for Castilla y León",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run2",
+  "check": "slope and CI match the artifact",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run2",
+  "check": "n = 25 shown",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run2",
+  "check": "NASA POWER source listed",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run2",
+  "check": "temperature contrast +0.60 °C/decade, CI +0.31 to +0.87",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run2",
+  "check": "do-not-conclude line present",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A-D/run2",
+  "check": "no uncaught page errors on the judge path",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run3",
+  "check": "page loads; globe ready",
+  "ok": true,
+  "detail": "19.4s"
+ },
+ {
+  "scenario": "A/run3",
+  "check": "Cesium canvas rendered",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run3",
+  "check": "research question visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run3",
+  "check": "no Energy Lab tab in judge build",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A/run3",
+  "check": "map-vs-study note visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run3",
+  "check": "case sheet shows insufficient evidence",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run3",
+  "check": "no 2040 / 2032 on the judge case chart",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "B/run3",
+  "check": "history-only caption",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run3",
+  "check": "card is for Castilla y León",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run3",
+  "check": "slope and CI match the artifact",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run3",
+  "check": "n = 25 shown",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "C/run3",
+  "check": "NASA POWER source listed",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run3",
+  "check": "temperature contrast +0.60 °C/decade, CI +0.31 to +0.87",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "D/run3",
+  "check": "do-not-conclude line present",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "A-D/run3",
+  "check": "no uncaught page errors on the judge path",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "E",
+  "check": "/explore?lab=energy is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "E",
+  "check": "/explore?concept=solar_pv is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "E",
+  "check": "/explore?scope=provincia&id=09 is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "E",
+  "check": "/explore?scope=provincia&id=ZZ is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "E",
+  "check": "/explore?scope=bogus&id=1 is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "E",
+  "check": "/explore#cam=nan,nan,nan is safe",
+  "ok": true,
+  "detail": "Explore observed environmental trends in Spain on a 3D globe\nSpain\n2D\n3D\nESEN\n\nWHAT THE DOTS ARE\n\nWeather station (NOAA)"
+ },
+ {
+  "scenario": "F",
+  "check": "desktop: globe ready",
+  "ok": true,
+  "detail": "globe still 'Preparing Spain' after 90 s"
+ },
+ {
+  "scenario": "F",
+  "check": "desktop 1920×1080: research question reachable",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "F",
+  "check": "desktop: no horizontal page scroll",
+  "ok": true,
+  "detail": "scrollWidth 1920"
+ },
+ {
+  "scenario": "F",
+  "check": "desktop: no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "F",
+  "check": "laptop: globe ready",
+  "ok": true,
+  "detail": "globe still 'Preparing Spain' after 90 s"
+ },
+ {
+  "scenario": "F",
+  "check": "laptop 1280×800: research question reachable",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "F",
+  "check": "laptop: no horizontal page scroll",
+  "ok": true,
+  "detail": "scrollWidth 1280"
+ },
+ {
+  "scenario": "F",
+  "check": "laptop: no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "F",
+  "check": "mobile: globe ready",
+  "ok": true,
+  "detail": "globe still 'Preparing Spain' after 90 s"
+ },
+ {
+  "scenario": "F",
+  "check": "mobile 390×844: research question reachable",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "F",
+  "check": "mobile: no horizontal page scroll",
+  "ok": true,
+  "detail": "scrollWidth 390"
+ },
+ {
+  "scenario": "F",
+  "check": "mobile: no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "G",
+  "check": "cards/bundle down: no temperature value fabricated",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "scenario": "G",
+  "check": "cards/bundle down: an error or loading state is shown",
+  "ok": true,
+  "detail": ""
+ }
+]

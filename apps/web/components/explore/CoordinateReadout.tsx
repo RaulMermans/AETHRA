@@ -17,6 +17,23 @@ function overlayKindLabel(kind: OverlayFeature["kind"], copy: Messages): string 
   return copy.coords.river;
 }
 
+/** Text for the map symbol's robustness label (UX_UI_RULES wording; never colour alone). */
+function trendStateLabel(feature: OverlayFeature, state: NonNullable<OverlayFeature["trendState"]>, copy: Messages): string {
+  switch (state) {
+    case "robust":
+      // Basin labels are single tests, not FDR-adjusted (D60): shown as EXPLORATORY.
+      return feature.kind === "basin-hub" ? copy.mapKey.basinsRobust : copy.mapKey.symbolRobust;
+    case "not-robust":
+      return copy.outcome.noRobust;
+    case "insufficient":
+      return copy.outcome.insufficient;
+    default: {
+      const exhaustive: never = state;
+      return exhaustive;
+    }
+  }
+}
+
 function OverlayCard({ feature, copy }: { feature: OverlayFeature; copy: Messages }) {
   const title = feature.name.replace(/, SP$/i, "");
   return (
@@ -27,12 +44,17 @@ function OverlayCard({ feature, copy }: { feature: OverlayFeature; copy: Message
         {feature.kind === "station" ? feature.id : feature.detail ?? feature.basin ?? feature.id}
         {feature.elevationM !== undefined ? ` · ${Math.round(feature.elevationM)} m` : ""}
       </p>
+      {/* Stations: `detail` carries pipeline values for relationship maps (ρ, q, n, label). */}
+      {feature.kind === "station" && feature.detail && (
+        <p className="mt-0.5 text-[11px] text-muted">{feature.detail}</p>
+      )}
       {feature.value !== undefined && (
         <p className="mt-0.5 font-mono text-xs text-ink">
           {feature.value}
           {feature.units ? ` ${feature.units}` : ""}
         </p>
       )}
+      {feature.trendState && <p className="mt-0.5 text-[11px] text-muted">{trendStateLabel(feature, feature.trendState, copy)}</p>}
     </div>
   );
 }

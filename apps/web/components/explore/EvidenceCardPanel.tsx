@@ -16,7 +16,8 @@ import { ToolPanel, smallButton } from "./ToolPanel";
  */
 type Outcome = "supported_increase" | "supported_decrease" | "no_robust_trend" | "insufficient_evidence";
 
-type Topic = "temperature" | "joint_low";
+export type EvidenceTopic = "temperature" | "joint_low";
+type Topic = EvidenceTopic;
 
 type EvidenceCard = {
   id: string;
@@ -149,7 +150,7 @@ function Series({ card, label, units, caption }: { card: EvidenceCard; label: st
         ))}
         <line x1={fx(x0)} y1={fy(line(x0))} x2={fx(x1)} y2={fy(line(x1))} stroke="rgb(251 191 36)" strokeDasharray="4 3" strokeWidth={1.4} />
       </svg>
-      <figcaption className="text-[10px] text-faint">
+      <figcaption className="text-[12px] text-faint">
         {caption}
       </figcaption>
     </figure>
@@ -169,7 +170,7 @@ function CardBody({ card }: { card: EvidenceCard }) {
       </div>
       <p className="font-mono text-sm text-ink tabular-nums">
         {signed(card.how_much.slope_per_decade)} {face.units}
-        <span className="block text-[11px] text-muted">
+        <span className="block text-[13px] text-muted">
           {m.cards.ci(signed(card.how_much.ci95_per_decade[0]), signed(card.how_much.ci95_per_decade[1]))}
           {card.how_much.window_range_per_decade &&
             ` · ${m.cards.window(signed(card.how_much.window_range_per_decade[0]), signed(card.how_much.window_range_per_decade[1]))}`}
@@ -186,11 +187,11 @@ function CardBody({ card }: { card: EvidenceCard }) {
         }
       />
       <dl className="space-y-1.5">
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.what}</dt><dd>{face.what}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.where}</dt><dd>{face.where}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.when}</dt><dd>{face.when}</dd></div>
+        <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.what}</dt><dd>{face.what}</dd></div>
+        <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.where}</dt><dd>{face.where}</dd></div>
+        <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.when}</dt><dd>{face.when}</dd></div>
         <div>
-          <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.evidence}</dt>
+          <dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.evidence}</dt>
           <dd>
             {face.method}. n = {card.evidence.n_years} {m.cards.years}, p = {card.evidence.p}
             {card.evidence.p_adjusted_bh !== undefined && ` ${m.cards.bh(card.evidence.p_adjusted_bh)}`}, lag-1 r ={" "}
@@ -202,7 +203,7 @@ function CardBody({ card }: { card: EvidenceCard }) {
         </div>
         {card.complementarity && (
           <div>
-            <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.context}</dt>
+            <dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.context}</dt>
             <dd>
               {m.cards.jointDays(
                 card.complementarity.observed_2001_2025,
@@ -240,10 +241,10 @@ function CardBody({ card }: { card: EvidenceCard }) {
               — {locale === "es" && s.role === card.sources[0]?.role ? face.sourceRole : locale === "es" && s.role === "daily 50 m wind speed" ? "velocidad del viento a 50 m, diaria" : locale === "es" && s.role === "daily solar insolation" ? "insolación solar diaria" : s.role}
             </li>
           ))}
-          <li className="font-mono text-[10px] break-all text-faint">
+          <li className="font-mono text-[12px] break-all text-faint">
             {card.provenance.bundle} · sha256 {card.provenance.bundle_sha256.slice(0, 12)}… · {card.provenance.git}
           </li>
-          <li className="text-[10px] text-faint">{face.status}</li>
+          <li className="text-[12px] text-faint">{face.status}</li>
         </ul>
       </details>
     </article>
@@ -252,16 +253,19 @@ function CardBody({ card }: { card: EvidenceCard }) {
 
 export function EvidenceCardPanel({
   scope,
+  initialTopic = "temperature",
   onOpenTrend,
   onClose,
 }: {
   scope: ResolvedAdminScope;
+  /** Topic selected on open (a joint-low research case opens on its joint-low card). */
+  initialTopic?: Topic;
   onOpenTrend: () => void;
   onClose: () => void;
 }) {
   const [cards, setCards] = useState<EvidenceCard[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [topic, setTopic] = useState<Topic>("temperature");
+  const [topic, setTopic] = useState<Topic>(initialTopic);
   const [showReference, setShowReference] = useState(false);
   const { m } = useLocale();
 
@@ -289,7 +293,7 @@ export function EvidenceCardPanel({
 
   return (
     <ToolPanel icon="chart" title={m.cards.title} onClose={onClose}>
-      <p className="mt-2 text-[11px] text-muted">
+      <p className="mt-2 text-[13px] text-muted">
         {m.cards.selected} <span className="text-ink">{regionLabel}</span>
       </p>
       {error && <p role="alert" className="mt-3 text-xs text-ink">{m.cards.failed(error)}</p>}
@@ -303,7 +307,7 @@ export function EvidenceCardPanel({
               role="tab"
               aria-selected={id === topic}
               onClick={() => setTopic(id)}
-              className={`focus-ring flex-1 rounded-md px-2 py-1 text-[11px] ${
+              className={`focus-ring flex-1 rounded-md px-2 py-1 text-[13px] ${
                 id === topic ? "bg-white/12 text-ink" : "text-muted hover:bg-white/6"
               }`}
             >
@@ -314,7 +318,7 @@ export function EvidenceCardPanel({
       )}
       {cards && exact && (
         <>
-          <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[11px] text-ink">
+          <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[13px] text-ink">
             {m.cards.resultFor} <strong className="font-medium">{exact.region.name}</strong>
             {key === "age" && ` ${m.cards.canarias}`}
           </p>
@@ -341,14 +345,14 @@ export function EvidenceCardPanel({
               type="button"
               aria-expanded={showReference}
               onClick={() => setShowReference((v) => !v)}
-              className="focus-ring text-[11px] text-muted underline hover:text-ink"
+              className="focus-ring text-[13px] text-muted underline hover:text-ink"
             >
               {showReference ? m.cards.hide : m.cards.show} {m.cards.nationalRef(national.region.name, scope.name)}
             </button>
           )}
           {showReference && national && (
             <>
-              <p className="rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[11px] text-amber-100">
+              <p className="rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[13px] text-amber-100">
                 {m.cards.notFor(national.region.name, scope.name)}
               </p>
               <CardBody card={national} />

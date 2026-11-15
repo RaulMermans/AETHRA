@@ -21,6 +21,8 @@ interface ToolDef<T> {
 const ALL_PANEL_TOOLS: ToolDef<PanelToolId>[] = [
   { id: "stations", icon: "station" },
   { id: "evidence", icon: "chart" },
+  // D74/D75: two-variable relationship maps (R2/R3 EXPLORATORY, unreviewed) — off in judge mode.
+  { id: "relationships", icon: "axes", exploratory: true },
   // D49: P1 context layer, opt-in, off the demo path.
   { id: "infrastructure", icon: "pylon", exploratory: true },
 ];
@@ -47,6 +49,7 @@ export function ToolsBar({
   const panelCopy: Record<PanelToolId, { label: string; hint: string }> = {
     stations: { label: m.tools.stations, hint: m.tools.stationsHint },
     evidence: { label: m.tools.evidence, hint: m.tools.evidenceHint },
+    relationships: { label: m.tools.relationships, hint: m.tools.relationshipsHint },
     infrastructure: { label: m.tools.infrastructure, hint: m.tools.infrastructureHint },
   };
   const actionCopy: Record<ToolAction, { label: string; hint: string }> = {

@@ -11,6 +11,8 @@ The **readiness table below was written 14 Nov morning.** Several "What's missin
 MERRA-2 / GPM / GLDAS / 2030 UI were addressed later the same day by **D46–D47 and D51**
 (complete years only, area weighting, no partial-year scaling, 2030 off the default path).
 **Classes are not upgraded here** — Gate 2/3 still need a named human (`SCIENTIFIC_REVIEW.md`).
+> **15 Nov 2026 (D75):** `climate-bundle.json` was rebuilt on the D64 NUTS-3 province boundaries (national and CCAA values unchanged). Gate A and Gate B were re-executed with current code and fresh NASA POWER downloads and reproduce exactly. See `docs/FINAL_RELEASE_VALIDATION.md`.
+
 Use the **temporal integrity table** (next section) and `climate-bundle.json` / AnalysisBundles
 for analysis windows. Spatial/3D layers: `docs/SPATIAL_EXPERIENCE.md` (D54, not implemented).
 

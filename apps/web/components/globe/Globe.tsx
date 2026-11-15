@@ -7,6 +7,7 @@ import { HOME_VIEW, MIN_ZOOM_DISTANCE } from "@/lib/globe/catalog";
 import { createCameraController, setOrbitView } from "@/lib/globe/cesium/camera";
 import { CesiumLayerManager } from "@/lib/globe/cesium/layer-manager";
 import { drawMeasure } from "@/lib/globe/cesium/measure-draw";
+import { drawPreview } from "@/lib/globe/cesium/preview-draw";
 import { loadCesium } from "@/lib/globe/cesium/load";
 import { attachSpaceAmbiance } from "@/lib/globe/cesium/space-ambiance";
 import { syncIllustrativeWindTurbine, type IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
@@ -35,6 +36,7 @@ import type {
   LayerStateMap,
   MeasureState,
   OverlayFeature,
+  PreviewPoint,
   QualityMode,
   QualityProfile,
   ViewMode,
@@ -50,6 +52,8 @@ export interface GlobeProps {
   /** Active map tool (distance, offset…). While set, clicks go to `onToolClick`, not `onSelect`. */
   measure?: MeasureState | null;
   onToolClick?: (coordinate: GeoCoordinate) => void;
+  /** Locations to point out while browsing a list (station catalog scroll); empty hides them. */
+  preview?: readonly PreviewPoint[];
   onHover?: (coordinate: GeoCoordinate | null) => void;
   onOverlayHover?: (feature: OverlayFeature | null) => void;
   onSelect?: (coordinate: GeoCoordinate | null) => void;
@@ -122,6 +126,7 @@ export default function Globe(props: GlobeProps) {
     setViewMode: (mode: ViewMode) => void;
     measureSource: CesiumNS.CustomDataSource;
     illustrativeSource: CesiumNS.CustomDataSource;
+    previewSource: CesiumNS.CustomDataSource;
   } | null>(null);
 
   // --- Viewer lifecycle -------------------------------------------------------------------
@@ -422,6 +427,9 @@ export default function Globe(props: GlobeProps) {
       const illustrativeSource = new Cesium.CustomDataSource("illustrative-infra");
       void v.dataSources.add(measureSource);
       void v.dataSources.add(illustrativeSource);
+      const previewSource = new Cesium.CustomDataSource("list-preview");
+      void v.dataSources.add(previewSource);
+      drawPreview(Cesium, previewSource, propsRef.current.preview ?? [], scene.verticalExaggeration || 1);
       drawMeasure(Cesium, measureSource, propsRef.current.measure ?? null);
       const cameraCtl = createCameraController(Cesium, v);
       const controller: GlobeController = {
@@ -480,6 +488,7 @@ export default function Globe(props: GlobeProps) {
         setViewMode,
         measureSource,
         illustrativeSource,
+        previewSource,
       };
       void syncIllustrativeWindTurbine(Cesium, v, illustrativeSource, propsRef.current.illustrativeAsset ?? null);
       placeMarker(propsRef.current.selected);
@@ -552,6 +561,14 @@ export default function Globe(props: GlobeProps) {
     if (!e) return;
     e.placeMarker(props.selected);
   }, [props.selected]);
+
+  // --- List preview (station catalog scroll) ---------------------------------------------
+  useEffect(() => {
+    const e = engine.current;
+    if (!e) return;
+    drawPreview(e.Cesium, e.previewSource, props.preview ?? [], e.viewer.scene.verticalExaggeration || 1);
+    e.viewer.scene.requestRender();
+  }, [props.preview]);
 
   // --- Illustrative / conceptual 3D plant (one entity set) --------------------------------
   useEffect(() => {

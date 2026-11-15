@@ -91,7 +91,8 @@ export interface RiverBasin {
   runoff_mm?: Record<string, number | null>;
   evap_mm?: Record<string, number | null>;
   soil_mm?: Record<string, number | null>;
-  rain_stats: TrendStats;
+  /** null when the basin box has too few complete GPM years (Tajo and Júcar in bundle v2). */
+  rain_stats: TrendStats | null;
   runoff_stats?: TrendStats | null;
   evap_stats?: TrendStats | null;
   soil_stats?: TrendStats | null;
@@ -209,6 +210,8 @@ export interface ClimateBundle {
     cell_p_value: number[];
     cell_intercept_2000: number[];
     cell_q_value: number[];
+    /** Pipeline label per cell: `significant` AND BH q < 0.05. Absent in bundles built before 15 Nov 2026. */
+    cell_significant_fdr?: boolean[];
     spain_annual: Record<string, number | null>;
     spain_stats: TrendStats;
     canarias_annual: Record<string, number | null>;
@@ -237,6 +240,10 @@ export interface ClimateBundle {
     cell_max_slope_decade: number[];
     cell_max_intercept_2000: number[];
     cell_q_value: number[];
+    /** Pipeline label per cell: `significant` AND BH q < 0.05. Absent in bundles built before 15 Nov 2026. */
+    cell_significant_fdr?: boolean[];
+    /** Precipitation slope / cell SD (σ/decade), computed in Python for the dry/wet trend map. */
+    cell_anomaly_slope_decade?: (number | null)[];
     spi_definition: string;
     spain_annual: Record<string, number | null>;
     spain_stats: TrendStats;
@@ -397,7 +404,7 @@ export const DIMENSIONS: DimensionMeta[] = [
     datasets: "NOAA GHCN-Daily (~175 stations)",
     units: "days/yr",
     trendUnits: "days/decade",
-    spatialNote: "NOAA stations; map is a ~50 km halo around each gauge",
+    spatialNote: "NOAA stations as point symbols; no field between gauges",
     valueDomain: [0, 65],
     trendDomain: [-5, 18],
     palette: "heat_extreme",
@@ -411,7 +418,7 @@ export const DIMENSIONS: DimensionMeta[] = [
     datasets: "NOAA GHCN-Daily + NASA GPM IMERG V07",
     units: "days",
     trendUnits: "days/decade",
-    spatialNote: "NOAA stations; map is a ~50 km halo around each gauge",
+    spatialNote: "NOAA stations as point symbols; no field between gauges",
     valueDomain: [15, 110],
     trendDomain: [-12, 18],
     palette: "heat_extreme",
@@ -601,15 +608,54 @@ export const HEATMAP_BOUNDS: GeoBounds = {
 export const FIRST_OBSERVED_YEAR = 2000;
 export const LAST_COMPLETE_YEAR = 2025;
 
-export function dimensionHasSpatialGrid(_id: DimensionId): boolean {
-  return true;
+/**
+ * How a dimension is drawn on the globe, chosen to match its native spatial support (D30, D73):
+ * - "grid-cells": gridded product, one flat colour per native cell (no smoothing finer than the grid).
+ * - "basin-boxes": eight basin bounding boxes, one flat colour each (a choropleth, not a field).
+ * - "station-symbols": point observations only; nothing is painted between gauges.
+ */
+export type MapEncoding = "grid-cells" | "basin-boxes" | "station-symbols";
+
+export function mapEncodingFor(id: DimensionId): MapEncoding {
+  switch (id) {
+    case "temperature":
+    case "precipitation":
+    case "drought":
+      return "grid-cells";
+    case "water_rivers":
+      return "basin-boxes";
+    case "snow":
+    case "heat_extremes":
+    case "rain_extremes":
+      return "station-symbols";
+    default: {
+      const exhaustive: never = id;
+      return exhaustive;
+    }
+  }
 }
 
-/** Local halo around NOAA stations (~50 km). Not a national interpolated climate field. */
-const STATION_HALO_DEG = 0.55;
+/** True when the dimension has a raster layer (grid cells or basin boxes) under the station symbols. */
+export function dimensionHasSpatialGrid(id: DimensionId): boolean {
+  return mapEncodingFor(id) !== "station-symbols";
+}
+
+/**
+ * Trend robustness as labelled by the pipeline, for map symbols. Never derived from p/q in the browser.
+ * "robust": significant after FDR (cells, stations) or `outcome` supported (basins);
+ * "not-robust": a trend was computed but is not robust; "insufficient": no trend computed.
+ */
+export type TrendRobustness = "robust" | "not-robust" | "insufficient";
+
+/** Whether the bundle carries the per-cell FDR label the trend map needs for stippling. */
+export function gridHasFdrLabels(bundle: ClimateBundle, id: DimensionId): boolean {
+  if (id === "temperature") return Array.isArray(bundle.merra2.cell_significant_fdr);
+  if (id === "precipitation" || id === "drought") return Array.isArray(bundle.gpm.cell_significant_fdr);
+  return false;
+}
 
 function collectSampleValues(samples: {
-  kind: "grid" | "idw" | "basins";
+  kind: "grid" | "stations" | "basins";
   grid?: Float32Array;
   points?: { val: number }[];
   basins?: { val: number }[];
@@ -708,7 +754,7 @@ export function getEffectiveMeta(cfg: ActiveClimateConfig, bundle?: ClimateBundl
       units: `${units}/decade`,
       domain: trendDomain,
       palette: base.trendPalette,
-      subtitle: "Theil–Sen slope per cell/station, complete years. Colour = slope only, not significance",
+      subtitle: "Theil–Sen slope per cell/station, complete years. Colour = slope; stippling, hatching and rings = not robust",
     };
   }
   return {
@@ -778,16 +824,26 @@ function stationMetricValue(
   return null;
 }
 
+interface BasinSample {
+  bbox: [number, number, number, number];
+  lat: number;
+  lon: number;
+  /** NaN when no value exists for this year / no trend was computed. */
+  val: number;
+  robustness: TrendRobustness;
+}
+
 function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig): {
-  kind: "grid" | "idw" | "basins";
+  kind: "grid" | "stations" | "basins";
   nLat?: number;
   nLon?: number;
   lats?: number[];
   lons?: number[];
   grid?: Float32Array;
+  /** Trend mode only: 1 = robust after FDR, 0 = not robust (stippled). Absent → slopes only. */
+  robust?: Uint8Array;
   points?: SamplePoint[];
-  basins?: { bbox: [number, number, number, number]; lat: number; lon: number; val: number }[];
-  haloDeg?: number;
+  basins?: BasinSample[];
 } {
   const { dimension, year, mode } = cfg;
 
@@ -797,6 +853,8 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
     const grid = new Float32Array(m.n_lat * m.n_lon).fill(Number.NaN);
     const yrStr = String(year);
     const hist = m.annual_by_year[yrStr];
+    const fdr = mode === "trend" ? m.cell_significant_fdr : undefined;
+    const robust = fdr ? new Uint8Array(m.n_lat * m.n_lon).fill(1) : undefined;
 
     for (let k = 0; k < m.valid_indices.length; k++) {
       const idx = m.valid_indices[k];
@@ -805,20 +863,23 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
       else if (mode === "value" && hist) v = hist[k];
       else v = Number.NaN; // no observed data for this year
       grid[idx] = v;
+      if (robust && fdr) robust[idx] = fdr[k] ? 1 : 0;
     }
-    return { kind: "grid", nLat: m.n_lat, nLon: m.n_lon, lats: m.lats, lons: m.lons, grid };
+    return { kind: "grid", nLat: m.n_lat, nLon: m.n_lon, lats: m.lats, lons: m.lons, grid, robust };
   }
 
   if (dimension === "water_rivers") {
-    const basins: { bbox: [number, number, number, number]; lat: number; lon: number; val: number }[] = [];
+    const basins: BasinSample[] = [];
     for (const b of bundle.rivers) {
       const obs = b.rain_mm[String(year)];
+      const stats = b.rain_stats;
       let val: number;
-      if (mode === "trend") val = b.rain_stats ? b.rain_stats.slope_decade : Number.NaN;
+      if (mode === "trend") val = stats ? stats.slope_decade : Number.NaN;
       else if (mode === "value" && obs !== null && obs !== undefined) val = obs;
       else val = Number.NaN;
-      if (!Number.isFinite(val)) continue;
-      basins.push({ bbox: b.bbox, lat: b.lat, lon: b.lon, val });
+      // Trend mode keeps basins without a computed trend so the gap is drawn as "insufficient", not hidden.
+      if (!Number.isFinite(val) && mode !== "trend") continue;
+      basins.push({ bbox: b.bbox, lat: b.lat, lon: b.lon, val, robustness: robustnessFromOutcome(stats) });
     }
     return { kind: "basins", basins };
   }
@@ -828,6 +889,8 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
     const g = bundle.gpm;
     const grid = new Float32Array(g.n_lat * g.n_lon).fill(Number.NaN);
     const yrKey = String(year);
+    const fdr = mode === "trend" ? g.cell_significant_fdr : undefined;
+    const robust = fdr ? new Uint8Array(g.n_lat * g.n_lon).fill(1) : undefined;
 
     for (let k = 0; k < g.valid_indices.length; k++) {
       const idx = g.valid_indices[k];
@@ -838,16 +901,17 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
         else if (mode === "value" && g.annual_by_year[yrKey]) v = g.annual_by_year[yrKey][k];
         else v = Number.NaN;
       } else if (dimension === "drought") {
-        // Trend map: the pipeline's precipitation slope divided by the cell SD (display unit only).
-        if (mode === "trend") v = g.cell_std[k] > 0 ? g.cell_slope_decade[k] / g.cell_std[k] : Number.NaN;
+        // Trend map: slope in σ/decade, divided by the cell SD in Python (cell_anomaly_slope_decade).
+        if (mode === "trend") v = g.cell_anomaly_slope_decade?.[k] ?? Number.NaN;
         else if (mode === "value" && g.spi_by_year[yrKey]) v = g.spi_by_year[yrKey][k];
         else v = Number.NaN;
       }
 
       grid[idx] = v;
+      if (robust && fdr) robust[idx] = fdr[k] ? 1 : 0;
     }
 
-    return { kind: "grid", nLat: g.n_lat, nLon: g.n_lon, lats: g.lats, lons: g.lons, grid };
+    return { kind: "grid", nLat: g.n_lat, nLon: g.n_lon, lats: g.lats, lons: g.lons, grid, robust };
   }
 
   const mKey: keyof NoaaStationYearRecord =
@@ -858,63 +922,73 @@ function buildDimensionSamples(bundle: ClimateBundle, cfg: ActiveClimateConfig):
     const val = stationMetricValue(st, mKey, cfg);
     if (val !== null && Number.isFinite(val)) points.push({ lat: st.lat, lon: st.lon, val });
   }
-  return { kind: "idw", points, haloDeg: STATION_HALO_DEG };
+  return { kind: "stations", points };
 }
 
-function bilinearSample(
-  grid: Float32Array,
-  nLat: number,
-  nLon: number,
-  lats: number[],
-  lons: number[],
-  lat: number,
-  lon: number,
-): number {
-  const lat0 = lats[0];
-  const latStep = lats.length > 1 ? lats[1] - lats[0] : 0.5;
-  const lon0 = lons[0];
-  const lonStep = lons.length > 1 ? lons[1] - lons[0] : 0.5;
+function robustnessFromOutcome(stats: TrendStats | null): TrendRobustness {
+  if (!stats) return "insufficient";
+  return stats.outcome === "supported_increase" || stats.outcome === "supported_decrease" ? "robust" : "not-robust";
+}
 
-  const fy = (lat - lat0) / latStep;
-  const fx = (lon - lon0) / lonStep;
-  const r0 = Math.floor(fy);
-  const c0 = Math.floor(fx);
-  if (r0 < -1 || r0 >= nLat || c0 < -1 || c0 >= nLon) return Number.NaN;
+/** Map symbol for a trend: filled = robust, ring = not robust, small grey = no trend computed. */
+export type TrendSymbol = "filled" | "ring" | "insufficient";
 
-  const dy = fy - r0;
-  const dx = fx - c0;
-
-  let sum = 0;
-  let wSum = 0;
-  const weights = [
-    [0, 0, (1 - dy) * (1 - dx)],
-    [0, 1, (1 - dy) * dx],
-    [1, 0, dy * (1 - dx)],
-    [1, 1, dy * dx],
-  ];
-
-  for (const [dr, dc, w] of weights) {
-    const r = r0 + dr;
-    const c = c0 + dc;
-    if (r >= 0 && r < nLat && c >= 0 && c < nLon) {
-      const v = grid[r * nLon + c];
-      if (Number.isFinite(v)) {
-        sum += v * w;
-        wSum += w;
-      }
+function symbolFor(r: TrendRobustness): TrendSymbol {
+  switch (r) {
+    case "robust":
+      return "filled";
+    case "not-robust":
+      return "ring";
+    case "insufficient":
+      return "insufficient";
+    default: {
+      const exhaustive: never = r;
+      return exhaustive;
     }
   }
-  return wSum > 0.05 ? sum / wSum : Number.NaN;
 }
+
+const NO_TREND_CSS = "rgb(120,128,140)";
+
+/** Station trend robustness from the pipeline's network-level FDR label. */
+export function stationRobustness(stats: TrendStats | undefined): TrendRobustness {
+  if (!stats) return "insufficient";
+  return stats.significant_fdr === true ? "robust" : "not-robust";
+}
+
+/** Index of the native grid cell containing (lat, lon); -1 outside the grid. Cell centres are `lats`/`lons`. */
+function nativeCellIndex(nLat: number, nLon: number, lats: number[], lons: number[], lat: number, lon: number): number {
+  const latStep = lats.length > 1 ? lats[1] - lats[0] : 0.5;
+  const lonStep = lons.length > 1 ? lons[1] - lons[0] : 0.5;
+  const r = Math.round((lat - lats[0]) / latStep);
+  const c = Math.round((lon - lons[0]) / lonStep);
+  if (r < 0 || r >= nLat || c < 0 || c >= nLon) return -1;
+  return r * nLon + c;
+}
+
+/** Map-ink colour for stippling and hatching: dark enough on every palette, never mistaken for data. */
+const MAP_INK: RGB = [11, 20, 36];
+/** Neutral fill for "no trend computed" so it never reads as a zero slope. */
+const NO_TREND_FILL: RGB = [120, 128, 140];
+const RASTER_WIDTH = 920;
+const RASTER_HEIGHT = 680;
 
 const heatmapCache = new Map<string, string>();
 
+/**
+ * Paints the dimension's raster layer, clipped to Spain (and to the admin scope when requested).
+ * Grid dimensions: one flat colour per native cell; in trend mode, cells that are not robust after
+ * FDR carry a dot (stippling, as in IPCC AR6 maps). Basin dimension: one flat colour per basin box;
+ * non-robust trends are hatched and basins without a trend are neutral grey. Station dimensions have
+ * no raster: returns "" (the stations are drawn as point symbols by the overlay).
+ */
 export async function renderDimensionHeatmapDataUrl(
   bundle: ClimateBundle,
   cfg: ActiveClimateConfig,
   resolvedScope?: ResolvedAdminScope | null,
   colorDomain?: readonly [number, number],
 ): Promise<string> {
+  if (!dimensionHasSpatialGrid(cfg.dimension)) return "";
   const scopeKey =
     resolvedScope && resolvedScope.level !== "age" && resolvedScope.clipToScope
       ? `${resolvedScope.level}:${resolvedScope.id}`
@@ -929,8 +1003,8 @@ export async function renderDimensionHeatmapDataUrl(
   const [dMin, dMax] = colorDomain ?? meta.domain;
   const samples = buildDimensionSamples(bundle, cfg);
 
-  const width = 460;
-  const height = 340;
+  const width = RASTER_WIDTH;
+  const height = RASTER_HEIGHT;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -940,11 +1014,23 @@ export async function renderDimensionHeatmapDataUrl(
   const { west, south, east, north } = HEATMAP_BOUNDS;
   const lonSpan = east - west;
   const latSpan = north - south;
+  const xOf = (lon: number) => ((lon - west) / lonSpan) * width;
+  const yOf = (lat: number) => ((north - lat) / latSpan) * height;
 
-  // 1. Paint raw heatmap pixels
   const img = ctx.createImageData(width, height);
   const data = img.data;
   const dSpan = dMax - dMin || 1;
+  const put = (px: number, py: number, rgb: RGB, alpha: number) => {
+    const offset = (py * width + px) * 4;
+    data[offset] = rgb[0];
+    data[offset + 1] = rgb[1];
+    data[offset + 2] = rgb[2];
+    data[offset + 3] = alpha;
+  };
+  const colourOf = (val: number): RGB => samplePalette(meta.palette, (val - dMin) / dSpan);
+
+  // Which basin owns each pixel (-1 = none), for the basin outlines drawn after the fill.
+  const basinOwner = samples.kind === "basins" ? new Int8Array(width * height).fill(-1) : null;
 
   for (let py = 0; py < height; py++) {
     const lat = north - ((py + 0.5) / height) * latSpan;
@@ -954,78 +1040,89 @@ export async function renderDimensionHeatmapDataUrl(
       if (lat < 35.0 && lon > -13.1) continue;
       if (lat > 30.0 && lon < -10.0) continue;
 
-      let val = Number.NaN;
-      let alpha = 168;
       if (samples.kind === "grid" && samples.grid && samples.lats && samples.lons && samples.nLat && samples.nLon) {
-        val = bilinearSample(samples.grid, samples.nLat, samples.nLon, samples.lats, samples.lons, lat, lon);
-      } else if (samples.kind === "basins" && samples.basins && samples.basins.length > 0) {
+        const idx = nativeCellIndex(samples.nLat, samples.nLon, samples.lats, samples.lons, lat, lon);
+        if (idx < 0) continue;
+        const val = samples.grid[idx];
+        if (Number.isFinite(val)) put(px, py, colourOf(val), 190);
+      } else if (samples.kind === "basins" && samples.basins && basinOwner) {
+        // Boxes overlap; a pixel belongs to the box whose centre is nearest (same rule as before).
+        let best = -1;
         let bestD = Infinity;
-        for (const b of samples.basins) {
-          const [bw, bs, be, bn] = b.bbox;
+        for (let i = 0; i < samples.basins.length; i++) {
+          const [bw, bs, be, bn] = samples.basins[i].bbox;
           if (lon < bw || lon > be || lat < bs || lat > bn) continue;
-          const d = (lat - b.lat) ** 2 + (lon - b.lon) ** 2;
+          const d = (lat - samples.basins[i].lat) ** 2 + (lon - samples.basins[i].lon) ** 2;
           if (d < bestD) {
             bestD = d;
-            val = b.val;
+            best = i;
           }
         }
-        alpha = 150;
-      } else if (samples.kind === "idw" && samples.points && samples.points.length > 0) {
-        const halo = samples.haloDeg ?? STATION_HALO_DEG;
-        const maxD2 = halo * halo;
-        let num = 0;
-        let den = 0;
-        let minDist2 = Infinity;
-        for (let i = 0; i < samples.points.length; i++) {
-          const p = samples.points[i];
-          const dLat = lat - p.lat;
-          const dLon = (lon - p.lon) * 0.8;
-          const d2 = dLat * dLat + dLon * dLon;
-          if (d2 > maxD2) continue;
-          if (d2 < minDist2) minDist2 = d2;
-          const w = 1.0 / (d2 + 0.02);
-          num += p.val * w;
-          den += w;
-        }
-        if (minDist2 <= maxD2 && den > 0) {
-          val = num / den;
-          alpha = Math.round(40 + 150 * (1 - Math.sqrt(minDist2) / halo));
+        if (best < 0) continue;
+        basinOwner[py * width + px] = best;
+        const b = samples.basins[best];
+        if (!Number.isFinite(b.val)) {
+          put(px, py, NO_TREND_FILL, 150);
+        } else if (cfg.mode === "trend" && b.robustness !== "robust" && (px + py) % 10 < 2) {
+          put(px, py, MAP_INK, 200); // diagonal hatch = no robust trend
+        } else {
+          put(px, py, colourOf(b.val), 175);
         }
       }
+    }
+  }
 
-      if (Number.isFinite(val)) {
-        const t = (val - dMin) / dSpan;
-        const [r, g, b] = samplePalette(meta.palette, t);
-        const offset = (py * width + px) * 4;
-        data[offset] = r;
-        data[offset + 1] = g;
-        data[offset + 2] = b;
-        data[offset + 3] = alpha;
+  // Basin outlines: pixels whose right or lower neighbour belongs to another basin (or to none).
+  if (basinOwner) {
+    for (let py = 0; py < height - 1; py++) {
+      for (let px = 0; px < width - 1; px++) {
+        const o = basinOwner[py * width + px];
+        if (o < 0) continue;
+        if (basinOwner[py * width + px + 1] !== o || basinOwner[(py + 1) * width + px] !== o) {
+          put(px, py, [236, 244, 255], 235);
+        }
       }
     }
   }
   ctx.putImageData(img, 0, 0);
 
-  // 2. Clip strictly to Spain land polygons (Peninsula, Balearics, Canarias, Ceuta, Melilla)
-  ctx.globalCompositeOperation = "destination-in";
-  ctx.beginPath();
-  for (const poly of multiPoly) {
-    for (const ring of poly) {
-      for (let i = 0; i < ring.length; i++) {
-        const [lon, lat] = ring[i];
-        const x = ((lon - west) / lonSpan) * width;
-        const y = ((north - lat) / latSpan) * height;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
+  // Stippling: one dot per native cell that is NOT robust after FDR (trend mode, label from the pipeline).
+  if (samples.kind === "grid" && samples.robust && samples.grid && samples.lats && samples.lons && samples.nLon) {
+    const latStep = samples.lats.length > 1 ? Math.abs(samples.lats[1] - samples.lats[0]) : 0.5;
+    const cellPx = (latStep / latSpan) * height;
+    const radius = Math.max(0.9, Math.min(2.4, cellPx * 0.16));
+    ctx.fillStyle = `rgba(${MAP_INK[0]},${MAP_INK[1]},${MAP_INK[2]},0.78)`;
+    for (let idx = 0; idx < samples.grid.length; idx++) {
+      if (!Number.isFinite(samples.grid[idx]) || samples.robust[idx] === 1) continue;
+      const r = Math.floor(idx / samples.nLon);
+      const c = idx % samples.nLon;
+      ctx.beginPath();
+      ctx.arc(xOf(samples.lons[c]), yOf(samples.lats[r]), radius, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
 
-  // 3. When an administrative scope is active (CCAA, Provincia, Municipio) and clipToScope is true,
-  //    clip the heatmap strictly to that jurisdiction's boundary polygon.
+  // Clip strictly to Spain land polygons (Peninsula, Balearics, Canarias, Ceuta, Melilla)
+  const tracePolygons = (polys: number[][][][]) => {
+    ctx.beginPath();
+    for (const poly of polys) {
+      for (const ring of poly) {
+        for (let i = 0; i < ring.length; i++) {
+          const [lon, lat] = ring[i];
+          if (i === 0) ctx.moveTo(xOf(lon), yOf(lat));
+          else ctx.lineTo(xOf(lon), yOf(lat));
+        }
+        ctx.closePath();
+      }
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+  };
+  ctx.globalCompositeOperation = "destination-in";
+  tracePolygons(multiPoly);
+
+  // When an administrative scope is active (CCAA, Provincia, Municipio) and clipToScope is true,
+  // clip the raster strictly to that jurisdiction's boundary polygon.
   if (
     resolvedScope &&
     resolvedScope.level !== "age" &&
@@ -1033,21 +1130,7 @@ export async function renderDimensionHeatmapDataUrl(
     resolvedScope.multiPolygon &&
     resolvedScope.multiPolygon.length > 0
   ) {
-    ctx.beginPath();
-    for (const poly of resolvedScope.multiPolygon) {
-      for (const ring of poly) {
-        for (let i = 0; i < ring.length; i++) {
-          const [lon, lat] = ring[i];
-          const x = ((lon - west) / lonSpan) * width;
-          const y = ((north - lat) / latSpan) * height;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-      }
-    }
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
+    tracePolygons(resolvedScope.multiPolygon);
   }
 
   ctx.globalCompositeOperation = "source-over";
@@ -1068,6 +1151,8 @@ export function buildDimensionOverlayGeoJson(
   cfg: ActiveClimateConfig,
   resolvedScope?: ResolvedAdminScope | null,
   adminBundle?: AdminBundle | null,
+  /** Locked colour domain (playback), so symbols match the map scale. Defaults to the year's domain. */
+  colorDomain?: readonly [number, number],
 ): {
   type: "FeatureCollection";
   features: Array<{
@@ -1077,6 +1162,7 @@ export function buildDimensionOverlayGeoJson(
   }>;
 } {
   const meta = getEffectiveMeta(cfg, bundle);
+  const symbolDomain: [number, number] = colorDomain ? [colorDomain[0], colorDomain[1]] : meta.domain;
   const features: Array<{
     type: "Feature";
     properties: Record<string, unknown>;
@@ -1087,7 +1173,9 @@ export function buildDimensionOverlayGeoJson(
 
   // Basin hubs: GPM rainfall in the basin box (real grid mean). Not gauged runoff.
   if (cfg.dimension === "water_rivers") {
-    const rainDomain: [number, number] = [40, 2100];
+    // Same palette and domain as the basin-box raster and the map scale, so hub and box agree.
+    const basinMeta = getMapLegendMeta(cfg, bundle);
+    const basinDomain: [number, number] = colorDomain ? [colorDomain[0], colorDomain[1]] : basinMeta.domain;
     for (const b of bundle.rivers) {
       if (filterByScope && resolvedScope) {
         const [bw, bs, be, bn] = b.bbox;
@@ -1096,14 +1184,14 @@ export function buildDimensionOverlayGeoJson(
         if (!overlaps) continue;
       }
       const obs = b.rain_mm[String(cfg.year)];
+      const robustness = robustnessFromOutcome(b.rain_stats);
       let val: number;
       if (cfg.mode === "trend") val = b.rain_stats ? b.rain_stats.slope_decade : Number.NaN;
       else if (cfg.mode === "value" && obs !== null && obs !== undefined) val = obs;
       else val = Number.NaN;
-      if (!Number.isFinite(val)) continue; // no observed value: draw nothing
+      // Value mode: no observation → draw nothing. Trend mode: keep the hub as "no trend computed".
+      if (!Number.isFinite(val) && cfg.mode !== "trend") continue;
 
-      const rainPalette = cfg.mode === "value" ? "precip" : "brbg";
-      const rainUnits = cfg.mode === "value" ? "mm" : cfg.mode === "trend" ? "mm/decade" : "Δ mm";
       features.push({
         type: "Feature",
         properties: {
@@ -1112,9 +1200,11 @@ export function buildDimensionOverlayGeoJson(
           name: b.name,
           river: b.river,
           basin: b.name,
-          value: val,
-          units: rainUnits,
-          color: samplePaletteCss(rainPalette, val, cfg.mode === "value" ? rainDomain : [-120, 120]),
+          value: Number.isFinite(val) ? val : undefined,
+          units: basinMeta.units,
+          color: Number.isFinite(val) ? samplePaletteCss(basinMeta.palette, val, basinDomain) : NO_TREND_CSS,
+          symbol: cfg.mode === "trend" ? symbolFor(robustness) : "filled",
+          trendState: cfg.mode === "trend" ? robustness : undefined,
           pixelSize: 11,
           latitude: b.lat,
           longitude: b.lon,
@@ -1149,38 +1239,44 @@ export function buildDimensionOverlayGeoJson(
         .slice(0, 2);
     }
 
+    const symbolOnly = mapEncodingFor(cfg.dimension) === "station-symbols";
     for (const st of candidateStations) {
+      const stStats = st.stats[stMetric];
       let val: number | null = null;
-      if (stMetric) {
-        const stStats = st.stats[stMetric];
+      if (cfg.mode === "trend" && stStats) {
+        val = stStats.slope_decade;
+      } else if (cfg.mode === "value") {
         const rec = st.years[String(Math.min(cfg.year, LAST_COMPLETE_YEAR))];
-        if (cfg.mode === "trend" && stStats) {
-          val = stStats.slope_decade;
-        } else if (cfg.mode === "value" && rec) {
-          const obs = rec[stMetric as keyof NoaaStationYearRecord];
-          if (obs !== null && obs !== undefined) val = Number(obs); // missing years stay missing
-        }
+        const obs = rec ? rec[stMetric] : null;
+        if (obs !== null && obs !== undefined) val = Number(obs); // missing years stay missing
       }
 
-      if (val === null || !Number.isFinite(val)) continue;
-      const color = samplePaletteCss(meta.palette, val, meta.domain);
+      const robustness = stationRobustness(stStats);
+      const hasValue = val !== null && Number.isFinite(val);
+      // Value mode: a station without an observation this year is simply not drawn. Trend mode: a
+      // station with too short a record stays visible as a small grey "insufficient" symbol.
+      if (!hasValue && cfg.mode !== "trend") continue;
+      const shown = hasValue && val !== null ? val : null;
       features.push({
         type: "Feature",
         properties: {
           kind: "station",
           id: st.id,
           name: st.name,
-          value: Number(val.toFixed(1)),
+          value: shown === null ? undefined : Number(shown.toFixed(1)),
           units: meta.units,
           elevation: st.elevation,
           reference: referenceIds.has(st.id),
-          color,
+          color: shown === null ? NO_TREND_CSS : samplePaletteCss(meta.palette, shown, symbolDomain),
+          symbol: cfg.mode === "trend" ? symbolFor(robustness) : "filled",
+          trendState: cfg.mode === "trend" ? robustness : undefined,
+          // Station-only dimensions are the map itself: larger symbols, size redundant with |value|.
           pixelSize:
-            cfg.dimension === "snow"
-              ? Math.min(16, 7 + val * 0.28)
-              : cfg.dimension === "heat_extremes" || cfg.dimension === "rain_extremes"
-                ? Math.min(14, 6.5 + Math.abs(val) * 0.12)
-                : 7.5,
+            shown === null
+              ? 5
+              : symbolOnly
+                ? Math.min(18, 11 + Math.abs(shown) * 0.15)
+                : 8.5,
           latitude: st.lat,
           longitude: st.lon,
         },
