@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale";
+import { ExecutiveSummary } from "./ExecutiveSummary";
 import { formatScreeningNumber, screeningCopy, type Bullet } from "@/lib/i18n/screening-copy";
 import type { ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
 import { MITECO_FALLBACK_COLORS, VERDICT_COLORS, type GiovanniDustFile, type PvCell, type PvHistoryFile, type PvHistoryYear, type PvScreeningData, type PvVerdict, type SolarPlant } from "@/lib/globe/pv-screening";
@@ -164,6 +165,7 @@ export function SolarScreeningPanel({
           <CellCard cell={selectedCell} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
         ) : s ? (
           <div className="space-y-1.5 text-[13px] leading-snug text-ink">
+            {data && <ExecutiveSummary data={data} locale={locale} />}
             {featuredCase && featuredCell && (
               <div className="mb-3 rounded-lg border border-emerald-400/45 bg-emerald-400/10 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-200">{t.featuredHeading}</p>

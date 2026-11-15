@@ -1,0 +1,384 @@
+{
+  "schema": "solar-capacity-trend/v1",
+  "status": "OFFICIAL_STATISTICS",
+  "generated_utc": "2026-11-15T14:14:49Z",
+  "source": {
+    "name": "Eurostat nrg_inf_epcrw (Solar photovoltaic, net maximum electrical capacity)",
+    "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_inf_epcrw/default/table",
+    "api": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_inf_epcrw?format=JSON&lang=EN&geo=ES&siec=RA420&unit=MW",
+    "retrieved_utc": "2026-11-15T14:14:49Z",
+    "dataset_updated": "2026-10-09T23:00:00+0200",
+    "unit": "MW",
+    "siec": "RA420",
+    "plant_tec": "CAP_NET_ELC"
+  },
+  "spain": {
+    "years": [
+      2000,
+      2001,
+      2002,
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "mw": [
+      10.3,
+      13.1,
+      17.0,
+      22.4,
+      32.8,
+      52.0,
+      130.8,
+      494.9,
+      3387.2,
+      3428.1,
+      3880.1,
+      4288.1,
+      4574.7,
+      4695.7,
+      4702.5,
+      4709.7,
+      4713.9,
+      4722.2,
+      4763.6,
+      8807.2,
+      10135.6,
+      13715.2,
+      23897.3,
+      29579.6,
+      35822.9
+    ],
+    "added_mw": [
+      null,
+      2.8,
+      3.9,
+      5.4,
+      10.4,
+      19.2,
+      78.8,
+      364.1,
+      2892.3,
+      40.9,
+      452.0,
+      408.0,
+      286.6,
+      121.0,
+      6.8,
+      7.2,
+      4.2,
+      8.3,
+      41.4,
+      4043.6,
+      1328.4,
+      3579.6,
+      10182.1,
+      5682.3,
+      6243.3
+    ],
+    "latest": {
+      "year": 2024,
+      "mw": 35822.9
+    },
+    "trend_full": {
+      "period": [
+        2000,
+        2024
+      ],
+      "sen_mw_per_year": 548.3,
+      "ci95": [
+        304.1,
+        1277.1
+      ],
+      "p": 1.51e-05,
+      "significant": true,
+      "n": 25,
+      "hamed_rao_applied": true,
+      "method": "Theil-Sen slope + Gilbert 95% CI; Mann-Kendall (ties-corrected), Hamed-Rao variance correction"
+    },
+    "trend_recent": {
+      "period": [
+        2015,
+        2024
+      ],
+      "sen_mw_per_year": 3457.0,
+      "ci95": [
+        1438.6,
+        5184.1
+      ],
+      "p": 8.3e-05,
+      "significant": true,
+      "n": 10,
+      "hamed_rao_applied": false,
+      "method": "Theil-Sen slope + Gilbert 95% CI; Mann-Kendall (ties-corrected), no autocorrelation correction needed"
+    },
+    "added_mw_trend": {
+      "period": [
+        2015,
+        2024
+      ],
+      "sen_mw_per_year2": 811.2,
+      "ci95": [
+        300.5,
+        1394.3
+      ],
+      "p": 0.00236,
+      "significant": true,
+      "n": 10,
+      "hamed_rao_applied": false,
+      "method": "Theil-Sen slope + Gilbert 95% CI; Mann-Kendall (ties-corrected), no autocorrelation correction needed"
+    },
+    "cagr_pct": {
+      "period": [
+        2019,
+        2024
+      ],
+      "value": 32.4
+    },
+    "doubling_years": 2.5,
+    "solar_thermal_mw": {
+      "siec": "RA410",
+      "years": [
+        2000,
+        2001,
+        2002,
+        2003,
+        2004,
+        2005,
+        2006,
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "mw": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        11.0,
+        11.0,
+        61.0,
+        282.0,
+        732.0,
+        1149.0,
+        2000.0,
+        2304.1,
+        2304.1,
+        2304.1,
+        2304.1,
+        2304.1,
+        2304.1,
+        2304.0,
+        2304.0,
+        2304.0,
+        2304.0,
+        2304.0,
+        2304.0
+      ]
+    }
+  },
+  "eu": {
+    "year": 2024,
+    "spain_rank": 2,
+    "n_countries": 27,
+    "spain_share_pct": 11.7,
+    "eu_total_mw": 307101.4,
+    "top": [
+      {
+        "geo": "DE",
+        "label": "Germany",
+        "mw": 91204.0
+      },
+      {
+        "geo": "ES",
+        "label": "Spain",
+        "mw": 35822.9
+      },
+      {
+        "geo": "IT",
+        "label": "Italy",
+        "mw": 35437.1
+      },
+      {
+        "geo": "FR",
+        "label": "France",
+        "mw": 25299.2
+      },
+      {
+        "geo": "NL",
+        "label": "Netherlands",
+        "mw": 24771.7
+      },
+      {
+        "geo": "PL",
+        "label": "Poland",
+        "mw": 21721.2
+      },
+      {
+        "geo": "BE",
+        "label": "Belgium",
+        "mw": 9642.4
+      },
+      {
+        "geo": "AT",
+        "label": "Austria",
+        "mw": 8895.1
+      },
+      {
+        "geo": "EL",
+        "label": "Greece",
+        "mw": 8826.9
+      },
+      {
+        "geo": "HU",
+        "label": "Hungary",
+        "mw": 7166.0
+      },
+      {
+        "geo": "PT",
+        "label": "Portugal",
+        "mw": 5639.4
+      },
+      {
+        "geo": "SE",
+        "label": "Sweden",
+        "mw": 4829.0
+      },
+      {
+        "geo": "BG",
+        "label": "Bulgaria",
+        "mw": 4559.9
+      },
+      {
+        "geo": "RO",
+        "label": "Romania",
+        "mw": 4257.4
+      },
+      {
+        "geo": "CZ",
+        "label": "Czechia",
+        "mw": 3984.2
+      },
+      {
+        "geo": "DK",
+        "label": "Denmark",
+        "mw": 3945.0
+      },
+      {
+        "geo": "LT",
+        "label": "Lithuania",
+        "mw": 2404.0
+      },
+      {
+        "geo": "SI",
+        "label": "Slovenia",
+        "mw": 1421.1
+      },
+      {
+        "geo": "IE",
+        "label": "Ireland",
+        "mw": 1323.4
+      },
+      {
+        "geo": "FI",
+        "label": "Finland",
+        "mw": 1247.0
+      },
+      {
+        "geo": "HR",
+        "label": "Croatia",
+        "mw": 901.8
+      },
+      {
+        "geo": "EE",
+        "label": "Estonia",
+        "mw": 877.2
+      },
+      {
+        "geo": "CY",
+        "label": "Cyprus",
+        "mw": 751.3
+      },
+      {
+        "geo": "SK",
+        "label": "Slovakia",
+        "mw": 728.0
+      },
+      {
+        "geo": "LV",
+        "label": "Latvia",
+        "mw": 660.4
+      },
+      {
+        "geo": "LU",
+        "label": "Luxembourg",
+        "mw": 547.9
+      },
+      {
+        "geo": "MT",
+        "label": "Malta",
+        "mw": 238.0
+      }
+    ],
+    "spain_mw_per_capita_rank": null
+  },
+  "plain": {
+    "en": {
+      "headline": "Spain had about 36 GW of solar panels (photovoltaic) installed at the end of 2024, 8 times more than in 2015.",
+      "growth": "Since 2019 the installed amount has grown about 32% per year, so it doubles roughly every 2.5 years. In 2024 alone about 6.2 GW of new panels were added. New additions per year are also clearly increasing since 2015.",
+      "rank": "In 2024 Spain was 2nd of the 27 EU countries in installed solar panels, after Germany, with about 12% of the EU total."
+    },
+    "es": {
+      "headline": "España tenía unos 36 GW de paneles solares (fotovoltaicos) instalados a finales de 2024, 8 veces más que en 2015.",
+      "growth": "Desde 2019 la potencia instalada ha crecido alrededor de un 32% al año, así que se duplica cada 2,5 años aproximadamente. Solo en 2024 se añadieron unos 6,2 GW nuevos. Lo que se instala cada año también aumenta claramente desde 2015.",
+      "rank": "En 2024 España era el país número 2 de los 27 de la UE en paneles solares instalados, detrás de Alemania, con cerca del 12% del total de la UE."
+    }
+  },
+  "notes": [
+    "Capacity is not generation: MW is the maximum power the installed panels can deliver, not the electricity (MWh) they actually produced.",
+    "Cumulative capacity is a running total that almost never goes down, so a significant upward trend on it is close to mechanical; the more informative test is the trend of annual additions (added_mw_trend).",
+    "added_mw is the year-on-year difference of net capacity; it can understate gross new builds when old plants are retired or re-rated.",
+    "Net maximum electrical capacity (Eurostat CAP_NET_ELC, total). Eurostat also publishes AC and DC sub-series; they are not mixed here.",
+    "Trends: Theil-Sen slope with Gilbert 95% CI and Mann-Kendall test (packages/science/trends.py), Hamed-Rao autocorrelation correction when lag-1 autocorrelation is significant. Smooth growth curves are strongly autocorrelated, so p-values are indicative.",
+    "EU ranking uses the latest year (2024) for which all 27 EU countries report a value.",
+    "This is national context for the screening: the featured Jaén–Granada cell is about where new plants fit; this series shows how fast Spain is building them. The GEM plant registry cannot give a yearly trend (docs/PV_HISTORY.md), so official statistics are used here.",
+    "Annual additions are lumpy (e.g. the 2008 tariff rush, 2015-2018 near zero, a 2022 peak), so their positive trend since 2015 mainly says the market restarted after 2018; it is not a forecast.",
+    "Spain and the 3rd country are close in 2024 (ES 35.8 GW vs IT 35.4 GW); the 2nd place is not a large margin.",
+    "Eurostat data are official statistics; the trend analysis is ours."
+  ]
+}

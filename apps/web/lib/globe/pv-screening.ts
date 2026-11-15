@@ -75,6 +75,16 @@ export interface PvSummary {
   operating_mw_total?: number;
   operating_mw_in_good_pct?: number;
   operating_mw_in_avoid_pct?: number;
+  operating_mw_in_mixed_pct?: number;
+  operating_mw_in_no_data_pct?: number;
+  cells_no_data?: number;
+  irr_cells_tested?: number;
+  irr_cells_significant_up?: number;
+  irr_cells_significant_down?: number;
+  irr_trend_pct_decade_median?: number;
+  t_cells_significant_up?: number;
+  t_trend_c_decade_median?: number;
+  heat_penalty_pct_decade_median?: number;
   /** Optional, if the pipeline adds it: short place names where green cells concentrate. */
   good_regions?: string[];
 }
@@ -85,6 +95,8 @@ export interface PvRegionValidation {
   power_p: number | null;
   merra2_trend_pct_decade: number | null;
   merra2_p: number | null;
+  period?: [number, number];
+  interannual_pearson_r?: number | null;
 }
 
 export interface FeaturedPvCase {
@@ -200,6 +212,43 @@ export interface PvHistoryFile {
   };
 }
 
+/** National installed-capacity trend (contract: research/2026-11-15_resumen-ejecutivo-contrato.md, v1). */
+export interface CapacityTrend {
+  period: [number, number];
+  sen_mw_per_year: number;
+  ci95: [number, number];
+  p: number;
+  significant: boolean;
+  method?: string;
+}
+
+export interface SolarCapacityTrendFile {
+  schema: "solar-capacity-trend/v1";
+  status?: string;
+  source: { name: string; url?: string; retrieved_utc?: string; unit?: string };
+  spain: {
+    years: number[];
+    mw: number[];
+    added_mw?: number[];
+    latest: { year: number; mw: number };
+    trend_full?: CapacityTrend;
+    trend_recent?: CapacityTrend;
+    added_mw_trend?: { period: [number, number]; sen_mw_per_year2: number; ci95: [number, number]; p: number; significant: boolean };
+    cagr_pct?: { period: [number, number]; value: number };
+    doubling_years?: number | null;
+  };
+  eu?: {
+    year: number;
+    spain_rank: number;
+    n_countries: number;
+    spain_share_pct?: number;
+    top?: { geo: string; label: string; mw: number }[];
+    spain_mw_per_capita_rank?: number | null;
+  };
+  plain?: Partial<Record<"en" | "es", { headline?: string; growth?: string; rank?: string }>>;
+  notes?: string[];
+}
+
 /** Each file loads independently: a missing optional file must not hide the others. */
 export interface PvScreeningData {
   screening: PvScreeningFile | null;
@@ -207,6 +256,7 @@ export interface PvScreeningData {
   miteco: MitecoSensitivityFile | null;
   dust: GiovanniDustFile | null;
   history: PvHistoryFile | null;
+  capacity: SolarCapacityTrendFile | null;
 }
 
 export const PV_SCREENING_URL = "/data/pv-screening.json";
@@ -214,6 +264,7 @@ export const SOLAR_PLANTS_URL = "/data/solar-plants.json";
 export const MITECO_SENSITIVITY_URL = "/data/miteco-pv-sensitivity.json";
 export const GIOVANNI_DUST_URL = "/data/giovanni-dust.json";
 export const PV_HISTORY_URL = "/data/pv-history.json";
+export const SOLAR_CAPACITY_TREND_URL = "/data/solar-capacity-trend.json";
 
 async function fetchJsonOrNull<T>(url: string, valid: (x: unknown) => boolean): Promise<T | null> {
   try {
@@ -283,15 +334,34 @@ async function fetchHistory(): Promise<PvHistoryFile | null> {
   }
 }
 
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+function isCapacityTrend(x: unknown): boolean {
+  return x === undefined || (isObj(x) && isNum(x.sen_mw_per_year) && isNum(x.p) && typeof x.significant === "boolean" &&
+    Array.isArray(x.ci95) && x.ci95.length === 2 && x.ci95.every(isNum) && Array.isArray(x.period) && x.period.length === 2);
+}
+
+function isSolarCapacityTrendFile(x: unknown): x is SolarCapacityTrendFile {
+  if (!isObj(x) || x.schema !== "solar-capacity-trend/v1" || !isObj(x.source) || typeof x.source.name !== "string") return false;
+  const es = x.spain;
+  if (!isObj(es) || !Array.isArray(es.years) || !Array.isArray(es.mw) || es.years.length !== es.mw.length ||
+      !es.years.every(isNum) || !es.mw.every(isNum) || !isObj(es.latest) || !isNum(es.latest.year) || !isNum(es.latest.mw)) return false;
+  if (!isCapacityTrend(es.trend_full) || !isCapacityTrend(es.trend_recent)) return false;
+  if (es.cagr_pct !== undefined && (!isObj(es.cagr_pct) || !isNum(es.cagr_pct.value))) return false;
+  if (x.eu !== undefined && (!isObj(x.eu) || !isNum(x.eu.spain_rank) || !isNum(x.eu.n_countries) || !isNum(x.eu.year))) return false;
+  return true;
+}
+
 export async function loadPvScreeningData(): Promise<PvScreeningData> {
-  const [screening, plants, miteco, dust, history] = await Promise.all([
+  const [screening, plants, miteco, dust, history, capacity] = await Promise.all([
     fetchJsonOrNull<PvScreeningFile>(PV_SCREENING_URL, (x) => isObj(x) && Array.isArray(x.cells) && isObj(x.summary)),
     fetchJsonOrNull<SolarPlantsFile>(SOLAR_PLANTS_URL, (x) => isObj(x) && Array.isArray(x.plants)),
     fetchJsonOrNull<MitecoSensitivityFile>(MITECO_SENSITIVITY_URL, (x) => isObj(x) && Array.isArray(x.images)),
     fetchDust(),
     fetchHistory(),
+    fetchJsonOrNull<SolarCapacityTrendFile>(SOLAR_CAPACITY_TREND_URL, isSolarCapacityTrendFile),
   ]);
-  return { screening, plants, miteco, dust, history };
+  return { screening, plants, miteco, dust, history, capacity };
 }
 
 /** MITECO PNGs are referenced by file name next to the JSON in /data. */

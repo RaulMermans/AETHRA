@@ -116,8 +116,8 @@ export interface ScreeningCopy {
   plantsInCell: (n: number, mw: number) => string;
 }
 
-const MITECO_EN = ["Maximum (not recommended)", "Very high", "High", "Moderate", "Low"];
-const MITECO_ES = ["Máxima (no recomendada)", "Muy alta", "Alta", "Moderada", "Baja"];
+const MITECO_EN = ["Maximum (not recommended)", "Very high (strong constraints)", "High (notable constraints)", "Moderate (some constraints)", "Low (fewest constraints)"];
+const MITECO_ES = ["Máxima (no recomendada)", "Muy alta (fuertes restricciones)", "Alta (restricciones notables)", "Moderada (algunas restricciones)", "Baja (menos restricciones)"];
 
 function sunBullet(locale: Locale, c: PvCell): Bullet | null {
   const p = c.irr_resource_percentile;
@@ -146,17 +146,17 @@ function trendBullet(locale: Locale, c: PvCell): Bullet {
   const es = locale === "es";
   const t = c.irr_trend_pct_decade;
   if (t === null || c.irr_significant === null) {
-    return { icon: "trend", text: es ? "No hay datos suficientes para ver si el sol cambia" : "Not enough data to tell whether sunshine is changing" };
+    return { icon: "trend", text: es ? "Sin datos suficientes: la zona es casi toda mar o queda fuera de España" : "Not enough data: the zone is mostly sea or outside Spain" };
   }
   const v = `${fmt(locale, t, 1, true)} % ${es ? "por década" : "per decade"}`;
   if (c.irr_significant && t > 0)
-    return { icon: "trend", text: es ? `El sol ha aumentado, y el aumento está respaldado (${v})` : `Sunshine has risen, and the rise is supported (${v})` };
+    return { icon: "trend", text: es ? `El sol ha aumentado y la subida está probada (${v})` : `Sunshine has risen and the rise is proven (${v})` };
   if (c.irr_significant && t < 0)
-    return { icon: "trend", text: es ? `El sol ha bajado, y la bajada está respaldada (${v})` : `Sunshine has dropped, and the drop is supported (${v})` };
+    return { icon: "trend", text: es ? `El sol ha bajado y la bajada está probada (${v})` : `Sunshine has dropped and the drop is proven (${v})` };
   if (t > 0)
-    return { icon: "trend", text: es ? `El sol muestra una ligera subida, pero aún no está demostrada (${v})` : `Sunshine shows a slight rise, but it is not proven yet (${v})` };
+    return { icon: "trend", text: es ? `Sol estable: una ligera subida (${v}) que no se distingue de las variaciones normales entre años` : `Sunshine is stable: a slight rise (${v}) that cannot be told apart from normal year-to-year swings` };
   if (t < 0)
-    return { icon: "trend", text: es ? `El sol muestra una ligera bajada, pero no está demostrada (${v})` : `Sunshine shows a slight drop, but it is not proven (${v})` };
+    return { icon: "trend", text: es ? `Sol estable: una ligera bajada (${v}) que no se distingue de las variaciones normales entre años` : `Sunshine is stable: a slight drop (${v}) that cannot be told apart from normal year-to-year swings` };
   return { icon: "trend", text: es ? "El sol se mantiene estable" : "Sunshine is holding steady" };
 }
 
@@ -169,13 +169,13 @@ function heatBullet(locale: Locale, c: PvCell): Bullet | null {
   const pv = `${fmt(locale, Math.abs(pen), 1)} %`;
   const proven = c.t_significant === true;
   if (t <= 0) {
-    return { icon: "heat", text: es ? `Cambio térmico veraniego estimado: ${tv}; no demuestra ausencia de calentamiento` : `Estimated summer temperature change: ${tv}; this does not establish an absence of warming` };
+    return { icon: "heat", text: es ? `Temperatura de verano: ${tv}; no hay subida probada, pero eso no demuestra que no se caliente` : `Summer temperature: ${tv}; no proven rise, but that does not show it is not warming` };
   }
   return {
     icon: "heat",
     text: es
-      ? `${proven ? "Sube la temperatura del aire en verano" : "La subida estival no es robusta"} (${tv}). Una regla térmica orientativa estima ${pv} por década de penalización FV; no es producción calculada.`
-      : `${proven ? "Summer air temperature is rising" : "The summer rise is not robust"} (${tv}). An indicative thermal rule estimates a ${pv} per-decade PV penalty; this is not calculated generation.`,
+      ? `${proven ? "Los veranos se calientan (subida probada)" : "Los veranos parecen calentarse, pero aquí aún no está probado"} (${tv}). Con más calor, los paneles solares rinden ≈ ${pv} menos por década (regla orientativa, no producción calculada).`
+      : `${proven ? "Summers are warming (proven rise)" : "Summers seem to be warming, but it is not proven here yet"} (${tv}). Hotter solar panels produce ≈ ${pv} less per decade (rule of thumb, not calculated output).`,
   };
 }
 
@@ -188,14 +188,14 @@ function envBullet(locale: Locale, c: PvCell): Bullet | null {
     return {
       icon: "leaf",
       text: es
-        ? `Solo el ${pct} de la superficie clasificada tiene sensibilidad baja o moderada; predominan las clases de sensibilidad alta a máxima (MITECO)`
-        : `Only ${pct} of the classified area has low or moderate sensitivity; high to maximum sensitivity classes dominate (MITECO)`,
+        ? `Solo el ${pct} de la superficie clasificada tiene sensibilidad baja o moderada; predomina el suelo con sensibilidad alta a máxima (mapa oficial del MITECO)`
+        : `Only ${pct} of the classified area has low or moderate sensitivity; most land is high to maximum sensitivity (official MITECO map)`,
     };
   return {
     icon: "leaf",
     text: es
-      ? `El ${pct} de la superficie clasificada de esta celda es de sensibilidad ambiental baja o moderada (MITECO)`
-      : `${pct} of this cell's classified area has low or moderate environmental sensitivity (MITECO)`,
+      ? `El ${pct} del suelo de esta zona tiene sensibilidad ambiental baja o moderada, es decir, pocas restricciones ambientales (mapa oficial del MITECO)`
+      : `${pct} of this zone's land has low or moderate environmental sensitivity, i.e. few environmental constraints (official MITECO map)`,
   };
 }
 
@@ -211,17 +211,17 @@ function detailRows(locale: Locale, c: PvCell, period: [number, number]) {
   const no = es ? "no" : "no";
   const num = (v: number | null, d: number, signed = false) => (v === null ? "—" : fmt(locale, v, d, signed));
   return [
-    { label: es ? "Celda" : "Cell", value: `${c.id} · ${fmt(locale, c.lat, 2)}°, ${fmt(locale, c.lon, 2)}° · ${es ? "tierra" : "land"} ${Math.round(c.land_fraction * 100)} %` },
+    { label: es ? "Zona (~50 km)" : "Zone (~50 km)", value: `${c.id} · ${fmt(locale, c.lat, 2)}°, ${fmt(locale, c.lon, 2)}° · ${es ? "tierra" : "land"} ${Math.round(c.land_fraction * 100)} %` },
     { label: es ? "Periodo" : "Period", value: `${period[0]}–${period[1]} (n = ${n} ${es ? "años" : "years"})` },
-    { label: es ? "Irradiancia media" : "Mean irradiance", value: `${num(c.irr_mean_kwh_m2_day, 2)} kWh/m²/${es ? "día" : "day"} · P${num(c.irr_resource_percentile, 0)}` },
-    { label: es ? "Tendencia irradiancia" : "Irradiance trend", value: `${num(c.irr_trend_pct_decade, 2, true)} %/${es ? "déc" : "dec"} · IC95 ${ci(locale, c.irr_ci_pct_decade, "%")}` },
-    { label: "p · p BH", value: `${fmtP(locale, c.irr_p)} · ${fmtP(locale, c.irr_p_bh)} · ${es ? "significativa" : "significant"}: ${c.irr_significant ? yes : no}` },
-    { label: es ? "T2M verano (JJA)" : "Summer T2M (JJA)", value: `${num(c.t_summer_mean_c, 1)} °C` },
-    { label: es ? "Tendencia T2M" : "T2M trend", value: `${num(c.t_trend_c_decade, 2, true)} °C/${es ? "déc" : "dec"} · IC95 ${ci(locale, c.t_ci_c_decade, "°C")}` },
-    { label: "p · p BH", value: `${fmtP(locale, c.t_p)} · ${fmtP(locale, c.t_p_bh)} · ${es ? "significativa" : "significant"}: ${c.t_significant ? yes : no}` },
-    { label: es ? "Penalización por calor" : "Heat penalty", value: `${num(c.heat_penalty_pct_decade, 2, true)} %/${es ? "déc (derivado)" : "dec (derived)"}` },
-    { label: es ? "Cambio FV neto (indicativo)" : "Net PV change (indicative)", value: `${num(c.net_pv_trend_pct_decade, 2, true)} %/${es ? "déc (derivado)" : "dec (derived)"}` },
-    { label: es ? "MITECO baja/moderada" : "MITECO low/moderate", value: c.miteco_low_moderate_pct === null ? "—" : `${Math.round(c.miteco_low_moderate_pct)} %` },
+    { label: es ? "Sol medio (irradiancia)" : "Average sunshine (irradiance)", value: `${num(c.irr_mean_kwh_m2_day, 2)} kWh/m²/${es ? "día" : "day"} · P${num(c.irr_resource_percentile, 0)}` },
+    { label: es ? "Tendencia del sol" : "Sunshine trend", value: `${num(c.irr_trend_pct_decade, 2, true)} %/${es ? "déc" : "dec"} · ${es ? "rango probable (IC95)" : "likely range (CI95)"} ${ci(locale, c.irr_ci_pct_decade, "%")}` },
+    { label: es ? "p · p tras control de falsas alarmas (BH)" : "p · p after false-alarm check (BH)", value: `${fmtP(locale, c.irr_p)} · ${fmtP(locale, c.irr_p_bh)} · ${es ? "significativa" : "significant"}: ${c.irr_significant ? yes : no}` },
+    { label: es ? "Temperatura verano (jun–ago, T2M)" : "Summer temperature (Jun–Aug, T2M)", value: `${num(c.t_summer_mean_c, 1)} °C` },
+    { label: es ? "Tendencia temperatura verano" : "Summer temperature trend", value: `${num(c.t_trend_c_decade, 2, true)} °C/${es ? "déc" : "dec"} · ${es ? "rango probable (IC95)" : "likely range (CI95)"} ${ci(locale, c.t_ci_c_decade, "°C")}` },
+    { label: es ? "p · p tras control de falsas alarmas (BH)" : "p · p after false-alarm check (BH)", value: `${fmtP(locale, c.t_p)} · ${fmtP(locale, c.t_p_bh)} · ${es ? "significativa" : "significant"}: ${c.t_significant ? yes : no}` },
+    { label: es ? "Pérdida de los paneles por calor" : "Panel loss from heat", value: `${num(c.heat_penalty_pct_decade, 2, true)} %/${es ? "déc (derivado)" : "dec (derived)"}` },
+    { label: es ? "Cambio neto de los paneles (orientativo)" : "Net panel change (indicative)", value: `${num(c.net_pv_trend_pct_decade, 2, true)} %/${es ? "déc (derivado)" : "dec (derived)"}` },
+    { label: es ? "Suelo sensibilidad baja/moderada (MITECO)" : "Land at low/moderate sensitivity (MITECO)", value: c.miteco_low_moderate_pct === null ? "—" : `${Math.round(c.miteco_low_moderate_pct)} %` },
     { label: es ? "Motivos (regla)" : "Reasons (rule)", value: c.verdict_reasons.join(", ") || "—" },
   ];
 }
@@ -233,57 +233,57 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   exploratory: "Exploratory — pending review",
   exploratoryHint: "Pre-registered rule; results not yet reviewed by a second person.",
   technology: "Technology",
-  techSolar: "Solar PV",
+  techSolar: "Solar panels (photovoltaic)",
   techHydro: "Hydro",
   techWind: "Wind",
   comingSoon: "coming soon",
   layersHeading: "On the map",
   toggleCells: "Evidence map",
-  toggleCellsHint: "Green / amber / red zones from NASA data",
-  toggleMiteco: "Environmental sensitivity (MITECO)",
-  toggleMitecoHint: "Official environmental sensitivity map",
+  toggleCellsHint: "Green / amber / red zones (~50 km squares) from NASA data",
+  toggleMiteco: "Environmental sensitivity (official MITECO map)",
+  toggleMitecoHint: "Spanish environment ministry map: green = few environmental constraints, red = not recommended",
   togglePlants: "Real plants",
-  togglePlantsHint: "Operating (dot) and under construction (ring), sized by MW",
+  togglePlantsHint: "Operating (dot) and under construction (ring), sized by installed power (MW)",
   legendGood: "Promising: look here first",
   legendMixed: "Mixed: possible, with a weak point",
   legendAvoid: "Not a priority",
-  legendNote: "One colour per NASA grid cell (~50 km). Multiple-testing control: Benjamini–Hochberg FDR.",
+  legendNote: "One colour per NASA zone (~50 km square). Trends were checked for false alarms across many zones (Benjamini–Hochberg FDR).",
   markerHeading: "Map points",
-  markerOperating: "Pale filled dot: operating solar plant; size shows registered MW, not production.",
+  markerOperating: "Pale filled dot: operating solar plant; size shows installed power (MW), not electricity produced.",
   markerConstruction: "Pale ring: solar plant under construction.",
   markerLandmark: "Amber dot or ring: named landmark plant.",
   markerOther: "Other black or white points belong to climate stations or research overlays and are hidden in this view.",
-  featuredHeading: "Featured case · Jaén–Granada cell",
-  featuredSunLabel: "Mean incoming sunlight · 2000–2025",
+  featuredHeading: "Featured case · Jaén–Granada zone",
+  featuredSunLabel: "Average sunshine reaching the ground · 2000–2025",
   featuredSunUnit: "kWh/m²/day",
-  featuredEnvLabel: "Mapped low/moderate sensitivity · MITECO 2024",
+  featuredEnvLabel: "Land with low/moderate environmental sensitivity · MITECO 2024",
   featuredNarrative: (place, moreSun, moreLand, both, total) =>
-    `${place} is a strong case to investigate among ${total} green cells. ${moreSun} have more sunlight and ${moreLand} have a higher low/moderate MITECO share; ${both} match or beat it on both measures. This is a comparison of mapped cells, not a parcel ranking.`,
-  featuredCenter: "Centre of the ~50 km map cell (not a proposed parcel)",
-  placeReferenceHeading: "Named places inside the cell",
-  placeReferenceNote: "IGN geodetic vertices locate the Jaén–Granada area. Their coordinates identify markers, not land assessed for PV development.",
+    `Jaén–Granada is a strong case to investigate among ${total} green zones. ${moreSun} get more sunshine and ${moreLand} have more low-sensitivity land, but ${both} match or beat it on both. This compares ~50 km map zones, not individual plots of land.`,
+  featuredCenter: "Centre of the ~50 km zone (not a proposed plot)",
+  placeReferenceHeading: "Named places inside the zone",
+  placeReferenceNote: "Survey markers from Spain's national mapping agency (IGN) help locate the Jaén–Granada area. They are landmarks, not land assessed for solar panels.",
   placeSource: "IGN record",
   featuredAction: "Centre map here",
-  featuredLimit: "Panel soiling, grid capacity, land ownership, permits and site surveys are still unassessed.",
-  environmentalMeaning: "MITECO's 2024 map grades environmental sensitivity for large PV projects from maximum (0) to low (4). The percentage counts mapped ~1 km pixels in classes 3 or 4 inside this ~50 km NASA cell. It does not mean that share is available or approved for building; each parcel still needs checks.",
-  dustHeading: "Dust context · NASA MERRA-2",
-  dustMeaning: (meanAot, years) => `Mean dust optical thickness at 550 nm: ${meanAot} (dimensionless), across ${years} complete years. Monthly values are weighted by calendar days; uncertainty was not estimated. This reanalysis describes atmospheric dust, not dust deposited on modules or lost PV output. It does not change the green verdict.`,
+  featuredLimit: "Not yet checked: dirt on panels, grid connection capacity, land ownership, permits and site surveys.",
+  environmentalMeaning: "Spain's environment ministry (MITECO) published a 2024 map that grades how sensitive the land is to large solar-panel plants: 0 = maximum (not recommended), 1 = very high, 2 = high, 3 = moderate, 4 = low (fewest environmental constraints). The percentage is the share of ~1 km map squares in classes 3 or 4 inside this ~50 km zone. It does not mean that land is free or approved for building; each plot still needs checks.",
+  dustHeading: "Dust in the air · NASA MERRA-2 (context only)",
+  dustMeaning: (meanAot, years) => `Average amount of dust in the air above this zone: ${meanAot} on a unitless haze index (0 = perfectly clear air), over ${years} complete years. It comes from a NASA weather model, not from measuring panels, so it cannot say how dirty panels get or how much output is lost. It does not change the green rating. (Technical: dust aerosol optical thickness at 550 nm; monthly values weighted by days; no uncertainty estimated.)`,
   dustSource: "MERRA-2 M2TMNXAER v5.12.4 · DUEXTTAU · 0.5° × 0.625° · DOI",
   dustUnavailable: "Dust values could not be loaded; the solar verdict does not use them.",
-  historyHeading: "Solar projects recorded over time in this Jaén–Granada cell",
-  historyNationalHeading: "Spain registry context",
-  historyFinding: (firstYear, firstCount, lastYear, lastCount) => `From ${firstCount} solar project phases dated ${firstYear} to ${lastCount} dated through ${lastYear}: ${lastCount - firstCount} more entries in this cell's current register.`,
-  historyHowToRead: "Each bar shows the running total of operating solar project phases in today's register, grouped by their reported start year. The number above is that total; the table shows how many entries each year adds. A flat bar means no new dated entry in this extract, not necessarily no real construction.",
+  historyHeading: "Solar plants recorded over time in the Jaén–Granada zone",
+  historyNationalHeading: "Whole of Spain in the same plant register",
+  historyFinding: (firstYear, firstCount, lastYear, lastCount) => `From ${firstCount} solar project entries dated ${firstYear} to ${lastCount} by ${lastYear}: ${lastCount - firstCount} more entries for this zone in today's plant register.`,
+  historyHowToRead: "Each bar is the running total of operating solar projects (a plant or one construction stage of it) in today's register, by the year they started. The number on top is that total; the table shows how many each year adds. A flat bar means no new dated entry, not necessarily that nothing was built.",
   historyTableYear: "Year",
   historyTableAdded: "Entries dated that year",
   historyTableCumulative: "Running total in this snapshot",
-  historyIntro: (operating, known, unknown) => `GEM's February 2026 Spain snapshot lists ${operating} operating solar project phases. ${known} have a reported start year and ${unknown} do not. The national bars count entries dated each year, not the running total shown above.`,
-  historyFeatured: (count, assumed) => `Of these ${count} phases in the ~50 km cell, GEM infers photovoltaic technology for ${assumed}; “Assumed PV” is its classification, not a hypothetical project. One location is approximate. These register points are not ${count} site-verified plants.`,
-  historyExplicit: "PV technology reported",
-  historyAssumed: "PV technology inferred by GEM",
-  historyLimit: "Source: GEM Global Solar Power Tracker, February 2026, operating utility-scale phases (at least 1 MW), reported start year, point inside this cell. This retrospective register omits smaller systems and may miss past or closed projects. The rise is exact for these records; it does not measure all installations or electricity output.",
-  historyOutcome: "Registered phases increased; real construction rate is not measured",
-  historyOutcomeMeaning: "The cumulative count necessarily rises when a dated entry is added. Without a complete annual commissioning census, a growth rate, slope or confidence interval for real construction would be misleading.",
+  historyIntro: (operating, known, unknown) => `The Global Energy Monitor plant register (February 2026) lists ${operating} operating solar projects in Spain. ${known} have a start year and ${unknown} do not. These bars count entries per year, not the running total shown above.`,
+  historyFeatured: (count, assumed) => `Of these ${count} entries in the ~50 km zone, ${assumed} are marked “probably solar panels (type not confirmed)” by the register: real plants whose technology was not confirmed, not hypothetical projects. One location is approximate. They are register points, not ${count} plants checked on site.`,
+  historyExplicit: "Solar panels (confirmed)",
+  historyAssumed: "Probably solar panels (type not confirmed)",
+  historyLimit: "Source: Global Energy Monitor plant register (Global Solar Power Tracker), February 2026: operating plants of at least 1 MW, by start year, located inside this zone. It leaves out small systems such as rooftops and may miss closed plants. The count is exact for these records; it is not electricity output.",
+  historyOutcome: "More plants are registered; the real building speed cannot be measured from this list",
+  historyOutcomeMeaning: "Why: the register only lists plants that exist today, not a year-by-year census, so a growth rate from it would mislead. The national building trend is in the executive summary (official Eurostat statistics).",
   loading: "Loading screening results…",
   notAvailable: "Screening results are not published yet.",
   notAvailableHint: "The map appears as soon as the data pipeline writes its results. Nothing here is estimated by the browser.",
@@ -292,7 +292,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   summaryGood: (n, where) => `${n} zones look promising${where ? `, mostly in ${where}` : ""}.`,
   summaryRest: (mixed, avoid) => `${mixed} are mixed and ${avoid} are not a priority.`,
   summaryMw: (g, a) =>
-    `${Math.round(g)}% of today's solar MW already sit in green zones${a !== undefined ? ` (${Math.round(a)}% in red ones)` : ""}.`,
+    `${Math.round(g)}% of today's operating solar capacity (MW) already sits in green zones${a !== undefined ? ` (${Math.round(a)}% in red ones)` : ""}.`,
   summaryBasis: (from, to) => `Based on NASA sunshine and summer heat ${from}–${to} plus MITECO's environmental map.`,
   clickHint: "Click any coloured square on the map to see why.",
   verdictTitle: { good: "Promising", mixed: "Mixed", avoid: "Not a priority", no_data: "No data" },
@@ -310,7 +310,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     no_data: "Use another source for this area.",
   },
   cannotHeading: "What we cannot tell you",
-  cannot: "No energy output (MWh), prices, grid capacity or permits. A screening aid, not investment advice.",
+  cannot: "Electricity output (MWh), prices, grid capacity or permits: there is no consistent public nationwide data for them, and they depend on each plot. A screening aid, not investment advice.",
   details: "Details & sources",
   method: "Method",
   sources: "Sources",
@@ -318,13 +318,13 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   back: "Back to summary",
   close: "Close",
   plantStatus: (s) => (s === "operating" ? "Operating" : s === "construction" ? "Under construction" : s),
-  plantTech: (t) => (t === "csp" ? "Solar thermal (CSP)" : t === "pv" ? "Solar PV" : t),
-  plantDetail: (p) => `${p.tech === "csp" ? "CSP" : "PV"} · ${p.status === "construction" ? "under construction" : "operating"}`,
+  plantTech: (t) => (t === "csp" ? "Solar thermal (mirrors heating fluid, CSP)" : t === "pv" ? "Solar panels (photovoltaic)" : t),
+  plantDetail: (p) => `${p.tech === "csp" ? "Solar thermal" : "Solar panels"} · ${p.status === "construction" ? "under construction" : "operating"}`,
   plantCapacity: "Capacity",
   plantStatusLabel: "Status",
-  plantMiteco: "MITECO sensitivity at the site",
+  plantMiteco: "Environmental sensitivity at the site (MITECO map)",
   plantMitecoUnknown: "Not available",
-  plantNote: "Real plant from a public register. Capacity is not generation.",
+  plantNote: "Real plant from the Global Energy Monitor plant register. Installed power (MW) is not electricity produced.",
   mitecoClass: (v) => `${v} · ${MITECO_EN[v] ?? "Unknown"}`,
   plantsInCell: (n, mw) => `${n} operating plants here today (${Math.round(mw)} MW).`,
 };
@@ -336,57 +336,57 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   exploratory: "Exploratorio — pendiente de revisión",
   exploratoryHint: "Regla fijada antes de ver los datos; resultados aún sin segunda revisión.",
   technology: "Tecnología",
-  techSolar: "Solar FV",
+  techSolar: "Paneles solares (fotovoltaica)",
   techHydro: "Hidráulica",
   techWind: "Eólica",
   comingSoon: "próximamente",
   layersHeading: "En el mapa",
   toggleCells: "Mapa de evidencia",
-  toggleCellsHint: "Zonas verde / ámbar / roja a partir de datos NASA",
-  toggleMiteco: "Sensibilidad ambiental (MITECO)",
-  toggleMitecoHint: "Mapa oficial de sensibilidad ambiental",
+  toggleCellsHint: "Zonas verde / ámbar / roja (cuadros de ~50 km) con datos NASA",
+  toggleMiteco: "Sensibilidad ambiental (mapa oficial del MITECO)",
+  toggleMitecoHint: "Mapa del Ministerio para la Transición Ecológica: verde = pocas restricciones ambientales, rojo = no recomendado",
   togglePlants: "Plantas reales",
-  togglePlantsHint: "En operación (punto) y en construcción (anillo), tamaño según MW",
+  togglePlantsHint: "En operación (punto) y en construcción (anillo), tamaño según potencia instalada (MW)",
   legendGood: "Prometedora: mira aquí primero",
   legendMixed: "Mixta: posible, con un punto débil",
   legendAvoid: "No prioritaria",
-  legendNote: "Un color por celda de la malla NASA (~50 km). Control de pruebas múltiples: FDR de Benjamini–Hochberg.",
+  legendNote: "Un color por zona NASA (cuadro de ~50 km). Las tendencias se revisan contra falsas alarmas entre muchas zonas (FDR de Benjamini–Hochberg).",
   markerHeading: "Puntos del mapa",
-  markerOperating: "Punto claro relleno: planta solar en operación; el tamaño indica MW registrados, no producción.",
+  markerOperating: "Punto claro relleno: planta solar en operación; el tamaño indica potencia instalada (MW), no electricidad producida.",
   markerConstruction: "Anillo claro: planta solar en construcción.",
   markerLandmark: "Punto o anillo ámbar: planta destacada con nombre.",
   markerOther: "Los otros puntos negros o blancos son estaciones climáticas u otras capas de investigación; se ocultan en esta vista.",
-  featuredHeading: "Caso destacado · celda Jaén–Granada",
-  featuredSunLabel: "Irradiancia media recibida · 2000–2025",
+  featuredHeading: "Caso destacado · zona Jaén–Granada",
+  featuredSunLabel: "Sol medio que llega al suelo · 2000–2025",
   featuredSunUnit: "kWh/m²/día",
-  featuredEnvLabel: "Sensibilidad baja/moderada en el mapa · MITECO 2024",
+  featuredEnvLabel: "Suelo con sensibilidad ambiental baja/moderada · MITECO 2024",
   featuredNarrative: (place, moreSun, moreLand, both, total) =>
-    `${place} destaca entre ${total} celdas verdes. ${moreSun} tienen más irradiancia y ${moreLand} tienen mayor proporción MITECO baja/moderada; ${both} la igualan o superan en ambas cosas. Se comparan celdas del mapa, no parcelas.`,
-  featuredCenter: "Centro de la celda de ~50 km (no es una parcela propuesta)",
-  placeReferenceHeading: "Lugares concretos dentro de la celda",
-  placeReferenceNote: "Los vértices geodésicos del IGN sitúan la zona Jaén–Granada. Sus coordenadas identifican hitos, no terrenos evaluados para construir FV.",
+    `Jaén–Granada destaca entre ${total} zonas verdes. ${moreSun} reciben más sol y ${moreLand} tienen más suelo poco sensible, pero ${both} la igualan o superan en ambas cosas. Se comparan zonas de ~50 km, no parcelas.`,
+  featuredCenter: "Centro de la zona de ~50 km (no es una parcela propuesta)",
+  placeReferenceHeading: "Lugares concretos dentro de la zona",
+  placeReferenceNote: "Los vértices geodésicos del Instituto Geográfico Nacional (IGN) sitúan la zona Jaén–Granada. Son hitos de referencia, no terrenos evaluados para paneles solares.",
   placeSource: "Ficha IGN",
   featuredAction: "Centrar mapa aquí",
-  featuredLimit: "Siguen sin evaluarse la suciedad en paneles, la capacidad de red, la propiedad del suelo, los permisos y el terreno.",
-  environmentalMeaning: "El mapa MITECO de 2024 clasifica la sensibilidad ambiental para grandes plantas FV de máxima (0) a baja (4). El porcentaje cuenta píxeles cartografiados de ~1 km en las clases 3 o 4 dentro de esta celda NASA de ~50 km. No significa que ese suelo esté libre ni autorizado para construir: hay que estudiar cada parcela.",
-  dustHeading: "Contexto de polvo · NASA MERRA-2",
-  dustMeaning: (meanAot, years) => `Espesor óptico medio del polvo a 550 nm: ${meanAot} (adimensional), durante ${years} años completos. Las medias mensuales se ponderan por días; no se ha estimado incertidumbre. Este reanálisis describe polvo en la atmósfera, no el depositado sobre paneles ni pérdidas de producción. No cambia el veredicto verde.`,
+  featuredLimit: "Falta comprobar: suciedad en paneles, capacidad de conexión a red, propiedad del suelo, permisos y estudio del terreno.",
+  environmentalMeaning: "El Ministerio para la Transición Ecológica (MITECO) publicó en 2024 un mapa que gradúa lo sensible que es el suelo a grandes plantas de paneles solares: 0 = máxima (no recomendada), 1 = muy alta, 2 = alta, 3 = moderada, 4 = baja (menos restricciones ambientales). El porcentaje es la parte de cuadros de ~1 km en las clases 3 o 4 dentro de esta zona de ~50 km. No significa que ese suelo esté libre ni autorizado: hay que estudiar cada parcela.",
+  dustHeading: "Polvo en el aire · NASA MERRA-2 (solo contexto)",
+  dustMeaning: (meanAot, years) => `Cantidad media de polvo en el aire sobre esta zona: ${meanAot} en un índice de turbidez sin unidades (0 = aire totalmente limpio), durante ${years} años completos. Sale de un modelo meteorológico de la NASA, no de medir paneles, así que no dice cuánto se ensucian ni cuánta producción se pierde. No cambia el color verde. (Técnico: espesor óptico del polvo a 550 nm; medias mensuales ponderadas por días; sin incertidumbre estimada.)`,
   dustSource: "MERRA-2 M2TMNXAER v5.12.4 · DUEXTTAU · 0,5° × 0,625° · DOI",
   dustUnavailable: "No se han podido cargar los valores de polvo; el veredicto solar no los utiliza.",
-  historyHeading: "Proyectos solares registrados a lo largo del tiempo en esta celda Jaén–Granada",
-  historyNationalHeading: "Contexto del registro de España",
-  historyFinding: (firstYear, firstCount, lastYear, lastCount) => `De ${firstCount} fases de proyectos solares fechadas en ${firstYear} a ${lastCount} hasta ${lastYear}: ${lastCount - firstCount} entradas más en el registro actual de esta celda.`,
-  historyHowToRead: "Cada barra muestra el total acumulado de fases solares en operación que aparecen hoy en el registro, según su año de inicio declarado. El número superior es ese total; la tabla indica cuántas entradas aporta cada año. Una barra plana indica que este extracto no añade entradas fechadas, no que no se construyera nada.",
+  historyHeading: "Plantas solares registradas a lo largo del tiempo en la zona Jaén–Granada",
+  historyNationalHeading: "Toda España en el mismo registro de plantas",
+  historyFinding: (firstYear, firstCount, lastYear, lastCount) => `De ${firstCount} entradas de proyectos solares fechadas en ${firstYear} a ${lastCount} hasta ${lastYear}: ${lastCount - firstCount} entradas más en esta zona en el registro de plantas actual.`,
+  historyHowToRead: "Cada barra es el total acumulado de proyectos solares en operación (una planta o una fase de obra de ella) que aparecen hoy en el registro, según su año de inicio. El número de arriba es ese total; la tabla indica cuántos suma cada año. Una barra plana indica que no hay entradas nuevas con fecha, no que no se construyera nada.",
   historyTableYear: "Año",
   historyTableAdded: "Entradas con ese año",
   historyTableCumulative: "Total acumulado en esta foto",
-  historyIntro: (operating, known, unknown) => `La foto de GEM de febrero de 2026 incluye ${operating} fases de proyectos solares en operación en España. ${known} tienen año de inicio declarado y ${unknown} no. Las barras nacionales cuentan entradas de cada año, no el acumulado del gráfico anterior.`,
-  historyFeatured: (count, assumed) => `De estas ${count} fases en la celda de ~50 km, GEM infiere la tecnología fotovoltaica en ${assumed}; «Assumed PV» es su clasificación, no un proyecto hipotético. Una localización es aproximada. Estos puntos del registro no son ${count} plantas verificadas sobre el terreno.`,
-  historyExplicit: "Tecnología fotovoltaica declarada",
-  historyAssumed: "Tecnología fotovoltaica inferida por GEM",
-  historyLimit: "Fuente: GEM Global Solar Power Tracker, febrero de 2026, fases en operación de proyectos de al menos 1 MW, año de inicio declarado y punto dentro de la celda. Este registro retrospectivo excluye sistemas pequeños y puede omitir proyectos pasados o cerrados. El aumento es exacto para estas fichas; no mide todas las instalaciones ni la producción eléctrica.",
-  historyOutcome: "Aumentan las fases registradas; no se mide la tasa real de construcción",
-  historyOutcomeMeaning: "El acumulado crece necesariamente al añadirse una ficha fechada. Sin un censo anual completo de puestas en marcha, una tasa de crecimiento, pendiente o intervalo de confianza sobre la construcción real sería engañosa.",
+  historyIntro: (operating, known, unknown) => `El registro de plantas de Global Energy Monitor (febrero de 2026) incluye ${operating} proyectos solares en operación en España. ${known} tienen año de inicio y ${unknown} no. Estas barras cuentan entradas de cada año, no el acumulado del gráfico anterior.`,
+  historyFeatured: (count, assumed) => `De estas ${count} entradas en la zona de ~50 km, el registro marca ${assumed} como «probablemente paneles solares (tipo sin confirmar)»: plantas reales cuya tecnología no se ha confirmado, no proyectos hipotéticos. Una localización es aproximada. Son puntos del registro, no ${count} plantas comprobadas sobre el terreno.`,
+  historyExplicit: "Paneles solares (confirmado)",
+  historyAssumed: "Probablemente paneles solares (tipo sin confirmar)",
+  historyLimit: "Fuente: registro de plantas de Global Energy Monitor (Global Solar Power Tracker), febrero de 2026: plantas en operación de al menos 1 MW, por año de inicio, situadas dentro de esta zona. Deja fuera instalaciones pequeñas como tejados y puede omitir plantas cerradas. El recuento es exacto para estas fichas; no es producción eléctrica.",
+  historyOutcome: "Hay más plantas registradas; la velocidad real de construcción no se puede medir con esta lista",
+  historyOutcomeMeaning: "Por qué: el registro solo lista las plantas que existen hoy, no un censo año a año, así que una tasa de crecimiento sacada de él engañaría. La tendencia nacional de construcción está en el resumen ejecutivo (estadística oficial de Eurostat).",
   loading: "Cargando resultados del cribado…",
   notAvailable: "Los resultados del cribado aún no están publicados.",
   notAvailableHint: "El mapa aparecerá en cuanto el proceso de datos escriba sus resultados. El navegador no estima nada.",
@@ -395,7 +395,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   summaryGood: (n, where) => `${n} zonas parecen prometedoras${where ? `, sobre todo en ${where}` : ""}.`,
   summaryRest: (mixed, avoid) => `${mixed} son mixtas y ${avoid} no son prioritarias.`,
   summaryMw: (g, a) =>
-    `El ${Math.round(g)} % de los MW solares actuales ya está en zonas verdes${a !== undefined ? ` (${Math.round(a)} % en rojas)` : ""}.`,
+    `El ${Math.round(g)} % de la potencia solar en operación (MW) ya está en zonas verdes${a !== undefined ? ` (${Math.round(a)} % en rojas)` : ""}.`,
   summaryBasis: (from, to) => `Basado en el sol y el calor de verano de la NASA ${from}–${to} y en el mapa ambiental del MITECO.`,
   clickHint: "Pulsa cualquier cuadro de color del mapa para ver por qué.",
   verdictTitle: { good: "Prometedora", mixed: "Mixta", avoid: "No prioritaria", no_data: "Sin datos" },
@@ -413,7 +413,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
     no_data: "Usa otra fuente para esta zona.",
   },
   cannotHeading: "Lo que no podemos decirte",
-  cannot: "Ni producción (MWh), ni precios, ni capacidad de red, ni permisos. Es una ayuda para cribar, no un consejo de inversión.",
+  cannot: "Ni electricidad producida (MWh), ni precios, ni capacidad de red, ni permisos: no hay datos públicos nacionales homogéneos y dependen de cada parcela. Es una ayuda para cribar, no un consejo de inversión.",
   details: "Detalles y fuentes",
   method: "Método",
   sources: "Fuentes",
@@ -421,13 +421,13 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   back: "Volver al resumen",
   close: "Cerrar",
   plantStatus: (s) => (s === "operating" ? "En operación" : s === "construction" ? "En construcción" : s),
-  plantTech: (t) => (t === "csp" ? "Termosolar (CSP)" : t === "pv" ? "Solar fotovoltaica" : t),
-  plantDetail: (p) => `${p.tech === "csp" ? "CSP" : "FV"} · ${p.status === "construction" ? "en construcción" : "en operación"}`,
+  plantTech: (t) => (t === "csp" ? "Termosolar (espejos que calientan un fluido, CSP)" : t === "pv" ? "Paneles solares (fotovoltaica)" : t),
+  plantDetail: (p) => `${p.tech === "csp" ? "Termosolar" : "Paneles solares"} · ${p.status === "construction" ? "en construcción" : "en operación"}`,
   plantCapacity: "Potencia",
   plantStatusLabel: "Estado",
-  plantMiteco: "Sensibilidad MITECO en el emplazamiento",
+  plantMiteco: "Sensibilidad ambiental en el emplazamiento (mapa MITECO)",
   plantMitecoUnknown: "No disponible",
-  plantNote: "Planta real de un registro público. La potencia no es producción.",
+  plantNote: "Planta real del registro de plantas de Global Energy Monitor. La potencia instalada (MW) no es electricidad producida.",
   mitecoClass: (v) => `${v} · ${MITECO_ES[v] ?? "Desconocida"}`,
   plantsInCell: (n, mw) => `${n} plantas en operación aquí hoy (${Math.round(mw)} MW).`,
 };
@@ -444,4 +444,4 @@ export function screeningCopy(locale: Locale): ScreeningCopy {
   };
 }
 
-export { fmt as formatScreeningNumber };
+export { fmt as formatScreeningNumber, fmtP as formatScreeningP };

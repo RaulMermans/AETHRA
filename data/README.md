@@ -17,6 +17,7 @@ All data covers **Spain, 2000 → 2026**. This page is the quick overview; each 
 | [`nasa_merra2_dust_giovanni/`](nasa_merra2_dust_giovanni/README.md) | MERRA-2 `DUEXTTAU` dust optical thickness via Giovanni; **312 real months validated**, exploratory Jaén–Granada cell series in the app | 321 source URLs, local NetCDFs, SHA manifest and compact JSON result | 2000–2025 complete years |
 | [`miteco_pv_sensitivity_2024/`](miteco_pv_sensitivity_2024/README.md) | 🚫 Official MITECO map of **where large solar farms are environmentally sensitive** (5 classes) | A **map** in ~1 km pixels (one snapshot) | 2024 |
 | [`gem_solar_spain/`](gem_solar_spain/README.md) | 🏭 **Real solar plants** ≥ 1 MW in Spain (Global Energy Monitor): location, MW, status | One row per **plant** | Feb 2026 |
+| [`eurostat_solar_capacity_spain/`](eurostat_solar_capacity_spain/README.md) | ☀️📈 **Official solar panel capacity installed in Spain each year** (Eurostat `nrg_inf_epcrw`, PV), ~35.8 GW in 2024, 2nd in the EU | One row per **year** (MW + MW added) | 2000 → 2024 |
 | [`raw/`](raw/README.md) | Original NASA files, before cutting them to Spain | Don't use directly | — |
 | [`metadata/`](metadata/) | Where each file came from (dataset IDs, versions, checksums) | — | — |
 
