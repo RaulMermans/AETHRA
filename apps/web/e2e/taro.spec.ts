@@ -39,6 +39,39 @@ test.describe("TARO Agentic Brain E2E", () => {
       await expect(traceSummary).toBeVisible();
       await traceSummary.click();
       await j.shot("02-taro-answered-malaga");
+
+      // Click suggested action ("Mira Málaga" / "Check Málaga") — TARO must stay open!
+      const flyBtn = panel.getByRole("button", { name: /Mira Málaga|Check Málaga/i });
+      if ((await flyBtn.count()) > 0) {
+        await flyBtn.click();
+        await expect(panel).toBeVisible();
+      }
+
+      // Minimize TARO and reopen it — conversation must still be saved!
+      const minimizeBtn = panel.getByRole("button", { name: /Minimize TARO|Minimizar TARO/i });
+      await minimizeBtn.click();
+      await expect(panel).toBeHidden();
+
+      await j.click(taroBtn, "Reopen TARO Panel");
+      await expect(panel).toBeVisible();
+      await expect(panel.getByText(/0\.56/)).toBeVisible();
+
+      // Ask a second question and verify turn navigation (1/2, 2/2) + New chat reset
+      await input.fill("¿Cuál es la tendencia de temperatura en la Península y Baleares?");
+      await panel.locator('button[type="submit"]').click();
+      await expect(panel.getByText(/2\/2/)).toBeVisible({ timeout: 30_000 });
+
+      const prevBtn = panel.getByRole("button", { name: /Previous question|Pregunta anterior/i });
+      await prevBtn.click();
+      await expect(panel.getByText(/1\/2/)).toBeVisible();
+
+      const nextBtn = panel.getByRole("button", { name: /Next question|Siguiente pregunta/i });
+      await nextBtn.click();
+      await expect(panel.getByText(/2\/2/)).toBeVisible();
+
+      const newChatBtn = panel.getByRole("button", { name: /New chat|Nuevo chat/i });
+      await newChatBtn.click();
+      await expect(panel.getByText(/0\.56/)).toHaveCount(0);
     } else {
       // In strict judge build, test the live API directly
       const askRes = await request.post("/api/aethra/ask", {

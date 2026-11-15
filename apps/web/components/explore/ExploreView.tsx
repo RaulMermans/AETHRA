@@ -955,7 +955,6 @@ export function ExploreView() {
   const toggleTool = useCallback((tool: ToolId) => {
     setProofStage(null);
     setActiveTool((t) => (t === tool ? null : tool));
-    setCoreOpen(false);
   }, []);
   const startProof = (card: EvidenceCard) => {
     if (!controller || !adminBundle) return;
@@ -1023,7 +1022,7 @@ export function ExploreView() {
   }, [showIllustrativeModel, modelAppearance, conceptualOpacity]);
 
   const handleSelectDestination = useCallback(
-    (dest: GeographicDestination) => {
+    (dest: GeographicDestination, options?: { keepCoreOpen?: boolean }) => {
       if (!EXPLORATORY_FEATURES_ENABLED && !destinationAllowedInJudgeMode(dest)) {
         return;
       }
@@ -1042,7 +1041,9 @@ export function ExploreView() {
       if (dest.caseStudyId) {
         const study = caseById(dest.caseStudyId);
         setActiveTool(null);
-        setCoreOpen(false);
+        if (!options?.keepCoreOpen) {
+          setCoreOpen(false);
+        }
         setCasePanelOpen(true);
         setActiveCaseId(dest.caseStudyId);
         if (study?.adminCcaaId) {
@@ -1085,7 +1086,7 @@ export function ExploreView() {
       if (action.type === "FLY_TO_REGION") {
         const dest = destinationById(action.targetId);
         if (dest) {
-          handleSelectDestination(dest);
+          handleSelectDestination(dest, { keepCoreOpen: true });
           return;
         }
         if (action.latitude !== undefined && action.longitude !== undefined) {
@@ -1100,8 +1101,12 @@ export function ExploreView() {
         }
         return;
       }
-      setCoreOpen(false);
-      setEvidenceTopic("temperature");
+      if (action.type === "SHOW_TIME_SERIES") {
+        setTrendTab("series");
+        setEvidenceOpen(true);
+        return;
+      }
+      setEvidenceTopic(action.targetId.includes("joint_low") ? "joint_low" : "temperature");
       setActiveTool("evidence");
       setEvidenceOpen(true);
     },
@@ -1111,7 +1116,7 @@ export function ExploreView() {
   const activeCase = casePanelOpen && activeCaseId ? caseById(activeCaseId) : undefined;
   const activeDestination = destinationId ? destinationById(destinationId) : undefined;
   // A map tool opened from elsewhere takes the panel; the screening panel returns when it closes.
-  const secondaryPanel = activeTool ? "tool" : screeningOpen ? "screening" : coreOpen ? "core" : activeCase ? "case" : null;
+  const secondaryPanel = activeTool ? "tool" : screeningOpen ? "screening" : activeCase ? "case" : null;
   const screeningActive = secondaryPanel === "screening";
   const inspectorOpen = evidenceOpen || secondaryPanel !== null;
 
@@ -1336,7 +1341,6 @@ export function ExploreView() {
       return;
     }
     setActiveTool(null);
-    setCoreOpen(false);
     setCasePanelOpen(false);
     setEvidenceOpen(false);
     setPlaying(false);
@@ -1704,14 +1708,6 @@ export function ExploreView() {
                     onClose={closeTool}
                   />
                 )}
-                {EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core" && (
-                  <AethraCorePanel
-                    open={coreOpen}
-                    regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
-                    onClose={() => setCoreOpen(false)}
-                    onAction={handleCoreAction}
-                  />
-                )}
                 {secondaryPanel === "case" && activeCase && (
                   <EnergyCasePanel
                     study={activeCase}
@@ -1730,7 +1726,6 @@ export function ExploreView() {
                     onOpacity={setConceptualOpacity}
                     onOpenEvidence={() => {
                       setCasePanelOpen(false);
-                      setCoreOpen(false);
                       setEvidenceTopic("joint_low");
                       setActiveTool("evidence");
                     }}
@@ -1833,6 +1828,25 @@ export function ExploreView() {
         </p>
       )}
 
+      {EXPLORATORY_FEATURES_ENABLED && (
+        <div
+          className={`pointer-events-none absolute top-[4.75rem] right-3 z-40 flex max-h-[min(28rem,calc(100dvh-10.5rem))] w-[min(25rem,calc(100vw-1.5rem))] flex-col sm:right-6 ${
+            inspectorOpen
+              ? workspaceMode === "energy"
+                ? "xl:right-[36.5rem]"
+                : "xl:right-[32.5rem]"
+              : ""
+          } ${coreOpen ? "" : "hidden"}`}
+        >
+          <AethraCorePanel
+            open={coreOpen}
+            regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
+            onClose={() => setCoreOpen(false)}
+            onAction={handleCoreAction}
+          />
+        </div>
+      )}
+
       <div
         ref={bottomBarRef}
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-4 pb-8 sm:px-6 ${
@@ -1880,13 +1894,7 @@ export function ExploreView() {
             {EXPLORATORY_FEATURES_ENABLED && (
             <button
               type="button"
-              onClick={() => {
-                setCoreOpen((o) => {
-                  const next = !o;
-                  if (next) setActiveTool(null);
-                  return next;
-                });
-              }}
+              onClick={() => setCoreOpen((o) => !o)}
               aria-expanded={coreOpen}
               aria-controls="taro"
               aria-label="TARO"
