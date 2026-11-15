@@ -145,10 +145,22 @@ export interface ImageryLayerDescriptor extends LayerBase {
   time?: TimeDimension;
 }
 
+/** OGC WMS cartographic context. The service renders pixels, not selectable vector geometry. */
+export interface WmsLayerDescriptor extends LayerBase {
+  kind: "wms";
+  url: string;
+  layers: string;
+  credit: string;
+  bounds: GeoBounds;
+  time?: TimeDimension;
+}
+
 /** Vector features (GeoJSON object or URL). */
 export interface GeoJsonLayerDescriptor extends LayerBase {
   kind: "geojson";
   data: object | string;
+  /** Changes when an in-memory feature replaces another feature in the same layer. */
+  cacheKey?: string;
   style: { stroke: string; fill?: string; strokeWidth?: number };
 }
 
@@ -173,6 +185,7 @@ export interface PointValuesLayerDescriptor extends LayerBase {
 // now so API contracts and UI can be built; their adapters come with the first real dataset.
 export type LayerDescriptor =
   | ImageryLayerDescriptor
+  | WmsLayerDescriptor
   | GeoJsonLayerDescriptor
   | RasterFieldLayerDescriptor
   | PointValuesLayerDescriptor;

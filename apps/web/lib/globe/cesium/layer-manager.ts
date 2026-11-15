@@ -10,6 +10,7 @@ import type {
   OverlayFeature,
   PointValuesLayerDescriptor,
   RasterFieldLayerDescriptor,
+  WmsLayerDescriptor,
   ViewMode,
 } from "../types";
 
@@ -28,6 +29,7 @@ interface LayerHandle {
 interface AdapterContext {
   Cesium: Cesium;
   viewer: CesiumNS.Viewer;
+  onError: (layerId: string, error: unknown) => void;
   /** Spain mode: imagery requested only inside these. Undefined: whole globe. */
   rectangles?: CesiumNS.Rectangle[];
 }
@@ -67,6 +69,36 @@ const imageryAdapter: Adapter<ImageryLayerDescriptor> = async ({ Cesium, viewer,
     destroy() {
       if (viewer.isDestroyed()) return;
       for (const layer of layers) viewer.imageryLayers.remove(layer, true);
+    },
+  };
+};
+
+const wmsAdapter: Adapter<WmsLayerDescriptor> = async ({ Cesium, viewer, onError }, d, state) => {
+  const b = d.bounds;
+  const rectangle = Cesium.Rectangle.fromDegrees(b.west, b.south, b.east, b.north);
+  const provider = new Cesium.WebMapServiceImageryProvider({
+    url: d.url,
+    layers: d.layers,
+    parameters: { transparent: true, format: "image/png", ...(d.time ? { time: state.time ?? d.time.default } : {}) },
+    tilingScheme: new Cesium.GeographicTilingScheme(),
+    rectangle,
+    credit: new Cesium.Credit(d.credit, true),
+  });
+  provider.errorEvent.addEventListener((error: CesiumNS.TileProviderError) => {
+    error.retry = false;
+    onError(d.id, error.message);
+  });
+  const layer = new Cesium.ImageryLayer(provider, { rectangle });
+  viewer.imageryLayers.add(layer);
+  return {
+    key: `${d.layers}|${state.time ?? d.time?.default ?? ""}`,
+    imagery: [layer],
+    apply(s) {
+      layer.show = s.visible;
+      layer.alpha = s.opacity;
+    },
+    destroy() {
+      if (!viewer.isDestroyed()) viewer.imageryLayers.remove(layer, true);
     },
   };
 };
@@ -276,7 +308,7 @@ const geoJsonAdapter: Adapter<GeoJsonLayerDescriptor> = async ({ Cesium, viewer 
   });
   await viewer.dataSources.add(ds);
   return {
-    key: typeof d.data === "string" ? d.data : d.id,
+    key: d.cacheKey ?? (typeof d.data === "string" ? d.data : d.id),
     apply(s) {
       ds.show = s.visible;
       for (const e of ds.entities.values) {
@@ -292,6 +324,7 @@ const geoJsonAdapter: Adapter<GeoJsonLayerDescriptor> = async ({ Cesium, viewer 
 
 const adapters: { [K in LayerDescriptor["kind"]]?: Adapter<Extract<LayerDescriptor, { kind: K }>> } = {
   imagery: imageryAdapter,
+  wms: wmsAdapter,
   geojson: geoJsonAdapter,
   "raster-field": rasterFieldAdapter,
   "point-values": pointValuesAdapter,
@@ -299,7 +332,8 @@ const adapters: { [K in LayerDescriptor["kind"]]?: Adapter<Extract<LayerDescript
 
 function computeLayerKey(d: LayerDescriptor, state: LayerState, mode: ViewMode): string {
   if (d.kind === "imagery") return `${state.time ?? d.time?.default ?? ""}|${mode}`;
-  if (d.kind === "geojson") return typeof d.data === "string" ? d.data : d.id;
+  if (d.kind === "wms") return `${d.layers}|${state.time ?? d.time?.default ?? ""}`;
+  if (d.kind === "geojson") return d.cacheKey ?? (typeof d.data === "string" ? d.data : d.id);
   if (d.kind === "raster-field") return d.url;
   if (d.kind === "point-values") {
     const fc = d.data as { features?: Array<{ properties?: Record<string, unknown> }> };
@@ -356,7 +390,7 @@ export class CesiumLayerManager {
         try {
           const adapter = adapters[d.kind] as Adapter<LayerDescriptor> | undefined;
           if (!adapter) throw new Error(`No Cesium adapter for layer kind "${d.kind}" yet`);
-          handle = await adapter({ Cesium: this.Cesium, viewer: this.viewer, rectangles }, d, state);
+          handle = await adapter({ Cesium: this.Cesium, viewer: this.viewer, rectangles, onError: this.onError }, d, state);
         } catch (err) {
           this.onError(d.id, err);
           continue;
