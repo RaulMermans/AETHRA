@@ -4,6 +4,7 @@ import { interpretCard, interpretOutcome } from "./interpret.ts";
 import { claimById, CYL_INCLUDED_INSTALLATIONS } from "./knowledge/claims.ts";
 import { matchesCurriculum, selectClaims } from "./knowledge/select.ts";
 import type { KnowledgeClaim } from "./knowledge/types.ts";
+import { findRegionalScope } from "./markdown-brain.ts";
 import type {
   AgentActionType,
   AgentAnswer,
@@ -149,6 +150,7 @@ function matchScope(text: string): StudyRegion | undefined {
 }
 
 function matchNamelessPlace(text: string): string | undefined {
+  if (matchScope(text)) return undefined;
   return matchNamedPlace(text)?.name;
 }
 
@@ -248,6 +250,13 @@ export function classifyIntent(q: string): AgentIntent {
   if (/\b(temperatur|warming|t2m|calent)/.test(f)) return "temperature_trend";
   if (/\b(trend|tendencia|changed|cambio)\b/.test(f)) return "nasa_evidence";
   if (matchesCurriculum(q)) return "explain_mechanism";
+  if (
+    /\b(hola|hello|hi\b|buenos dias|buenas|quien eres|who are you|que eres|what are you|que puedes hacer|what can you do|ayuda|help|taro|aethra|espana|spain|clima|climate|tierra|earth|energia|energy|nasa|satelit|mapa|globe|globo|explica|explain|resumen|summary|nota|markdown)\b/.test(
+      f,
+    )
+  ) {
+    return "explain_mechanism";
+  }
   return "out_of_domain";
 }
 
@@ -380,14 +389,20 @@ function asksEnergyInstall(question: string): boolean {
 function placeBriefing(question: string, language: AgentLanguage, intent: AgentIntent, place: NamedPlace): AgentAnswer {
   const coord = formatLonLat(place.latitude, place.longitude);
   const energy = asksEnergyInstall(question);
+  const scopeDigest = findRegionalScope(place.name);
+  const tempInfo = scopeDigest?.temperature
+    ? language === "es"
+      ? ` En el bundle precalculado (${scopeDigest.name}, MERRA-2 2000–2025) la tendencia provincial es ${signed(scopeDigest.temperature.slopePerDecade)} °C/década (IC 95% ${signed(scopeDigest.temperature.ci95[0])} a ${signed(scopeDigest.temperature.ci95[1])}; p = ${scopeDigest.temperature.pValue}; n = ${scopeDigest.temperature.n}).`
+      : ` In the precomputed bundle (${scopeDigest.name}, MERRA-2 2000–2025) the provincial trend is ${signed(scopeDigest.temperature.slopePerDecade)} °C/decade (95% CI ${signed(scopeDigest.temperature.ci95[0])} to ${signed(scopeDigest.temperature.ci95[1])}; p = ${scopeDigest.temperature.pValue}; n = ${scopeDigest.temperature.n}).`
+    : "";
   const responseText = canned(
     language,
-    `There is no EvidenceCard for ${place.name}, and I will not use the national Peninsula + Balearics result instead.${energy ? " I also cannot say which energy industry to install there: that would be a site ranking, which I do not do." : ""} Published trends cover national temperature and five pre-registered solar–wind regions, not ${place.name}. Here is ${place.name} (${coord}).`,
-    `No hay EvidenceCard para ${place.name}, y no sustituyo el resultado nacional de Península + Baleares.${energy ? " Tampoco puedo decir qué industria energética instalar ahí: eso sería un ranking de sitios, y no lo hago." : ""} Las tendencias publicadas cubren temperatura nacional y cinco CCAA de recurso solar-viento, no ${place.name}. Aquí tienes ${place.name} (${coord}).`,
+    `There is no EvidenceCard for ${place.name}, and I will not use the national Peninsula + Balearics result instead.${energy ? " I also cannot say which energy industry to install there: that would be a site ranking, which I do not do." : ""}${tempInfo} Published EvidenceCards cover national temperature and five pre-registered solar–wind regions, not ${place.name}. Here is ${place.name} (${coord}).`,
+    `No hay EvidenceCard para ${place.name}, y no sustituyo el resultado nacional de Península + Baleares.${energy ? " Tampoco puedo decir qué industria energética instalar ahí: eso sería un ranking de sitios, y no lo hago." : ""}${tempInfo} Las tendencias publicadas en EvidenceCards cubren temperatura nacional y cinco CCAA de recurso solar-viento, no ${place.name}. Aquí tienes ${place.name} (${coord}).`,
   );
   return {
     ...base(question, intent, language, "NOT_AVAILABLE", responseText),
-    scope: { regionName: place.name },
+    scope: { regionId: scopeDigest?.scopeKey, regionName: place.name },
     limitations: ["Geographic scope must match the card exactly (D50).", "Not a site ranking or investment recommendation."],
     suggestedActions: [
       {
@@ -486,10 +501,16 @@ function precipitationBriefing(question: string, language: AgentLanguage): Agent
   const wantsCustomWindow = /\b(2020|2021|2022|2023|2024|2025)\b/.test(question);
   const coord = pin ? formatLonLat(pin.latitude, pin.longitude) : "";
   const place = pin?.name ?? (language === "es" ? "esa zona" : "that place");
+  const scopeDigest = pin ? findRegionalScope(pin.name) : undefined;
+  const rainInfo = scopeDigest?.precipitation
+    ? language === "es"
+      ? ` En el bundle completo 2000–2024 (GPM IMERG, EXPLORATORY sin ajuste BH), la pendiente en ${scopeDigest.name} es ${signed(scopeDigest.precipitation.slopePerDecade)} mm/década (IC 95% ${signed(scopeDigest.precipitation.ci95[0])} a ${signed(scopeDigest.precipitation.ci95[1])}; p = ${scopeDigest.precipitation.pValue}).`
+      : ` Over the full 2000–2024 bundle (GPM IMERG, EXPLORATORY without BH adjustment), the slope in ${scopeDigest.name} is ${signed(scopeDigest.precipitation.slopePerDecade)} mm/decade (95% CI ${signed(scopeDigest.precipitation.ci95[0])} to ${signed(scopeDigest.precipitation.ci95[1])}; p = ${scopeDigest.precipitation.pValue}).`
+    : "";
   const responseText = canned(
     language,
-    `I do not have a published precipitation trend for ${place}${wantsCustomWindow ? " over 2020–2025" : ""}, so I cannot draw hydraulic-basin conclusions from a number I do not have. On the globe, Rain shows NASA GPM IMERG rainfall and Rivers shows basin boxes of that rainfall — not river discharge. ${pin ? `Here is ${pin.name} (${coord}).` : "Open Rain or Rivers to look around."}`,
-    `No tengo una tendencia de precipitación publicada para ${place}${wantsCustomWindow ? " en 2020–2025" : ""}, así que no puedo sacar conclusiones de cuencas a partir de un número que no existe. En el globo, Rain muestra la lluvia NASA GPM IMERG y Rivers las cajas de cuenca de esa lluvia — no el caudal del río. ${pin ? `Aquí tienes ${pin.name} (${coord}).` : "Abre Rain o Rivers para mirar."}`,
+    `I do not have a published precipitation EvidenceCard for ${place}${wantsCustomWindow ? " over 2020–2025" : ""}, so I cannot draw hydraulic-basin conclusions from a custom window.${rainInfo} On the globe, Rain shows NASA GPM IMERG rainfall and Rivers shows basin boxes of that rainfall — not river discharge. ${pin ? `Here is ${pin.name} (${coord}).` : "Open Rain or Rivers to look around."}`,
+    `No tengo una EvidenceCard de precipitación publicada para ${place}${wantsCustomWindow ? " en 2020–2025" : ""}, así que no puedo sacar conclusiones de cuencas a partir de una ventana a medida.${rainInfo} En el globo, Rain muestra la lluvia NASA GPM IMERG y Rivers las cajas de cuenca de esa lluvia — no el caudal del río. ${pin ? `Aquí tienes ${pin.name} (${coord}).` : "Abre Rain o Rivers para mirar."}`,
   );
   const fly = pin
     ? {
@@ -561,7 +582,10 @@ function trendSentence(card: EvidenceCard, language: AgentLanguage): string {
 }
 
 export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): AgentAnswer {
-  const language = request.language ?? detectLanguage(request.question);
+  const detected = detectLanguage(request.question);
+  const f = fold(request.question);
+  const hasExplicitEs = /[¿¡áéíóúñ]/.test(request.question.toLowerCase()) || /\b(hola|que|cual|como|donde|por que|tendencia|españa|espana|segun)\b/.test(f);
+  const language: AgentLanguage = hasExplicitEs ? "es" : (request.language ?? detected);
   const intent = classifyIntent(request.question);
   const region = resolveScope(request.question, request.session);
   const unnamed = matchNamelessPlace(request.question);
@@ -748,6 +772,12 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
   }
 
   if (intent === "temperature_trend" && wantedScope !== "age") {
+    const scopeDigest = findRegionalScope(scope.scope);
+    const tempInfo = scopeDigest?.temperature
+      ? language === "es"
+        ? ` En el bundle precalculado (${scopeDigest.name}, MERRA-2 2000–2025) la tendencia regional es ${signed(scopeDigest.temperature.slopePerDecade)} °C/década (IC 95% ${signed(scopeDigest.temperature.ci95[0])} a ${signed(scopeDigest.temperature.ci95[1])}; p = ${scopeDigest.temperature.pValue}; n = ${scopeDigest.temperature.n}).`
+        : ` In the precomputed bundle (${scopeDigest.name}, MERRA-2 2000–2025) the regional trend is ${signed(scopeDigest.temperature.slopePerDecade)} °C/decade (95% CI ${signed(scopeDigest.temperature.ci95[0])} to ${signed(scopeDigest.temperature.ci95[1])}; p = ${scopeDigest.temperature.pValue}; n = ${scopeDigest.temperature.n}).`
+      : "";
     return {
       ...base(
         request.question,
@@ -756,8 +786,8 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
         "NOT_AVAILABLE",
         canned(
           language,
-          `No temperature EvidenceCard is published for ${scope.name}. I will not silently use the national result. A Peninsula + Balearics card exists if you ask for that extent.`,
-          `No hay EvidenceCard de temperatura para ${scope.name}. No uso en silencio el resultado nacional. Existe una tarjeta de Península + Baleares si preguntas por ese ámbito.`,
+          `No temperature EvidenceCard is published for ${scope.name}. I will not silently use the national result.${tempInfo} A Peninsula + Balearics card exists if you ask for that extent.`,
+          `No hay EvidenceCard de temperatura para ${scope.name}. No uso en silencio el resultado nacional.${tempInfo} Existe una tarjeta de Península + Baleares si preguntas por ese ámbito.`,
         ),
       ),
       scope: { regionId: scope.scope, regionName: scope.name },

@@ -56,7 +56,7 @@ first screen (Study findings) and in the receipts.
 | Claim | AETHRA's answer | Where |
 |---|---|---|
 | **A** "Days with both low sun and low wind are becoming more frequent in Castilla y León." | **? Insufficient evidence** — 0.00 days/decade, 95 % CI −1.55 to +1.67, 2001–2025. Not proof of stability. | CyL case → EvidenceCard |
-| **B** "Near-surface air temperature is increasing over the Peninsula and Balearics." | **▲ Supported increase** — +0.60 °C/decade, 95 % CI +0.31 to +0.87, 2000–2025; 64/64 NOAA stations also warmed (external comparison, not independent). | Study findings → Open Evidence cards |
+| **B** "Near-surface air temperature is increasing over the Peninsula and Balearics." | **▲ Supported increase** — +0.60 °C/decade, 95 % CI +0.31 to +0.87, 2000–2025; 64/64 NOAA stations show a positive trend, 57 significant (external comparison, not independent). | Study findings → Open Evidence cards |
 | **C** "So this hybrid plant will be less profitable in 2040." | **⊘ Outside the evidence** — no plant generation, price, grid or 2040 analysis exists; no estimate is given. | Study findings, Boundary block |
 
 Line for the pitch: *"AETHRA doesn't turn a plausible hypothesis into a fact, it does recognise a
@@ -70,7 +70,7 @@ supported change when the data warrant it, and it says where the evidence stops.
 | 2 | **Are low solar and wind resource conditions becoming more frequent?** | Why joint lows: averages hide timing. A resource indicator, *not* electricity-system reliability. The decision: investigate further, or not | Simple diagram, no data |
 | 3 | **The investigation** | WHAT: `ALLSKY_SFC_SW_DWN` (CERES SYN1deg Ed4.2) + `WS50M` (MERRA-2), via NASA POWER · WHERE: 5 pre-registered regions, area-weighted · WHEN: 2001–2025, daily → annual · Definition: both below monthly P20 (ref 2001–2020) · HOW: Theil–Sen + Gilbert 95 % CI, Mann–Kendall, Hamed–Rao, BH across 5 regions | Evidence-chain strip: source → QA → series → test → outcome → EvidenceCard |
 | 4 | **No statistically supported trend in joint-low frequency** | Approved claim 3. CyL card: 0.0 days/decade (CI −1.55 to +1.67). Line: "Failing to detect a change is not proof of stability (detectable ≈ 2–3 days/decade)." Small, labelled *descriptive*: claim 4 | `energy_gap/e1_joint_low_days.svg` |
-| 5 | **The detector also says yes when the data say yes** (`04-evidence-receipt-temperature.png` beside `03-…cyl.png`) | Approved claims 1 + 2: +0.6 °C/decade (CI 0.31–0.87), all 6 windows positive; 64/64 NOAA stations warming. "Not linked to energy, not causal." EvidenceCard anatomy callouts | `gate_a_temperature/t2m.svg`, `noaa_validation/slopes.svg`. **Only if second-person review is signed; otherwise label "EXPLORATORY — pending independent review"** |
+| 5 | **The detector also says yes when the data say yes** (`04-evidence-receipt-temperature.png` beside `03-…cyl.png`) | Approved claims 1 + 2: +0.6 °C/decade (CI 0.31–0.87), all 6 windows positive; 64/64 NOAA stations with a positive trend (57 significant). "Not linked to energy, not causal." EvidenceCard anatomy callouts | `gate_a_temperature/t2m.svg`, `noaa_validation/slopes.svg`. **Only if second-person review is signed; otherwise label "EXPLORATORY — pending independent review"** |
 | 6 | **The product: one investigation, end to end** | Question → CyL case → evidence receipt (1 claim · 2 verdict · 3 how much · 4 what it does not show · 5 method · 6 NASA data & provenance) | `docs/release/2026-11-15/slides/01-question-and-answer.png`, `02-castilla-y-leon-case.png`, `03-evidence-receipt-cyl.png` (real judge build) |
 | 7 | **What this means for research decisions** | Claim Test row C (`05-boundary-claim.png`): where the evidence stops. What the evidence supports / does not support / next study needed (observed generation, station wind, longer record). Limits: curated, reanalysis/satellite, resource ≠ generation. Credits: NASA MERRA-2, NASA POWER (CERES, MERRA-2), NOAA GHCN-Daily, GISCO, Cesium/Esri/EOX. AI use declared. Close: **"We don't tell you what you want to hear. We show you what NASA's evidence supports."** | Text |
 
@@ -86,7 +86,7 @@ supported change when the data warrant it, and it says where the evidence stops.
 | Insufficient evidence in all five regions | same file, `E1_outcome` × 5 |
 | Detectable ≈ 2 days/decade (CyL), 2–3 across regions | `E1_minimum_detectable_trend_per_decade` (2.0–3.2) |
 | +0.6 °C/decade, CI 0.31–0.87, 2000–2025 | `gate_a_temperature/analysis_bundle.json` |
-| 64 NOAA stations warmed | `noaa_validation/analysis_bundle.json` `summary` |
+| 64/64 NOAA stations positive trend, 57 significant | `noaa_validation/analysis_bundle.json` `summary` |
 | About half as often as independence | `energy_gap/independence_check.json` |
 
 ## 7. Judge Q&A preparation

@@ -1,6 +1,7 @@
-import { AGENT_INTENTS } from "../types.ts";
+import { readRecentResearchNotes, readTaroMarkdown, type RegionalScopeDigest } from "../markdown-brain.ts";
 import { skillPromptBlock } from "../skills/catalog.ts";
 import { AGENT_TOOL_NAMES } from "../tools/catalog.ts";
+import { AGENT_INTENTS, type AgentAnswer } from "../types.ts";
 
 export function intentSystemPrompt(): string {
   return [
@@ -18,5 +19,31 @@ export function paraphraseSystemPrompt(): string {
     "You are TARO speaking after a tool loop. Return JSON only: {\"responseText\":\"...\"}.",
     "Sound like an investigator handing someone a pin on a globe, not a policy FAQ. First person. Short. Keep every number, unit and outcome. Do not add numbers. Do not say where to build. You may invite them to inspect a research case.",
     skillPromptBlock(),
+  ].join("\n\n");
+}
+
+export function agenticReasoningPrompt(opts: {
+  truth: AgentAnswer;
+  regionalScope?: RegionalScopeDigest;
+}): string {
+  const soul = readTaroMarkdown("SOUL.md");
+  const knowledge = readTaroMarkdown("KNOWLEDGE.md");
+  const recentNotes = readRecentResearchNotes(8);
+  const scopeBlock = opts.regionalScope
+    ? `\n## Precomputed Regional Climate Scope (climate-bundle.json)\n${JSON.stringify(opts.regionalScope)}`
+    : "";
+  return [
+    soul,
+    "## Knowledge Base Reference",
+    knowledge,
+    "## Recent Research Notes (RESEARCH_NOTES.md)",
+    recentNotes || "(No notes recorded yet)",
+    scopeBlock,
+    "## Output Contract (Strict JSON)",
+    "Think like TARO and return a single JSON object with keys:",
+    '- "thought": 1 short sentence describing your reasoning and which Markdown/bundle sources you consulted.',
+    '- "responseText": Write an intelligent, natural, conversational answer in "' + opts.truth.language + '" directly addressing the user\'s question using your Knowledge Base and the Baseline Evidence Payload. Do NOT copy-paste the baseline responseText verbatim—synthesize and explain clearly like an expert field scientist.',
+    '  CRITICAL NUMERICAL RULE: If the Baseline Evidence Payload has findings (findings.length > 0), you MUST include every exact number from findings[].claim verbatim in your responseText, and you MUST NOT introduce any new digits that do not appear in the Baseline Evidence Payload or question. If findings is empty, do not invent any AETHRA numbers.',
+    '- "noteToSave": A concise 1-sentence research note to append to data/taro/RESEARCH_NOTES.md summarizing what the user asked and what was concluded (or "" if trivial).',
   ].join("\n\n");
 }

@@ -13,6 +13,9 @@ All data covers **Spain, 2000 → 2026**. This page is the quick overview; each 
 | [`processed/spain/gldas/`](processed/spain/README.md) | 💧 Runoff, ET, soil moisture, snow — **map grid** ~25 km (NASA GLDAS) | A **map** of Spain, one per **month** | 2000 → 2026-07 |
 | [`processed/spain/swot/`](processed/spain/README.md) | 🏞️ River reaches + lakes: water-surface height from SWOT (not gauges) | lines/polygons, ~days | 2023 → |
 | [`nasa_gldas_spain_monthly/`](nasa_gldas_spain_monthly/README.md) | 💧 **Where the water goes** (evaporation, rivers, soil, snow), from NASA GLDAS, a land model fed with satellite data | **One number per month for all of Spain** (an average, no map) | 2000 → 2026-07 |
+| [`nasa_merra2_solar_spain_monthly/`](nasa_merra2_solar_spain_monthly/README.md) | ☀️ **Sunlight reaching the ground** (NASA MERRA-2 `SWGDN`), the fuel of solar panels | A **map** in ~50 km squares, one per **month** | 2000 → 2026-09 |
+| [`miteco_pv_sensitivity_2024/`](miteco_pv_sensitivity_2024/README.md) | 🚫 Official MITECO map of **where large solar farms are environmentally sensitive** (5 classes) | A **map** in ~1 km pixels (one snapshot) | 2024 |
+| [`gem_solar_spain/`](gem_solar_spain/README.md) | 🏭 **Real solar plants** ≥ 1 MW in Spain (Global Energy Monitor): location, MW, status | One row per **plant** | Feb 2026 |
 | [`raw/`](raw/README.md) | Original NASA files, before cutting them to Spain | Don't use directly | — |
 | [`metadata/`](metadata/) | Where each file came from (dataset IDs, versions, checksums) | — | — |
 
@@ -44,6 +47,11 @@ All data covers **Spain, 2000 → 2026**. This page is the quick overview; each 
 |---|---|---|
 | `T2M_celsius` | ⭐ **Average air temperature of the month**, measured 2 m above the ground (like a normal thermometer). Use this one | °C |
 | `T2M` | Same value in Kelvin (°C + 273.15) | K |
+
+### ☀️ `nasa_merra2_solar_spain_monthly/` (sunlight)
+| Variable | Meaning | Unit |
+|---|---|---|
+| `M2TMNXRAD_5_12_4_SWGDN` | ⭐ **Sunlight arriving at the ground**, averaged over day and night of the month. × 0.024 = kWh/m²/day | W/m² |
 
 ### 🌱 `processed/spain/modis/` (vegetation, test only)
 | Variable | Meaning | Unit |

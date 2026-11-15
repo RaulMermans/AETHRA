@@ -298,33 +298,39 @@ type Copy = {
     aria: string;
     title: string;
     close: string;
-    questionLabel: string;
+    /** Plain question for the joint solar + wind lows finding (Q1). */
     question: string;
-    banner: string;
-    invented: string;
-    howSit: string;
-    diagram: string;
-    air: string;
-    solarWind: string;
-    sameCountry: string;
-    noArrow: string;
-    spainExtent: string;
+    answerJoint: string;
+    /** Plain question for the air-temperature finding (Q2). */
     finding1: string;
+    answerWarm: (slope: string) => string;
     loadingGate: string;
-    finding2: string;
-    insufficientFive: string;
-    jointNote: string;
-    relate: string;
-    relateBody: string;
-    chance: string;
-    independence: string;
-    notPresentable: string;
-    notPresentableBody: string;
+    invented: string;
+    verdictProven: string;
+    verdictNotYet: string;
+    meansLabel: string;
+    cantLabel: string;
+    meansJoint: string;
+    cantJoint: string;
+    meansWarm: string;
+    cantWarm: string;
+    regionsLabel: string;
     mapNote: string;
     boundary: string;
     boundaryClaim: string;
     boundaryVerdict: string;
     boundaryBody: string;
+    showNumbers: string;
+    numbersJoint: string;
+    numbersWarm: string;
+    regionRow: (slope: string, units: string, ci: string, p: string, n: number) => string;
+    chanceRow: (ratio: string) => string;
+    chanceNote: string;
+    sourceJoint: string;
+    sourceWarm: (source: string) => string;
+    notPresentableBody: string;
+    banner: string;
+    solarHint: string;
     openCards: string;
   };
   cards: {
@@ -819,39 +825,42 @@ export const messages: Record<Locale, Copy> = {
       aria: "Study findings",
       title: "Study findings",
       close: "Close findings",
-      questionLabel: "Research question",
-      question: "Are days when solar and wind resources are both low becoming more frequent in Spain (2001–2025)?",
-      banner:
-        "Precomputed by the Python pipeline and shown as published. EXPLORATORY until independent human review. No correlation is computed between the two questions.",
+      question: "Are days when solar and wind are both low becoming more common in Spain?",
+      answerJoint: "No clear change since 2001 in any of the 5 regions we checked.",
+      finding1: "Is Spain getting warmer?",
+      answerWarm: (slope) => `Yes: about ${slope} °C every 10 years since 2000.`,
+      loadingGate: "Loading the temperature result…",
       invented: "No finding was invented.",
-      howSit: "How the questions sit",
-      diagram: "Two NASA questions over Spain, not causally linked",
-      air: "Air temperature",
-      solarWind: "Solar + wind lows",
-      sameCountry: "Same country · different question",
-      noArrow: "No causal arrow · not a fitted correlation",
-      spainExtent: "Spain · Peninsula + Balearics",
-      finding1: "Contrast · air temperature (NASA MERRA-2)",
-      loadingGate: "Loading the air-temperature card…",
-      finding2: "Answer · joint solar + wind lows (NASA POWER)",
-      insufficientFive: "Insufficient evidence (5/5 regions)",
-      jointNote:
-        "No detectable trend in joint low-resource days, 2001–2025, in any of the five pre-registered regions. Not detecting a change is not proof of stability: with 25 years the test can only detect trends of about 2–3 days per decade. Not generation.",
-      relate: "How solar and wind relate",
-      relateBody:
-        "Descriptive only: how often both resources are low on the same day, versus independence. Not a trend. Not grid reliability.",
-      chance: "× chance rate",
-      independence: "1.00 would match independent odds. Values below 1 mean lows coincide less often in these datasets.",
-      notPresentable: "Not a presentable finding",
-      notPresentableBody:
-        "GPM rain and GLDAS modelled runoff exist on the map, but their regional “Supported” labels do not survive a multiple-testing adjustment, so we do not present them as findings. They are not linked to either question here.",
-      mapNote:
-        "The globe shows the climate map selected on the left (air temperature by default) as context. Joint solar + wind lows are results for five regions, not a map layer.",
-      boundary: "Boundary · a claim this evidence cannot test",
+      verdictProven: "Proven",
+      verdictNotYet: "Not proven yet",
+      meansLabel: "What it means for you",
+      cantLabel: "What we can't say",
+      meansJoint:
+        "Don't size extra backup on the idea that dark, windless days are rising. Keep it as an open question for plant or station data. Bonus: in these data, sun and wind lows land on the same day less often than chance.",
+      cantJoint:
+        "That nothing is changing: 25 years can only spot changes of about 2–3 days per decade. This is weather, not power output.",
+      meansWarm:
+        "Put warmer air into your design assumptions: panel heat losses, cooling and equipment temperature ratings.",
+      cantWarm: "Why it is warming, what comes next, or how much output a plant loses.",
+      regionsLabel: "Open a region",
+      mapNote: "The globe shows the climate layer picked on the left as context. These answers are for 5 regions, not a map layer.",
+      boundary: "A question we can't answer",
       boundaryClaim: "“So this hybrid plant will be less profitable in 2040.”",
-      boundaryVerdict: "Outside the evidence: no estimate given",
+      boundaryVerdict: "Outside our data",
       boundaryBody:
-        "AETHRA has no plant-level generation, electricity-price, grid or 2040 analysis. The historical results above can frame the next study; they cannot answer this.",
+        "We have no plant output, prices, grid or 2040 analysis, so we give no estimate. Use the answers above to choose your next study, not to judge profit.",
+      showNumbers: "Show the numbers",
+      numbersJoint: "Sun + wind lows: trend in days per year with both low",
+      numbersWarm: "Air temperature",
+      regionRow: (slope, units, ci, p, n) => `${slope} ${units} · ${ci} · p = ${p} · n = ${n} years`,
+      chanceRow: (ratio) => `${ratio}× chance rate`,
+      chanceNote: "Both low on the same day vs. what chance alone would give (1.00). Descriptive, not a trend.",
+      sourceJoint: "NASA POWER: CERES SYN1deg sunlight + MERRA-2 50 m wind, daily, 2001–2025. Regions fixed before looking.",
+      sourceWarm: (source) => `Source: ${source}.`,
+      notPresentableBody:
+        "Rain (GPM) and modelled river runoff (GLDAS) are on the map but did not pass our multiple-testing check, so they are not findings here.",
+      banner: "Precomputed by our Python pipeline and shown as published. Exploratory until independent human review.",
+      solarHint: "Want to see where solar looks promising? Open the solar screening tool.",
       openCards: "Open Evidence cards",
     },
     cards: {
@@ -909,7 +918,7 @@ export const messages: Record<Locale, Copy> = {
       period: "Period",
       source: "NASA source",
       externalCheck: (n, warming, within, diff, period) =>
-        `External station comparison (NOAA GHCN-Daily, ${period}): ${warming} of ${n} stations also warmed; ${within} of ${n} within ±0.2 °C/decade of their MERRA-2 cell (median difference ${diff} °C/decade).`,
+        `External station comparison (NOAA GHCN-Daily, ${period}): ${warming} of ${n} stations show a positive trend; ${within} of ${n} within ±0.2 °C/decade of their MERRA-2 cell (median difference ${diff} °C/decade).`,
       externalNote: "Supporting evidence, not proof, and not claimed independent of MERRA-2 (it assimilates some land surface observations). Stations are not homogenized.",
     },
     stations: {
@@ -1392,40 +1401,42 @@ export const messages: Record<Locale, Copy> = {
       aria: "Resultados del estudio",
       title: "Resultados del estudio",
       close: "Cerrar los resultados",
-      questionLabel: "Pregunta de investigación",
-      question: "¿Son cada vez más frecuentes en España los días en que el recurso solar y el eólico están bajos a la vez (2001–2025)?",
-      banner:
-        "Calculado por la cadena de Python y mostrado tal cual se publicó. EXPLORATORIO hasta la revisión humana independiente. No se calcula ninguna correlación entre las dos preguntas.",
+      question: "¿Hay cada vez más días en España con poco sol y poco viento a la vez?",
+      answerJoint: "No se ve un cambio claro desde 2001 en ninguna de las 5 regiones estudiadas.",
+      finding1: "¿Se está calentando España?",
+      answerWarm: (slope) => `Sí: unos ${slope} °C cada 10 años desde 2000.`,
+      loadingGate: "Cargando el resultado de temperatura…",
       invented: "No se ha inventado ningún resultado.",
-      howSit: "Cómo se sitúan las preguntas",
-      diagram: "Dos preguntas NASA sobre España, sin vínculo causal",
-      air: "Temperatura del aire",
-      solarWind: "Mínimos de sol y viento",
-      sameCountry: "Mismo país · pregunta distinta",
-      noArrow: "Sin flecha causal · no es una correlación ajustada",
-      spainExtent: "España · Península y Baleares",
-      finding1: "Contraste · temperatura del aire (NASA MERRA-2)",
-      loadingGate: "Cargando la ficha de temperatura del aire…",
-      finding2: "Respuesta · mínimos conjuntos de sol y viento (NASA POWER)",
-      insufficientFive: "Evidencia insuficiente (5/5 regiones)",
-      jointNote:
-        "No hay una tendencia detectable en los días de recurso conjunto bajo, 2001–2025, en ninguna de las cinco regiones preregistradas. No detectar un cambio no prueba estabilidad: con 25 años el test solo puede detectar tendencias de unos 2–3 días por década. No es generación.",
-      relate: "Cómo se relacionan sol y viento",
-      relateBody:
-        "Solo descriptivo: con qué frecuencia ambos recursos están bajos el mismo día, frente a la independencia. No es una tendencia. No es fiabilidad de la red.",
-      chance: "× tasa de azar",
-      independence:
-        "1,00 coincidiría con el azar independiente. Un valor inferior a 1 significa que los mínimos coinciden menos a menudo en estos datos.",
-      notPresentable: "No es un resultado presentable",
-      notPresentableBody:
-        "La lluvia GPM y la escorrentía modelada GLDAS están en el mapa, pero sus etiquetas regionales de «respaldado» no superan un ajuste por comparaciones múltiples, así que no las presentamos como resultados. Aquí no se vinculan con ninguna de las dos preguntas.",
-      mapNote:
-        "El globo muestra como contexto el mapa climático elegido a la izquierda (temperatura del aire por defecto). Las bajadas conjuntas de sol y viento son resultados de cinco regiones, no una capa del mapa.",
-      boundary: "Límite · una afirmación que esta evidencia no puede evaluar",
+      verdictProven: "Demostrado",
+      verdictNotYet: "Aún sin demostrar",
+      meansLabel: "Qué significa para ti",
+      cantLabel: "Qué no podemos decir",
+      meansJoint:
+        "No dimensiones más respaldo pensando que aumentan los días sin sol ni viento. Déjalo como pregunta abierta para datos de planta o de estaciones. Además, en estos datos el sol y el viento flojean el mismo día menos de lo que daría el azar.",
+      cantJoint:
+        "Que no esté cambiando nada: con 25 años solo se detectan cambios de unos 2–3 días por década. Esto es tiempo atmosférico, no producción eléctrica.",
+      meansWarm:
+        "Incluye un aire más caliente en tus hipótesis de diseño: pérdidas de los paneles por calor, refrigeración y temperatura nominal de los equipos.",
+      cantWarm: "Por qué se calienta, qué pasará después ni cuánta producción pierde una planta.",
+      regionsLabel: "Abrir una región",
+      mapNote: "El globo muestra como contexto la capa climática elegida a la izquierda. Estas respuestas son de 5 regiones, no una capa del mapa.",
+      boundary: "Una pregunta que no podemos responder",
       boundaryClaim: "«Así que esta planta híbrida será menos rentable en 2040».",
-      boundaryVerdict: "Fuera de la evidencia: no se da ninguna estimación",
+      boundaryVerdict: "Fuera de nuestros datos",
       boundaryBody:
-        "AETHRA no tiene análisis de producción por planta, precios de la electricidad, red ni 2040. Los resultados históricos de arriba pueden orientar el siguiente estudio; no pueden responder a esto.",
+        "No tenemos producción por planta, precios, red ni análisis de 2040, así que no damos ninguna estimación. Usa las respuestas de arriba para elegir tu siguiente estudio, no para juzgar la rentabilidad.",
+      showNumbers: "Ver los números",
+      numbersJoint: "Poco sol + poco viento: tendencia en días al año con ambos bajos",
+      numbersWarm: "Temperatura del aire",
+      regionRow: (slope, units, ci, p, n) => `${slope} ${units} · ${ci} · p = ${p} · n = ${n} años`,
+      chanceRow: (ratio) => `${ratio}× la tasa de azar`,
+      chanceNote: "Ambos bajos el mismo día frente a lo que daría solo el azar (1,00). Descriptivo, no es una tendencia.",
+      sourceJoint: "NASA POWER: radiación solar CERES SYN1deg + viento MERRA-2 a 50 m, diario, 2001–2025. Regiones fijadas antes de mirar los datos.",
+      sourceWarm: (source) => `Fuente: ${source}.`,
+      notPresentableBody:
+        "La lluvia (GPM) y la escorrentía modelada de ríos (GLDAS) están en el mapa, pero no superan nuestro ajuste por comparaciones múltiples, así que aquí no son resultados.",
+      banner: "Calculado de antemano por nuestra cadena de Python y mostrado tal cual se publicó. Exploratorio hasta la revisión humana independiente.",
+      solarHint: "¿Quieres ver dónde el solar parece prometedor? Abre la herramienta de cribado solar.",
       openCards: "Abrir las fichas de evidencia",
     },
     cards: {
@@ -1485,7 +1496,7 @@ export const messages: Record<Locale, Copy> = {
       period: "Periodo",
       source: "Fuente NASA",
       externalCheck: (n, warming, within, diff, period) =>
-        `Comparación externa con estaciones (NOAA GHCN-Daily, ${period}): ${warming} de ${n} estaciones también se calentaron; ${within} de ${n} a menos de ±0,2 °C/década de su celda MERRA-2 (diferencia mediana ${diff} °C/década).`,
+        `Comparación externa con estaciones (NOAA GHCN-Daily, ${period}): ${warming} de ${n} estaciones muestran una tendencia positiva; ${within} de ${n} a menos de ±0,2 °C/década de su celda MERRA-2 (diferencia mediana ${diff} °C/década).`,
       externalNote: "Evidencia de apoyo, no una prueba, y no se presenta como independiente de MERRA-2 (asimila algunas observaciones de superficie terrestre). Las estaciones no están homogeneizadas.",
     },
     stations: {

@@ -135,3 +135,25 @@ list for land stations, the Gate B "insufficient evidence" reading and A1–A3 a
 complementarity sentence, the NOAA disagreement reading, and one click-through on the judge build.
 Until then every finding stays **EXPLORATORY** in UI, slides and project page.
 
+
+## 8. Second automated re-verification (15 Nov 2026, Windows) — not a human sign-off
+
+Run by a second Claude Code session on a clean Windows machine (fresh venv, Python 3.13, `PYTHONUTF8=1`)
+to give the human reviewer evidence for each §5 box. Like §7, it ticks nothing in §5: it is the same
+kind of tool that ran the analysis.
+
+| §5 item | What was executed | Result |
+|---|---|---|
+| Tests | `python -m pytest -q packages/science tests` | **70 passed**. On Windows it needs `PYTHONUTF8=1` (several tests read JSON without `encoding="utf-8"`) |
+| Gate A numbers | `analyze_gate_a_temperature.py` re-run into a scratch dir; independent check with `pymannkendall` + `scipy.stats.theilslopes` (no repo code) | All analysis fields identical; `annual_series.csv` identical. Independent: S = 161, p = 0.00042, Sen +0.596 °C/decade, CI 0.306–0.870; six windows 0.405–0.828. OLS +0.60 (p = 4e-5) agrees. Provenance: the bundle's `trends.py` hash matches no committed version (it was generated from an uncommitted state); the later commit only **adds** functions, so numbers are unaffected |
+| Gate A estimand / claim | D36 vs `DEMO_AND_SUBMISSION.md` claim 1 | Consistent. Wording nit: "95 % CI 0.31–0.87 °C" should read "°C per decade" |
+| GMAO independence | McCarty et al. 2016 (TM-2016-104606 Vol. 46) text extracted: §2.1 and the observation table list only "Surface land observations … NCEP" with no variable. UCAR Climate Data Guide, Expert Developer Guidance: MERRA-2 "does not directly assimilate observed 2m air temperature" and uses "observation corrected precipitation forcing for the land surface" | Primary GMAO source still silent on the variable; secondary expert source says T2m is **not** assimilated. Keep "external station comparison" (D75); the risk of shared input is low for T2m but not zero (radiosondes, surface pressure) |
+| Gate B full re-run | NASA POWER re-downloaded (100 files, API v2.10.3, no FLASHFLUX/GEOSIT/SRB), then `analyze_energy_gap.py` + `check_energy_gap_independence.py` into scratch | Raw bytes differ from the manifest in 97/100 files (API response serialisation), but **every result field is identical** (0 differences in `analysis_bundle.results` and `independence_check.regions`; `annual_series.csv` identical) |
+| Gate B outcome rule | Independent MK/Theil–Sen + BH from `annual_series.csv` | p identical; BH q = 0.794 for all 5; MDT (2.0–3.2 days/decade) > 2 × \|slope\| everywhere → "insufficient evidence" is the correct pre-registered outcome. Git history holds a single version of the bundle with P20/2001–2020 (consistent with "nothing else tried"; work outside git cannot be audited). Note: the test can only detect changes of ~2–3 days/decade on a base of 7–11 days/yr, so this is a weak null — the claim "no detectable change" is correct, "no change" would not be |
+| Complementarity | Annual-pooled expectation recomputed from annual counts | Identical (R0 183 vs 369.6, ratio 0.50; Aragón 0.79). Consistent with literature on Iberian solar–wind complementarity (Polo 2025, *Energies* 18(15):3966; López de la Franca et al. 2026, AEMET). Sentence is descriptive and correctly worded |
+| NOAA | Summary recomputed from `pairs` | §3 numbers reproduced. Two nuances for wording: (a) slope > 0 at 64/64 stations but **significant (p < 0.05) at 57/64** — "all 64 … also warmed" should become "all 64 show a positive trend (significant at 57)"; (b) station and cell slopes barely correlate across stations (Spearman ρ = 0.2): MERRA-2 matches the network median, not station-to-station differences. Low-elevation/coastal-island pairs disagree more (mean cell − station +0.10 vs +0.02 inland), consistent with mixed land–sea cells. Sevilla San Pablo also has low year-to-year r (0.57), pointing to a station issue; unverified |
+| Judge path | `npm run typecheck` (pass), `npm run lint` (0 errors, 2 warnings); `scripts/e2e_judge_path.py` against the **dev** server, Chrome | Scenarios A–C ran and screenshots show values matching the bundles (CyL: 160 vs ≈ 367.9, ratio 0.43, 0.00 days/decade CI −1.55…+1.67). Scenario D timed out waiting for a navigation on the dev server; a run against `next build && next start` is still needed |
+
+**Verdict of this pass:** no number in the approved claims is wrong. The two wording fixes above
+(CI units; "warmed" → "positive trend, significant at 57/64") are recommended. §5 still needs a named
+human to do the checks and sign.

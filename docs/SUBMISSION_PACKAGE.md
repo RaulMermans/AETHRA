@@ -22,7 +22,7 @@ not proof of stability.
 
 The same pipeline gives a different answer when the data support one: NASA MERRA-2 2 m air
 temperature over the Peninsula and Balearics rose **+0.60 °C per decade (95 % CI +0.31 to +0.87),
-2000–2025**, and all 64 long-record NOAA stations we compared also warmed.
+2000–2025**, and all 64 long-record NOAA stations we compared show a positive trend (significant at 57).
 
 Every result is an EvidenceCard with variable, units, region, period, slope and interval, method,
 source and a "do not conclude" line. Statistics run in tested Python; the browser only renders them.

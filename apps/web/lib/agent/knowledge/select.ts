@@ -9,6 +9,7 @@ type Rule = {
 };
 
 const RULES: readonly Rule[] = [
+  { id: "claim-taro-identity", terms: [/\bhola\b/, /\bhello\b/, /\bquien eres\b/, /\bwho are you\b/, /\bcomo me puedes ayudar\b/, /\bque puedes hacer\b/, /\bwhat can you do\b/], need: 1 },
   { id: "claim-theil-sen-vs-ols", terms: [/\btheil[- ]?sen\b/, /\bols\b/, /\bordinary least squares\b/, /\bautocorrelat/], need: 1 },
   { id: "claim-autocorrelation-n", terms: [/\bautocorrelat/, /\beffective sample/, /\btamano efectivo/], need: 1 },
   { id: "claim-two-datasets-temperature", terms: [/\btwo datasets\b/, /\bdifferent temperatur/, /\bpor que .*temperatur/], need: 1 },

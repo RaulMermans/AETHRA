@@ -62,7 +62,7 @@ unconfirmed hypothesis. Source: card `energy-gap-ES41`, `data/results/energy_gap
 | Where | Peninsula + Balearics, area-weighted | 5 pre-registered regions: Peninsula + Balearics, Galicia, Castilla y León, Aragón, Andalucía |
 | When | 2000–2025 annual means (26 complete years) | 2001–2025 daily → annual counts (25 years) |
 | Outcome | **Supported increase**: +0.60 °C per decade (95 % CI +0.31 to +0.87; p < 0.001); positive in all 6 windows (+0.41 to +0.83) | **Insufficient evidence** in 5/5 regions (e.g. Peninsula + Balearics 0.0 days/decade, CI −1.8 to +2.2) |
-| External station comparison | 64/64 NOAA GHCN-Daily stations also warm (not claimed independent of MERRA-2, D75); 53 within ±0.2 °C/decade of their cell | Pre-registered definition and sensitivity (P10, P30, alt. reference): no variant significant |
+| External station comparison | 64/64 NOAA GHCN-Daily stations show a positive trend, 57 significant (not claimed independent of MERRA-2, D75); 53 within ±0.2 °C/decade of their cell | Pre-registered definition and sensitivity (P10, P30, alt. reference): no variant significant |
 | Descriptive context (not a trend) | — | Joint lows occur about half as often as if solar and wind were independent (Peninsula: 183 vs ≈ 370 expected over 25 years; Aragón ratio 0.79) |
 | What it is not | Not a cause, not a forecast, not energy evidence | Not generation, not grid reliability, not site suitability, not a forecast |
 
@@ -88,7 +88,7 @@ demonstrate.
 
 **Use only these (from `DEMO_AND_SUBMISSION.md` §Approved claim wording; numbers unchanged):**
 1. Temperature: +0.6 °C/decade, 95 % CI 0.31–0.87, p < 0.001, 26 years, windows 0.41–0.83.
-2. NOAA: 64/64 stations warmed; 53 within 0.2 °C/decade of their reanalysis cell.
+2. NOAA: 64/64 stations show a positive trend (57 significant); 53 within 0.2 °C/decade of their reanalysis cell.
 3. Joint lows: no detectable change; insufficient evidence in all five pre-registered regions.
 4. Descriptive: about half the joint-low days expected under independence (183 vs ≈ 370 over 25 years).
    Never a headline on its own.

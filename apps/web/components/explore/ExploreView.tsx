@@ -118,6 +118,11 @@ import type { Messages } from "@/lib/i18n/messages";
 import { ToolsBar, type ToolAction } from "./ToolsBar";
 import { TopNav } from "./TopNav";
 import { ViewModeToggle } from "./ViewModeToggle";
+// Evidence-based solar PV screening (EVIDENCE_SCREENING_PLAN.md): visible in judge mode, labelled exploratory.
+import { SolarScreeningPanel, SunGlyph } from "./SolarScreeningPanel";
+import { cellAt, loadPvScreeningData, plantAt, type PvScreeningData, type SolarPlant } from "@/lib/globe/pv-screening";
+import { buildScreeningLayers, screeningLayerStates, screeningPlants, type ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
+import { screeningCopy } from "@/lib/i18n/screening-copy";
 
 const QUALITY_KEY = "globe-quality-mode";
 
@@ -159,7 +164,7 @@ const PROOF_COMPACT_VIEW: OrbitView = {
 };
 
 export function ExploreView() {
-  const { m } = useLocale();
+  const { m, locale } = useLocale();
   const [baseLayers] = useState(() => buildLayerCatalog());
   const [layerStates, setLayerStates] = useState<LayerStateMap>(() => ({
     ...initialLayerStates(baseLayers),
@@ -750,6 +755,30 @@ export function ExploreView() {
       active = false;
     };
   }, [needInfra, infraFile, infraError]);
+  // --- Solar PV evidence screening: loaded on first open; missing files = "not available yet" ---
+  const [screeningOpen, setScreeningOpen] = useState(false);
+  const [screeningData, setScreeningData] = useState<PvScreeningData | null>(null);
+  const [screeningToggles, setScreeningToggles] = useState<ScreeningToggles>({ cells: true, miteco: false, plants: true });
+  const [screeningCellId, setScreeningCellId] = useState<string | null>(null);
+  const [screeningPlant, setScreeningPlant] = useState<SolarPlant | null>(null);
+  useEffect(() => {
+    if (!screeningOpen || screeningData) return;
+    let active = true;
+    void loadPvScreeningData().then((d) => {
+      if (active) setScreeningData(d);
+    });
+    return () => {
+      active = false;
+    };
+  }, [screeningOpen, screeningData]);
+  const screeningCell = useMemo(
+    () => screeningData?.screening?.cells.find((c) => c.id === screeningCellId) ?? null,
+    [screeningData, screeningCellId],
+  );
+  const screeningPlantList = useMemo(
+    () => (screeningData ? screeningPlants(screeningData).map((p) => p.plant) : []),
+    [screeningData],
+  );
   const selectedInstallation = useMemo(
     () => infraFile?.installations.find((i) => i.id === selectedInstallationId) ?? null,
     [infraFile, selectedInstallationId],
@@ -1048,7 +1077,9 @@ export function ExploreView() {
 
   const activeCase = casePanelOpen && activeCaseId ? caseById(activeCaseId) : undefined;
   const activeDestination = destinationId ? destinationById(destinationId) : undefined;
-  const secondaryPanel = activeTool ? "tool" : coreOpen ? "core" : activeCase ? "case" : null;
+  // A map tool opened from elsewhere takes the panel; the screening panel returns when it closes.
+  const secondaryPanel = activeTool ? "tool" : screeningOpen ? "screening" : coreOpen ? "core" : activeCase ? "case" : null;
+  const screeningActive = secondaryPanel === "screening";
   const inspectorOpen = evidenceOpen || secondaryPanel !== null;
 
   // "Open in Trend panel": the province scope whose precomputed MERRA-2 result the panel shows.
@@ -1101,6 +1132,24 @@ export function ExploreView() {
           }
         }
       }
+      // Solar screening: a click picks a plant (exact marker coordinates) or the native cell under it.
+      if (screeningActive) {
+        if (coord && screeningData) {
+          const plant = screeningToggles.plants ? plantAt(screeningPlantList, coord.latitude, coord.longitude) : null;
+          const cell =
+            !plant && screeningToggles.cells && screeningData.screening
+              ? cellAt(screeningData.screening, coord.latitude, coord.longitude)
+              : null;
+          if (plant) {
+            setScreeningPlant(plant);
+            setScreeningCellId(null);
+          } else if (cell) {
+            setScreeningCellId(cell.id);
+            setScreeningPlant(null);
+          }
+        }
+        return;
+      }
       // A click on an installation marker selects the installation (exact marker coordinates).
       if (coord && infraOpen && infraFile) {
         const hit = infraFile.installations.find(
@@ -1134,7 +1183,7 @@ export function ExploreView() {
         }
       }
     },
-    [workspaceMode, evaluatedEnergySites, infraOpen, infraFile, selectedInstallationId, selectInstallation, layerStates],
+    [workspaceMode, evaluatedEnergySites, infraOpen, infraFile, selectedInstallationId, selectInstallation, layerStates, screeningActive, screeningData, screeningToggles, screeningPlantList],
   );
 
   const inspectStation = useCallback(
@@ -1217,6 +1266,47 @@ export function ExploreView() {
 
   const ready = status?.phase === "ready";
 
+  const screeningText = useMemo(() => screeningCopy(locale), [locale]);
+  const screeningLayers = useMemo<LayerDescriptor[]>(
+    () => (screeningActive && screeningData ? buildScreeningLayers(screeningData, screeningCell, screeningText.plantDetail) : []),
+    [screeningActive, screeningData, screeningCell, screeningText],
+  );
+  const sceneLayers = useMemo(
+    () => (screeningLayers.length ? [...displayLayers, ...screeningLayers] : displayLayers),
+    [displayLayers, screeningLayers],
+  );
+  const sceneLayerStates = useMemo<LayerStateMap>(() => {
+    if (!screeningActive) return displayLayerStates;
+    // The screening map replaces the climate map while it is shown (one colour meaning at a time).
+    const hideClimate = screeningToggles.cells || screeningToggles.miteco;
+    return {
+      ...displayLayerStates,
+      ...(hideClimate
+        ? {
+            "climate-heatmap": { ...(displayLayerStates["climate-heatmap"] ?? { opacity: 0.62 }), visible: false },
+            "climate-heatmap-blend": { visible: false, opacity: 0 },
+            "climate-overlay": { ...(displayLayerStates["climate-overlay"] ?? { opacity: 1 }), visible: false },
+          }
+        : {}),
+      ...screeningLayerStates(screeningLayers, screeningToggles),
+    };
+  }, [screeningActive, displayLayerStates, screeningLayers, screeningToggles]);
+  const toggleScreening = () => {
+    if (screeningOpen) {
+      setScreeningOpen(false);
+      setScreeningCellId(null);
+      setScreeningPlant(null);
+      return;
+    }
+    setActiveTool(null);
+    setCoreOpen(false);
+    setCasePanelOpen(false);
+    setEvidenceOpen(false);
+    setPlaying(false);
+    setScreeningOpen(true);
+    controller?.flyTo(homeView);
+  };
+
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-space">
       <h1 className="sr-only">{m.explore.h1}</h1>
@@ -1225,8 +1315,8 @@ export function ExploreView() {
         <GlobeClient
           className="absolute inset-0 focus-ring"
           ariaLabel={m.explore.globeAria}
-          layers={displayLayers}
-          layerStates={displayLayerStates}
+          layers={sceneLayers}
+          layerStates={sceneLayerStates}
           selected={selected}
           preview={stationPreview}
           qualityMode={qualityMode}
@@ -1516,6 +1606,21 @@ export function ExploreView() {
                     onClose={closeTool}
                   />
                 )}
+                {secondaryPanel === "screening" && (
+                  <SolarScreeningPanel
+                    data={screeningData}
+                    loading={screeningData === null}
+                    toggles={screeningToggles}
+                    onToggle={(key) => setScreeningToggles((tg) => ({ ...tg, [key]: !tg[key] }))}
+                    selectedCell={screeningCell}
+                    selectedPlant={screeningPlant}
+                    onClearSelection={() => {
+                      setScreeningCellId(null);
+                      setScreeningPlant(null);
+                    }}
+                    onClose={toggleScreening}
+                  />
+                )}
                 {EXPLORATORY_FEATURES_ENABLED && activeTool === "infrastructure" && (
                   <EnergyInfrastructurePanel
                     file={infraFile}
@@ -1709,6 +1814,18 @@ export function ExploreView() {
               onSelect={handleSelectDestination}
               disabled={!controller}
             />
+            <button
+              type="button"
+              onClick={toggleScreening}
+              aria-pressed={screeningOpen}
+              disabled={!controller}
+              className={`focus-ring panel pointer-events-auto inline-flex items-center gap-2 !rounded-full px-3.5 py-2 text-xs font-medium text-amber-100 transition-colors disabled:opacity-50 sm:mb-1 ${
+                screeningOpen ? "!bg-amber-400/20" : "hover:bg-amber-400/10"
+              }`}
+            >
+              <SunGlyph className="size-4 text-amber-300" />
+              {screeningText.entry}
+            </button>
             <button
               type="button"
               onClick={() => setEvidenceOpen((o) => !o)}

@@ -1,22 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cardById, parseEvidenceCatalog, type EvidenceCard } from "@/lib/agent/cards";
 import { ENERGY_RESEARCH_CASES } from "@/lib/globe/energy-research-cases";
 import { useLocale } from "@/lib/i18n/locale";
 import { localizeCardFace } from "@/lib/i18n/science-copy";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 
 /**
- * Detective briefing of published findings only. Does not compute correlations or new slopes.
- * Temperature numbers come from evidence-cards.json; joint-low copy is D62-tested against Python.
+ * Plain-language briefing of published findings only: question → answer → what it means → what we can't say.
+ * Does not compute correlations or new slopes. Temperature numbers come from evidence-cards.json;
+ * joint-low numbers are quoted in energy-research-cases.ts (D62-tested against Python).
  */
 
-function signed(n: number): string {
-  const mag = Math.abs(n).toFixed(2);
-  if (n > 0) return `+${mag}`;
-  if (n < 0) return `−${mag}`;
-  return mag;
+type Verdict = "proven" | "notYet" | "outside";
+
+const VERDICT_STYLE: Record<Verdict, { icon: IconName; cls: string }> = {
+  proven: { icon: "check", cls: "border-amber-300/50 bg-amber-400/15 text-amber-100" },
+  notYet: { icon: "search", cls: "border-sky-300/40 bg-sky-400/10 text-sky-100" },
+  outside: { icon: "close", cls: "border-white/30 bg-white/5 text-ink" },
+};
+
+function VerdictBadge({ verdict, label }: { verdict: Verdict; label: string }) {
+  const s = VERDICT_STYLE[verdict];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium ${s.cls}`}>
+      <Icon name={s.icon} className="size-3" />
+      {label}
+    </span>
+  );
+}
+
+function Meaning({ means, cant, meansLabel, cantLabel }: { means: string; cant: string; meansLabel: string; cantLabel: string }) {
+  return (
+    <dl className="mt-2 space-y-1.5 text-[13px] leading-snug">
+      <div>
+        <dt className="text-[12px] font-medium text-ink">{meansLabel}</dt>
+        <dd className="text-muted">{means}</dd>
+      </div>
+      <div>
+        <dt className="text-[12px] font-medium text-faint">{cantLabel}</dt>
+        <dd className="text-faint">{cant}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function Finding({ question, answer, badge, children, className }: { question: string; answer: ReactNode; badge: ReactNode; children: ReactNode; className: string }) {
+  return (
+    <article className={`rounded-md border p-2.5 ${className}`}>
+      <p className="text-[14px] leading-snug font-medium text-ink">{question}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {badge}
+        <p className="text-[14px] leading-snug text-ink">{answer}</p>
+      </div>
+      {children}
+    </article>
+  );
 }
 
 export function FindingsBriefPanel({
@@ -35,6 +75,7 @@ export function FindingsBriefPanel({
   const [temp, setTemp] = useState<EvidenceCard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { locale, m } = useLocale();
+  const f = m.findings;
 
   useEffect(() => {
     let active = true;
@@ -58,6 +99,13 @@ export function FindingsBriefPanel({
     };
   }, []);
 
+  /** Spanish uses a decimal comma; the value itself is unchanged. */
+  const dec = (s: string) => (locale === "es" ? s.replace(/(\d)\.(\d)/g, "$1,$2") : s);
+  const signed = (n: number, digits = 2): string => {
+    const mag = Math.abs(n).toFixed(digits);
+    return dec(n > 0 ? `+${mag}` : n < 0 ? `−${mag}` : mag);
+  };
+
   const face = temp
     ? localizeCardFace(
         {
@@ -80,33 +128,32 @@ export function FindingsBriefPanel({
       )
     : null;
 
+  // Verdicts are keyed on the pipeline outcomes, never on the size of a number.
+  const jointVerdict: Verdict = ENERGY_RESEARCH_CASES.every((c) => c.primary.outcomeLabel === "Insufficient evidence") ? "notYet" : "proven";
+  const tempVerdict: Verdict = temp?.outcome === "supported_increase" ? "proven" : "notYet";
+  const verdictLabel = (v: Verdict) => (v === "proven" ? f.verdictProven : f.verdictNotYet);
+  const caseUnits = locale === "es" ? "días por década" : null;
+
   return (
     <section
-      aria-label={m.findings.aria}
+      aria-label={f.aria}
       className="panel pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-hidden"
     >
       <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <h2 className="text-[14px] font-medium tracking-wide text-ink">{m.findings.title}</h2>
+        <h2 className="text-[14px] font-medium tracking-wide text-ink">{f.title}</h2>
         <button
           type="button"
           onClick={onClose}
-          aria-label={m.findings.close}
+          aria-label={f.close}
           className="focus-ring grid size-7 place-items-center rounded-md text-muted hover:bg-white/6 hover:text-ink"
         >
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
-      <div className="px-3 pb-2">
-        <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.questionLabel}</p>
-        <p className="mt-0.5 text-[15px] leading-snug font-medium text-ink">{m.findings.question}</p>
-      </div>
-      <p className="px-3 pb-2 font-mono text-[12px] leading-snug text-faint">
-        {m.findings.banner}
-      </p>
       {/* D75: separate the active study from whatever climate layer the globe is showing. */}
-      <p className="mx-3 mb-2 flex gap-1.5 rounded-md border border-sky-300/25 bg-sky-400/8 px-2 py-1 text-[13px] leading-snug text-sky-100">
-        <Icon name="globe" className="mt-0.5 size-3.5 shrink-0" />
-        <span>{m.findings.mapNote}</span>
+      <p className="mx-3 mb-2 flex gap-1.5 text-[12px] leading-snug text-faint">
+        <Icon name="globe" className="mt-0.5 size-3 shrink-0" />
+        <span>{f.mapNote}</span>
       </p>
       {temp && (
         <button
@@ -119,46 +166,86 @@ export function FindingsBriefPanel({
           {m.proof.start}
         </button>
       )}
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-3">
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3">
         {error ? (
           <p role="alert" className="text-[14px] text-amber-100">
-            {error}. {m.findings.invented}
+            {error}. {f.invented}
           </p>
         ) : null}
 
-        <article className="rounded-md border border-white/20 bg-white/5 p-2.5">
-          <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.finding2}</p>
-          <p className="mt-1 text-[15px] font-medium text-ink">◆ {m.findings.insufficientFive}</p>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{m.findings.jointNote}</p>
-          <ul className="mt-2 space-y-1">
+        <Finding
+          question={f.question}
+          answer={f.answerJoint}
+          badge={<VerdictBadge verdict={jointVerdict} label={verdictLabel(jointVerdict)} />}
+          className="border-sky-300/30 bg-sky-400/5"
+        >
+          <Meaning means={f.meansJoint} cant={f.cantJoint} meansLabel={f.meansLabel} cantLabel={f.cantLabel} />
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            <span className="mr-0.5 text-[12px] text-faint">{f.regionsLabel}:</span>
             {ENERGY_RESEARCH_CASES.map((study) => (
-              <li key={study.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpenCase(study.id)}
-                  className="focus-ring flex w-full items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/8"
-                >
-                  <span className="text-[14px] text-ink">{study.regionName}</span>
-                  <span className="font-mono text-[12px] text-faint">
-                    {signed(study.primary.slopePerDecade)} {locale === "es" ? "días por década" : study.primary.units}
-                  </span>
-                </button>
+              <button
+                key={study.id}
+                type="button"
+                onClick={() => onOpenCase(study.id)}
+                className="focus-ring rounded-full border border-line px-2 py-0.5 text-[12px] text-ink hover:bg-white/8"
+              >
+                {study.regionName}
+              </button>
+            ))}
+          </div>
+        </Finding>
+
+        <Finding
+          question={f.finding1}
+          answer={temp ? f.answerWarm(signed(temp.how_much.slope_per_decade, 1)) : f.loadingGate}
+          badge={temp ? <VerdictBadge verdict={tempVerdict} label={verdictLabel(tempVerdict)} /> : null}
+          className="border-amber-300/35 bg-amber-400/8"
+        >
+          <Meaning means={f.meansWarm} cant={f.cantWarm} meansLabel={f.meansLabel} cantLabel={f.cantLabel} />
+        </Finding>
+
+        {/* Claim C of the Claim Test (D76): a boundary, not a third study. No estimate is produced. */}
+        <article className="rounded-md border border-dashed border-white/30 bg-black/25 p-2.5" aria-label={f.boundary}>
+          <p className="text-[14px] leading-snug font-medium text-ink">{f.boundary}</p>
+          <p className="mt-0.5 text-[13px] text-muted italic">{f.boundaryClaim}</p>
+          <div className="mt-1">
+            <VerdictBadge verdict="outside" label={m.findings.boundaryVerdict} />
+          </div>
+          <p className="mt-1 text-[13px] leading-snug text-muted">{f.boundaryBody}</p>
+        </article>
+
+        <details className="rounded-md border border-line bg-black/20 p-2.5 text-[12px] leading-snug text-muted">
+          <summary className="focus-ring cursor-pointer text-[13px] text-ink">{f.showNumbers}</summary>
+
+          <p className="mt-2 font-medium text-ink">{f.numbersJoint}</p>
+          <ul className="mt-1 space-y-1 font-mono">
+            {ENERGY_RESEARCH_CASES.map((study) => (
+              <li key={`${study.id}-n`}>
+                <span className="font-sans text-ink">{study.regionName}</span>{" "}
+                {f.regionRow(
+                  signed(study.primary.slopePerDecade),
+                  caseUnits ?? study.primary.units,
+                  m.cards.ci(signed(study.primary.ciLow), signed(study.primary.ciHigh)),
+                  dec(String(study.primary.p)),
+                  study.primary.nYears,
+                )}{" "}
+                · {f.chanceRow(dec(study.complementarityPrimary.ratio.toFixed(2)))}
               </li>
             ))}
           </ul>
-        </article>
+          <p className="mt-1 text-faint">{f.chanceNote}</p>
+          <p className="mt-1 text-faint">{f.sourceJoint}</p>
 
-        <article className="rounded-md border border-amber-300/35 bg-amber-400/10 p-2.5">
-          <p className="font-mono text-[12px] tracking-[0.14em] text-amber-100/80 uppercase">{m.findings.finding1}</p>
+          <p className="mt-3 font-medium text-ink">{f.numbersWarm}</p>
           {temp && face ? (
             <>
-              <p className="mt-1 text-[15px] font-medium text-amber-100">▲ {face.outcome_label}</p>
-              <p className="mt-1 text-[14px] leading-snug text-ink">
-                {signed(temp.how_much.slope_per_decade)} {face.units} ({m.cards.ci(signed(temp.how_much.ci95_per_decade[0]), signed(temp.how_much.ci95_per_decade[1]))}; n = {temp.evidence.n_years}). {face.when}.
+              <p className="mt-1 font-mono">
+                {face.outcome_label}: {signed(temp.how_much.slope_per_decade)} {face.units} ·{" "}
+                {m.cards.ci(signed(temp.how_much.ci95_per_decade[0]), signed(temp.how_much.ci95_per_decade[1]))} · p ={" "}
+                {dec(String(temp.evidence.p))} · n = {temp.evidence.n_years} · {face.when}
               </p>
-              <p className="mt-1 text-[12px] leading-snug text-muted">{face.what}. {face.where}.</p>
               {temp.external_check && (
-                <p className="mt-1 text-[12px] leading-snug text-muted">
+                <p className="mt-1">
                   {m.cards.externalCheck(
                     temp.external_check.n_stations,
                     temp.external_check.stations_warming,
@@ -168,91 +255,24 @@ export function FindingsBriefPanel({
                   )}
                 </p>
               )}
-              <p className="mt-1 text-[12px] leading-snug text-faint">{face.do_not_conclude}</p>
+              <p className="mt-1 text-faint">{f.sourceWarm("NASA MERRA-2 M2TMNXSLV (T2M)")}</p>
             </>
           ) : (
-            <p className="mt-1 text-[13px] text-faint">{m.findings.loadingGate}</p>
+            <p className="mt-1 text-faint">{f.loadingGate}</p>
           )}
-        </article>
 
-        {/* Claim C of the Claim Test (D76): a boundary, not a third study. No estimate is produced. */}
-        <article className="rounded-md border border-dashed border-white/30 bg-black/25 p-2.5" aria-label={m.findings.boundary}>
-          <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.boundary}</p>
-          <p className="mt-1 text-[14px] text-ink italic">{m.findings.boundaryClaim}</p>
-          <p className="mt-1 text-[15px] font-medium text-ink">
-            <span aria-hidden className="mr-1 font-mono">⊘</span>
-            {m.findings.boundaryVerdict}
-          </p>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{m.findings.boundaryBody}</p>
-        </article>
+          <p className="mt-3 text-faint">{f.notPresentableBody}</p>
+          <p className="mt-1 text-faint">{f.banner}</p>
+        </details>
 
-        <article className="rounded-md border border-line bg-black/20 p-2.5">
-          <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.relate}</p>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{m.findings.relateBody}</p>
-          <ul className="mt-2 space-y-1.5">
-            {ENERGY_RESEARCH_CASES.map((study) => {
-              const ratio = study.complementarityPrimary.ratio;
-              const pct = Math.min(100, Math.max(0, ratio * 100));
-              return (
-                <li key={`${study.id}-c`}>
-                  <div className="flex items-baseline justify-between text-[13px] text-ink">
-                    <span>{study.regionName}</span>
-                    <span className="font-mono text-faint">{ratio.toFixed(2)}{m.findings.chance}</span>
-                  </div>
-                  <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-                    <div className="h-full rounded-full bg-sky-300/70" style={{ width: `${pct}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-2 text-[12px] leading-snug text-faint">
-            {m.findings.independence}
-          </p>
-        </article>
-
-        <div className="rounded-md border border-line bg-black/20 p-2.5">
-          <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.howSit}</p>
-          <svg viewBox="0 0 280 132" className="mt-2 w-full text-ink" role="img" aria-label={m.findings.diagram}>
-            <rect x="8" y="8" width="120" height="52" rx="6" fill="rgba(251,191,36,0.12)" stroke="rgba(252,211,77,0.45)" />
-            <text x="68" y="28" textAnchor="middle" fill="currentColor" fontSize="10">
-              {m.findings.air}
-            </text>
-            <text x="68" y="44" textAnchor="middle" fill="#fde68a" fontSize="9">
-              MERRA-2 T2M
-            </text>
-            <rect x="152" y="8" width="120" height="52" rx="6" fill="rgba(56,189,248,0.1)" stroke="rgba(125,211,252,0.4)" />
-            <text x="212" y="28" textAnchor="middle" fill="currentColor" fontSize="10">
-              {m.findings.solarWind}
-            </text>
-            <text x="212" y="44" textAnchor="middle" fill="#7dd3fc" fontSize="9">
-              NASA POWER
-            </text>
-            <line x1="128" y1="34" x2="152" y2="34" stroke="rgba(255,255,255,0.35)" strokeDasharray="3 3" />
-            <text x="140" y="78" textAnchor="middle" fill="#9ca3af" fontSize="8">
-              {m.findings.sameCountry}
-            </text>
-            <text x="140" y="92" textAnchor="middle" fill="#9ca3af" fontSize="8">
-              {m.findings.noArrow}
-            </text>
-            <rect x="48" y="102" width="184" height="22" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" />
-            <text x="140" y="117" textAnchor="middle" fill="currentColor" fontSize="9">
-              {m.findings.spainExtent}
-            </text>
-          </svg>
-        </div>
-
-        <article className="rounded-md border border-amber-300/25 bg-amber-400/5 p-2.5">
-          <p className="font-mono text-[12px] tracking-[0.14em] text-amber-100/80 uppercase">{m.findings.notPresentable}</p>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{m.findings.notPresentableBody}</p>
-        </article>
+        <p className="text-[13px] leading-snug text-muted">{f.solarHint}</p>
 
         <button
           type="button"
           onClick={onOpenCard}
           className="focus-ring w-full rounded-md border border-line px-2 py-1.5 text-[14px] text-ink hover:bg-white/6"
         >
-          {m.findings.openCards}
+          {f.openCards}
         </button>
       </div>
     </section>

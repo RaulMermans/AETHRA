@@ -56,10 +56,10 @@ Use these sentences as written. Each traces to a recorded file.
 
 1. **Headline (Gate A).** "In NASA's MERRA-2 reanalysis, annual near-surface air temperature over
    Peninsular Spain and the Balearics rose by about **0.6 °C per decade** from 2000 to 2025 (95 % CI
-   0.31–0.87 °C; Theil–Sen with Mann–Kendall, p < 0.001; 26 complete years). The trend is positive in
+   0.31–0.87 °C per decade; Theil–Sen with Mann–Kendall, p < 0.001; 26 complete years). The trend is positive in
    all six analysis windows we tested, with magnitudes from 0.41 to 0.83 °C per decade."
    — `data/results/gate_a_temperature/analysis_bundle.json`
-2. **External station comparison** (not claimed independent, D75). "All 64 long-record NOAA weather stations we compared also warmed, and for 53
+2. **External station comparison** (not claimed independent, D75). "All 64 long-record NOAA weather stations we compared show a positive trend (significant at 57), and for 53
    of them the station trend is within 0.2 °C per decade of the reanalysis cell around it."
    — `data/results/noaa_validation/analysis_bundle.json`
 3. **Energy question (Gate B, honest null).** "We found **no detectable change** in how often solar and
@@ -106,8 +106,8 @@ clipped to Spanish regions, with complete years only. Trends use Theil–Sen slo
 checked for autocorrelation, 95 % confidence intervals, and a method we wrote down before looking.
 
 **Act 4 — Verified finding (20 s).** Air temperature over Peninsular Spain and the Balearics rose about
-0.6 °C per decade from 2000 to 2025, interval 0.31 to 0.87, in every window we tried. 64 independent
-NOAA stations warmed too.
+0.6 °C per decade from 2000 to 2025, interval 0.31 to 0.87, in every window we tried. All 64 NOAA
+stations we compared also show a positive trend (57 significant).
 
 **Act 5 — Energy investigation (20 s).** In NASA's resource data, days when solar and wind are both low
 happen about half as often as they would if the two were independent. But we find no detectable change in how often they happen since 2001, in any of
