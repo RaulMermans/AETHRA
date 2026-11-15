@@ -218,6 +218,8 @@ type Copy = {
     aria: string;
     title: string;
     close: string;
+    questionLabel: string;
+    question: string;
     banner: string;
     invented: string;
     howSit: string;
@@ -461,7 +463,7 @@ export const messages: Record<Locale, Copy> = {
       stations: "Station catalog",
       stationsHint: "Weather station catalog (NOAA ground truth)",
       evidence: "Evidence cards",
-      evidenceHint: "Verified trend results with sources (EvidenceCards)",
+      evidenceHint: "Trend results with method, uncertainty, sources and limits (EvidenceCards)",
       infrastructure: "Energy infrastructure",
       infrastructureHint: "Registered wind and solar installations (Castilla y León register) and their NASA analysis region",
       screenshot: "Screenshot",
@@ -632,7 +634,10 @@ export const messages: Record<Locale, Copy> = {
       aria: "Study findings",
       title: "Study findings",
       close: "Close findings",
-      banner: "EXPLORATORY until human review. Render-only. Correlation is not causation. No r computed here.",
+      questionLabel: "Research question",
+      question: "Are days when solar and wind resources are both low becoming more frequent in Spain (2001–2025)?",
+      banner:
+        "Precomputed by the Python pipeline and shown as published. EXPLORATORY until independent human review. No correlation is computed between the two questions.",
       invented: "No finding was invented.",
       howSit: "How the questions sit",
       diagram: "Two NASA questions over Spain, not causally linked",
@@ -641,11 +646,12 @@ export const messages: Record<Locale, Copy> = {
       sameCountry: "Same country · different question",
       noArrow: "No causal arrow · not a fitted correlation",
       spainExtent: "Spain · Peninsula + Balearics",
-      finding1: "Finding 1 · Gate A",
-      loadingGate: "Loading Gate A card…",
-      finding2: "Finding 2 · Gate B family",
+      finding1: "Contrast · air temperature (NASA MERRA-2)",
+      loadingGate: "Loading the air-temperature card…",
+      finding2: "Answer · joint solar + wind lows (NASA POWER)",
       insufficientFive: "Insufficient evidence (5/5 regions)",
-      jointNote: "Joint low-resource days (POWER solar + WS50M, 2001–2025) show no detectable trend. Pre-registered. Not generation.",
+      jointNote:
+        "No detectable trend in joint low-resource days, 2001–2025, in any of the five pre-registered regions. Not detecting a change is not proof of stability: with 25 years the test can only detect trends of about 2–3 days per decade. Not generation.",
       relate: "How solar and wind relate",
       relateBody:
         "Descriptive only: how often both resources are low on the same day, versus independence. Not a trend. Not grid reliability.",
@@ -653,7 +659,7 @@ export const messages: Record<Locale, Copy> = {
       independence: "1.00 would match independent odds. Values below 1 mean lows coincide less often in these datasets.",
       notPresentable: "Not a presentable finding",
       notPresentableBody:
-        "GPM rain and GLDAS modelled runoff exist on the map, but after multiplicity (D53) their “Supported” labels are not judge-presentable. They are not linked to Gate A or Gate B here.",
+        "GPM rain and GLDAS modelled runoff exist on the map, but their regional “Supported” labels do not survive a multiple-testing adjustment, so we do not present them as findings. They are not linked to either question here.",
       openCards: "Open Evidence cards",
     },
     cards: {
@@ -914,7 +920,7 @@ export const messages: Record<Locale, Copy> = {
       stations: "Catálogo de estaciones",
       stationsHint: "Catálogo de estaciones meteorológicas (observación NOAA)",
       evidence: "Fichas de evidencia",
-      evidenceHint: "Resultados de tendencia con fuentes (fichas de evidencia)",
+      evidenceHint: "Resultados de tendencia con método, incertidumbre, fuentes y límites (fichas de evidencia)",
       infrastructure: "Infraestructura energética",
       infrastructureHint:
         "Instalaciones eólicas y solares registradas (registro de Castilla y León) y su región de análisis NASA",
@@ -1087,7 +1093,10 @@ export const messages: Record<Locale, Copy> = {
       aria: "Resultados del estudio",
       title: "Resultados del estudio",
       close: "Cerrar los resultados",
-      banner: "EXPLORATORIO hasta la revisión humana. Solo se muestra. Correlación no es causalidad. Aquí no se calcula ninguna r.",
+      questionLabel: "Pregunta de investigación",
+      question: "¿Son cada vez más frecuentes en España los días en que el recurso solar y el eólico están bajos a la vez (2001–2025)?",
+      banner:
+        "Calculado por la cadena de Python y mostrado tal cual se publicó. EXPLORATORIO hasta la revisión humana independiente. No se calcula ninguna correlación entre las dos preguntas.",
       invented: "No se ha inventado ningún resultado.",
       howSit: "Cómo se sitúan las preguntas",
       diagram: "Dos preguntas NASA sobre España, sin vínculo causal",
@@ -1096,12 +1105,12 @@ export const messages: Record<Locale, Copy> = {
       sameCountry: "Mismo país · pregunta distinta",
       noArrow: "Sin flecha causal · no es una correlación ajustada",
       spainExtent: "España · Península y Baleares",
-      finding1: "Resultado 1 · Puerta A",
-      loadingGate: "Cargando la ficha de la Puerta A…",
-      finding2: "Resultado 2 · familia de la Puerta B",
+      finding1: "Contraste · temperatura del aire (NASA MERRA-2)",
+      loadingGate: "Cargando la ficha de temperatura del aire…",
+      finding2: "Respuesta · mínimos conjuntos de sol y viento (NASA POWER)",
       insufficientFive: "Evidencia insuficiente (5/5 regiones)",
       jointNote:
-        "Los días de recurso conjunto bajo (POWER solar + WS50M, 2001–2025) no muestran una tendencia detectable. Definición preregistrada. No es generación.",
+        "No hay una tendencia detectable en los días de recurso conjunto bajo, 2001–2025, en ninguna de las cinco regiones preregistradas. No detectar un cambio no prueba estabilidad: con 25 años el test solo puede detectar tendencias de unos 2–3 días por década. No es generación.",
       relate: "Cómo se relacionan sol y viento",
       relateBody:
         "Solo descriptivo: con qué frecuencia ambos recursos están bajos el mismo día, frente a la independencia. No es una tendencia. No es fiabilidad de la red.",
@@ -1110,7 +1119,7 @@ export const messages: Record<Locale, Copy> = {
         "1,00 coincidiría con el azar independiente. Un valor inferior a 1 significa que los mínimos coinciden menos a menudo en estos datos.",
       notPresentable: "No es un resultado presentable",
       notPresentableBody:
-        "La lluvia GPM y la escorrentía modelada GLDAS están en el mapa, pero tras la multiplicidad (D53) sus etiquetas de «respaldado» no son presentables ante el jurado. Aquí no se vinculan con la Puerta A ni con la Puerta B.",
+        "La lluvia GPM y la escorrentía modelada GLDAS están en el mapa, pero sus etiquetas regionales de «respaldado» no superan un ajuste por comparaciones múltiples, así que no las presentamos como resultados. Aquí no se vinculan con ninguna de las dos preguntas.",
       openCards: "Abrir las fichas de evidencia",
     },
     cards: {

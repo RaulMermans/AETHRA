@@ -148,7 +148,12 @@ export function ExploreView() {
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
-  const [trendTab, setTrendTab] = useState<"series" | "findings">("series");
+  // First view leads with the research question and its answer (Study findings), not a bare globe.
+  const [trendTab, setTrendTab] = useState<"series" | "findings">("findings");
+  useEffect(() => {
+    // Wide screens only: below 1200 px the open panel hides the left controls (see inspectorOpen).
+    if (window.matchMedia("(min-width: 1200px)").matches) setEvidenceOpen(true);
+  }, []);
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const viewMode: ViewMode = "world";
   const [dim, setDim] = useState<SceneDim>("3d");
@@ -491,6 +496,7 @@ export function ExploreView() {
     (next: AdminScopeSelection, fly = true) => {
       setAdminScope(next);
       setSelected(null);
+      setTrendTab("series");
       setEvidenceOpen(true);
       if (fly && controller) {
         const nextResolved = resolveAdminScope(adminBundle, next);
@@ -917,6 +923,7 @@ export function ExploreView() {
       }
       setSelected(coord);
       if (coord) {
+        setTrendTab("series");
         setEvidenceOpen(true);
         if (workspaceMode === "energy" && evaluatedEnergySites.length > 0) {
           let bestSite: EvaluatedEnergySite | null = null;

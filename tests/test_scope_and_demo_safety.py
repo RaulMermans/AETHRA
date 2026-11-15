@@ -78,10 +78,12 @@ def test_no_energy_claim_wording_in_cards():
 def test_card_panel_matches_scope_exactly_and_labels_national_reference():
     p = src("components/explore/EvidenceCardPanel.tsx")
     assert "c.region.scope === key" in p
-    assert "not</strong> a result for" in p
+    # Copy lives in the i18n catalogue since the EN/ES split; the panel must still render it.
+    assert "m.cards.notFor(national.region.name, scope.name)" in p
+    assert "This is not a result for ${name}." in src("lib/i18n/messages.ts")
     assert "TITLES" not in p, "fixed national card list is back"
     x = src("components/explore/ExploreView.tsx")
-    assert "<EvidenceCardPanel scope={resolvedScope}" in x
+    assert re.search(r"<EvidenceCardPanel\s+scope=\{resolvedScope\}", x)
 
 
 def test_new_frontend_files_do_not_compute_statistics():
@@ -130,13 +132,15 @@ def test_multiplicity_caveat_matches_recorded_check():
     assert m["precipitation"]["supported_after_bh"] == 0 and m["drought"]["supported_after_bh"] == 0
     r = m["water_rivers"]
     panel = src("components/explore/EvidencePanel.tsx")
-    assert f"only {r['supported_after_bh']} of {r['supported_unadjusted']} modelled-runoff" in panel
+    messages = src("lib/i18n/messages.ts")  # EN/ES copy moved out of the panel
+    assert f"only {r['supported_after_bh']} of {r['supported_unadjusted']} modelled-runoff" in messages
+    assert "m.evidence.multiplicity" in panel
     assert 'config.dimension !== "temperature" && st' in panel
     guard = src("lib/globe/scope-multiplicity.ts")
     assert "judgePromotesUnadjustedSupport" in guard
     assert 'return dimension === "temperature"' in guard
     assert "presentedOutcome" in panel
-    assert "EXPLORATORY — multiplicity unadjusted" in panel
+    assert "EXPLORATORY — multiplicity unadjusted" in messages
     assert "supported_increase" in panel
 
 
@@ -149,8 +153,10 @@ def test_climate_timeline_slots_are_observed_years_then_trend_not_a_year():
     view = src("components/explore/ExploreView.tsx")
     assert "labelledObservedYear(playbackRef.current)" in view
     dock = src("components/explore/DimensionDock.tsx")
-    assert "Visual blend between consecutive observed years" in dock
-    assert "not a new year, not a forecast" in dock
+    assert "m.dock.blend" in dock
+    messages = src("lib/i18n/messages.ts")
+    assert "Visual blend between consecutive observed years" in messages
+    assert "not a new year, not a forecast" in messages
 
 
 # --- NASA vs NOAA artifact is internally consistent ---------------------------------------------

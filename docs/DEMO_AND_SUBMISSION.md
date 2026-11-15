@@ -122,6 +122,10 @@ output, not forecasts, not causes. Next: link real infrastructure and observed g
 
 ## Demo flow (live, ~90 s, verified 3× on the production build 14 Nov)
 
+> **Superseded 15 Nov (D72):** the first view now opens on Study findings. Use the step-by-step script in
+> [JUDGE_EXPERIENCE.md](JUDGE_EXPERIENCE.md); the 14 Nov 3× verification does not cover it. Final pitch and
+> slides: [PITCH_FINAL.md](PITCH_FINAL.md). Positioning: [PRODUCT_POSITIONING_FINAL.md](PRODUCT_POSITIONING_FINAL.md).
+
 1. `/explore` opens on Spain, Temperature, judge mode.
 2. Trend → Peninsula + Balearics: Supported increase +0.60 °C/decade (CI +0.31 to +0.87).
 3. Region → Galicia: the Trend panel shows Galicia's own MERRA-2 result.

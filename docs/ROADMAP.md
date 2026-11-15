@@ -79,6 +79,8 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 - [ ] **P0-P2** Slide 5 written from a gate-checked result only. Claim review by a second person.
 - [ ] **P0-P3** Rehearsed demo ≤ 2:00 with a fallback screen recording.
 
+**15 Nov 02:00:** MVP alignment audit, readiness and submission docs written: `MVP_ALIGNMENT_AUDIT.md`, `JUDGING_READINESS.md` (release checklist), `JUDGE_EXPERIENCE.md`, `PITCH_FINAL.md`. New blocker found: province-scope results predate the D64 boundary change (audit §4.3).
+
 **Immediate next action (updated 14 Nov, late evening):** a named second team member works through the
 PENDING sign-off list in `docs/SCIENTIFIC_REVIEW.md` §5 and **decides D53** (Python significance
 rule). Judge-facing Trend badges already hide unadjusted rain/runoff Supported labels (D60) — that

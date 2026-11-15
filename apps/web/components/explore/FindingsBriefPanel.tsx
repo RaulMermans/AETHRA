@@ -92,6 +92,10 @@ export function FindingsBriefPanel({
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
+      <div className="px-3 pb-2">
+        <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.questionLabel}</p>
+        <p className="mt-0.5 text-[13px] leading-snug font-medium text-ink">{m.findings.question}</p>
+      </div>
       <p className="px-3 pb-2 font-mono text-[10px] leading-snug text-faint">
         {m.findings.banner}
       </p>
@@ -101,6 +105,69 @@ export function FindingsBriefPanel({
             {error}. {m.findings.invented}
           </p>
         ) : null}
+
+        <article className="rounded-md border border-white/20 bg-white/5 p-2.5">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.finding2}</p>
+          <p className="mt-1 text-[13px] font-medium text-ink">◆ {m.findings.insufficientFive}</p>
+          <p className="mt-1 text-[11px] leading-snug text-muted">{m.findings.jointNote}</p>
+          <ul className="mt-2 space-y-1">
+            {ENERGY_RESEARCH_CASES.map((study) => (
+              <li key={study.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCase(study.id)}
+                  className="focus-ring flex w-full items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/8"
+                >
+                  <span className="text-[12px] text-ink">{study.regionName}</span>
+                  <span className="font-mono text-[10px] text-faint">
+                    {signed(study.primary.slopePerDecade)} {locale === "es" ? "días por década" : study.primary.units}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="rounded-md border border-amber-300/35 bg-amber-400/10 p-2.5">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-amber-100/80 uppercase">{m.findings.finding1}</p>
+          {temp && face ? (
+            <>
+              <p className="mt-1 text-[13px] font-medium text-amber-100">▲ {face.outcome_label}</p>
+              <p className="mt-1 text-[12px] leading-snug text-ink">
+                {signed(temp.how_much.slope_per_decade)} {face.units} ({m.cards.ci(signed(temp.how_much.ci95_per_decade[0]), signed(temp.how_much.ci95_per_decade[1]))}; n = {temp.evidence.n_years}). {face.when}.
+              </p>
+              <p className="mt-1 text-[10px] leading-snug text-muted">{face.what}. {face.where}.</p>
+              <p className="mt-1 text-[10px] leading-snug text-faint">{face.do_not_conclude}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-[11px] text-faint">{m.findings.loadingGate}</p>
+          )}
+        </article>
+
+        <article className="rounded-md border border-line bg-black/20 p-2.5">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.relate}</p>
+          <p className="mt-1 text-[11px] leading-snug text-muted">{m.findings.relateBody}</p>
+          <ul className="mt-2 space-y-1.5">
+            {ENERGY_RESEARCH_CASES.map((study) => {
+              const ratio = study.complementarityPrimary.ratio;
+              const pct = Math.min(100, Math.max(0, ratio * 100));
+              return (
+                <li key={`${study.id}-c`}>
+                  <div className="flex items-baseline justify-between text-[11px] text-ink">
+                    <span>{study.regionName}</span>
+                    <span className="font-mono text-faint">{ratio.toFixed(2)}{m.findings.chance}</span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+                    <div className="h-full rounded-full bg-sky-300/70" style={{ width: `${pct}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-[10px] leading-snug text-faint">
+            {m.findings.independence}
+          </p>
+        </article>
 
         <div className="rounded-md border border-line bg-black/20 p-2.5">
           <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.howSit}</p>
@@ -132,69 +199,6 @@ export function FindingsBriefPanel({
             </text>
           </svg>
         </div>
-
-        <article className="rounded-md border border-amber-300/35 bg-amber-400/10 p-2.5">
-          <p className="font-mono text-[10px] tracking-[0.14em] text-amber-100/80 uppercase">{m.findings.finding1}</p>
-          {temp && face ? (
-            <>
-              <p className="mt-1 text-[13px] font-medium text-amber-100">▲ {face.outcome_label}</p>
-              <p className="mt-1 text-[12px] leading-snug text-ink">
-                {signed(temp.how_much.slope_per_decade)} {face.units} ({m.cards.ci(signed(temp.how_much.ci95_per_decade[0]), signed(temp.how_much.ci95_per_decade[1]))}; n = {temp.evidence.n_years}). {face.when}.
-              </p>
-              <p className="mt-1 text-[10px] leading-snug text-muted">{face.what}. {face.where}.</p>
-              <p className="mt-1 text-[10px] leading-snug text-faint">{face.do_not_conclude}</p>
-            </>
-          ) : (
-            <p className="mt-1 text-[11px] text-faint">{m.findings.loadingGate}</p>
-          )}
-        </article>
-
-        <article className="rounded-md border border-white/20 bg-white/5 p-2.5">
-          <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.finding2}</p>
-          <p className="mt-1 text-[13px] font-medium text-ink">◆ {m.findings.insufficientFive}</p>
-          <p className="mt-1 text-[11px] leading-snug text-muted">{m.findings.jointNote}</p>
-          <ul className="mt-2 space-y-1">
-            {ENERGY_RESEARCH_CASES.map((study) => (
-              <li key={study.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpenCase(study.id)}
-                  className="focus-ring flex w-full items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/8"
-                >
-                  <span className="text-[12px] text-ink">{study.regionName}</span>
-                  <span className="font-mono text-[10px] text-faint">
-                    {signed(study.primary.slopePerDecade)} {locale === "es" ? "días por década" : study.primary.units}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="rounded-md border border-line bg-black/20 p-2.5">
-          <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.findings.relate}</p>
-          <p className="mt-1 text-[11px] leading-snug text-muted">{m.findings.relateBody}</p>
-          <ul className="mt-2 space-y-1.5">
-            {ENERGY_RESEARCH_CASES.map((study) => {
-              const ratio = study.complementarityPrimary.ratio;
-              const pct = Math.min(100, Math.max(0, ratio * 100));
-              return (
-                <li key={`${study.id}-c`}>
-                  <div className="flex items-baseline justify-between text-[11px] text-ink">
-                    <span>{study.regionName}</span>
-                    <span className="font-mono text-faint">{ratio.toFixed(2)}{m.findings.chance}</span>
-                  </div>
-                  <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-                    <div className="h-full rounded-full bg-sky-300/70" style={{ width: `${pct}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-2 text-[10px] leading-snug text-faint">
-            {m.findings.independence}
-          </p>
-        </article>
 
         <article className="rounded-md border border-amber-300/25 bg-amber-400/5 p-2.5">
           <p className="font-mono text-[10px] tracking-[0.14em] text-amber-100/80 uppercase">{m.findings.notPresentable}</p>
