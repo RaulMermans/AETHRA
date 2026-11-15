@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { formatDegrees, formatElevation } from "@/lib/format";
 import { useLocale } from "@/lib/i18n/locale";
 import type { Messages } from "@/lib/i18n/messages";
@@ -92,11 +92,14 @@ export function CoordinateReadout({
   selected,
   overlay,
   onClear,
+  children,
 }: {
   hover: GeoCoordinate | null;
   selected: GeoCoordinate | null;
   overlay: OverlayFeature | null;
   onClear: () => void;
+  /** Extra context for the clicked point (IGN river/lake), shown inside the same box. */
+  children?: ReactNode;
 }) {
   const { locale, m } = useLocale();
   const [copied, setCopied] = useState(false);
@@ -124,6 +127,7 @@ export function CoordinateReadout({
           <Row label={m.coords.point} value={selected} copy={m} locale={locale} />
         </dl>
       )}
+      {children}
       {selected && (
         <div className="mt-1 flex items-center justify-end gap-0.5">
           <button

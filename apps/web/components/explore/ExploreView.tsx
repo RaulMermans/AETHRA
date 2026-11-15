@@ -188,6 +188,17 @@ export function ExploreView() {
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [proofStage, setProofStage] = useState<ProofStage | null>(null);
+  // Height of the bottom bar (wraps on narrow screens, grows with the point readout).
+  const [bottomBarHeight, setBottomBarHeight] = useState(0);
+  const bottomBarObserver = useRef<ResizeObserver | null>(null);
+  const bottomBarRef = useCallback((el: HTMLDivElement | null) => {
+    bottomBarObserver.current?.disconnect();
+    bottomBarObserver.current = null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setBottomBarHeight(Math.ceil(el.getBoundingClientRect().height)));
+    observer.observe(el);
+    bottomBarObserver.current = observer;
+  }, []);
   const [proofCard, setProofCard] = useState<EvidenceCard | null>(null);
   // First view leads with the research question and its answer (Study findings), not a bare globe.
   const [trendTab, setTrendTab] = useState<"series" | "findings">("findings");
@@ -1401,7 +1412,9 @@ export function ExploreView() {
       )}
 
       <div
-        className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-10.5rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 sm:max-h-[calc(100dvh-9rem)] [&>*]:shrink-0 ${
+        // Ends above the measured bottom bar (buttons + point readout), so the two never overlap.
+        style={{ maxHeight: `calc(100dvh - 4.75rem - ${bottomBarHeight}px - 0.75rem)` }}
+        className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 [&>*]:shrink-0 ${
           inspectorOpen ? "max-[1199px]:hidden" : ""
         } ${proofStage ? "max-lg:hidden" : ""}`}
       >
@@ -1537,15 +1550,6 @@ export function ExploreView() {
             )}
           </>
         )}
-        <HydroFeatureCard
-          feature={selectedHydro}
-          unavailable={hydroSelectionStatus === "error" || Boolean(layerErrors["ign-rivers"] || layerErrors["ign-waterbodies"])}
-          onClose={() => {
-            setSelectedHydro(null);
-            setHydroSelectionStatus("idle");
-            setLayerErrors((prev) => ({ ...prev, "ign-rivers": "", "ign-waterbodies": "" }));
-          }}
-        />
       </div>
 
       <div
@@ -1762,6 +1766,7 @@ export function ExploreView() {
       )}
 
       <div
+        ref={bottomBarRef}
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-4 pb-8 sm:px-6 ${
           // Inspector = 30rem (energy 34rem) + 1.5rem right offset; keep a 1rem gap so buttons never sit under it.
           inspectorOpen
@@ -1778,11 +1783,24 @@ export function ExploreView() {
                 hover={hover}
                 selected={selected}
                 overlay={overlayHover}
-                onClear={() => setSelected(null)}
-              />
+                onClear={() => {
+                  setSelected(null);
+                  setSelectedHydro(null);
+                  setHydroSelectionStatus("idle");
+                  setLayerErrors((prev) => ({ ...prev, "ign-rivers": "", "ign-waterbodies": "" }));
+                }}
+              >
+                {selected && (
+                  <HydroFeatureCard
+                    feature={selectedHydro}
+                    unavailable={hydroSelectionStatus === "error" || Boolean(layerErrors["ign-rivers"] || layerErrors["ign-waterbodies"])}
+                  />
+                )}
+              </CoordinateReadout>
             )}
           </div>
-          <div className="flex flex-wrap items-end justify-end gap-2">
+          {/* With the inspector open below 1280 px there is no room beside it: the panel has its own close button. */}
+          <div className={`flex flex-wrap items-end justify-end gap-2 ${inspectorOpen ? "max-[1279px]:hidden" : ""}`}>
             {activeDestination && activeDestination.id !== "spain" && (
               <p className="pointer-events-none mb-1 max-w-[16rem] text-[10px] leading-snug text-muted">
                 {activeDestination.protectedLandscape
