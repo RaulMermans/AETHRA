@@ -1,12 +1,11 @@
 import type { GeoCoordinate } from "./types";
 
-export const IGN_HYDRO_LAYERS = ["ign-rivers", "ign-waterbodies", "ign-catchments"] as const;
+export const IGN_HYDRO_LAYERS = ["ign-rivers", "ign-waterbodies"] as const;
 export type IgnHydroLayerId = (typeof IGN_HYDRO_LAYERS)[number];
 
 const SOURCE_LAYERS: Record<IgnHydroLayerId, string> = {
   "ign-rivers": "HY.Network",
   "ign-waterbodies": "HY.PhysicalWaters.Waterbodies",
-  "ign-catchments": "HY.PhysicalWaters.Catchments",
 };
 
 export interface IgnHydroFeature {

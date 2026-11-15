@@ -1,10 +1,22 @@
 "use client";
 
 import type { EvidenceCard } from "@/lib/agent/cards";
+import { paletteGradientCss, type PaletteId } from "@/lib/globe/climate";
 import { useLocale } from "@/lib/i18n/locale";
 import { localizeCardFace } from "@/lib/i18n/science-copy";
 
 export type ProofStage = "planet" | "extent" | "trend";
+
+/** Map colour scale as already shown by the left-column legend (hidden below lg while the guide runs). */
+export interface ProofScale {
+  palette: PaletteId;
+  domain: [number, number];
+  units: string;
+}
+
+function tick(n: number): string {
+  return n.toFixed(Math.abs(n) >= 10 ? 0 : 1).replace(/\.0$/, "");
+}
 
 export function PlanetToProof({
   card,
@@ -13,9 +25,11 @@ export function PlanetToProof({
   onTrend,
   onReveal,
   onExit,
+  scale,
 }: {
   card: EvidenceCard;
   stage: ProofStage;
+  scale: ProofScale;
   onRegion: () => void;
   onTrend: () => void;
   onReveal: () => void;
@@ -41,7 +55,11 @@ export function PlanetToProof({
   const stepLabel = stage === "planet" ? m.proof.planet : stage === "extent" ? m.proof.extent : m.proof.trend;
 
   return (
-    <aside aria-label={m.proof.title} className="panel pointer-events-auto absolute top-[4.75rem] right-16 z-30 w-[min(23rem,calc(100vw-5rem))] p-4 sm:right-20">
+    // Below lg the guide is a bottom sheet and the side panels are hidden, so nothing overlaps it.
+    <aside
+      aria-label={m.proof.title}
+      className="panel pointer-events-auto absolute inset-x-3 bottom-3 z-40 mx-auto max-h-[46dvh] max-w-xl overflow-y-auto p-4 lg:inset-x-auto lg:top-[4.75rem] lg:right-20 lg:bottom-auto lg:mx-0 lg:max-h-[calc(100dvh-9rem)] lg:w-[23rem]"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] tracking-[0.14em] text-faint uppercase">{m.proof.title}</p>
@@ -67,6 +85,14 @@ export function PlanetToProof({
       {stage === "trend" && (
         <div className="mt-3 space-y-2 text-[13px] leading-snug text-muted">
           <p>{m.proof.trendMapNote}</p>
+          <div className="lg:hidden" role="img" aria-label={`${tick(scale.domain[0])} to ${tick(scale.domain[1])} ${scale.units}`}>
+            <div className="h-1.5 rounded-full" style={{ background: paletteGradientCss(scale.palette) }} />
+            <div className="mt-1 flex justify-between font-mono text-[11px] text-ink">
+              <span>{tick(scale.domain[0])}</span>
+              <span>{scale.units}</span>
+              <span>{tick(scale.domain[1])}</span>
+            </div>
+          </div>
           <p>{face.do_not_conclude}</p>
           <p><span className="font-medium text-ink">{m.proof.why}:</span> {m.proof.whyBody}</p>
         </div>

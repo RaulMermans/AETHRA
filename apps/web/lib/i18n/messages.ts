@@ -53,6 +53,13 @@ type Copy = {
     linkCopied: string;
     linkInBar: string;
   };
+  hydro: {
+    label: string;
+    unnamed: string;
+    note: string;
+    unavailable: string;
+    close: string;
+  };
   proof: {
     start: string;
     title: string;
@@ -550,6 +557,13 @@ export const messages: Record<Locale, Copy> = {
       screenshotSaved: "Screenshot saved",
       linkCopied: "Link to this view copied",
       linkInBar: "Link is in the address bar",
+    },
+    hydro: {
+      label: "River or lake (IGN)",
+      unnamed: "Unnamed mapped feature",
+      note: "Geographic context from the Instituto Geográfico Nacional. No NASA basin result is implied.",
+      unavailable: "IGN river and lake information is unavailable right now. The map may still show them.",
+      close: "Close",
     },
     proof: {
       start: "Planet to Proof · air temperature",
@@ -1114,6 +1128,13 @@ export const messages: Record<Locale, Copy> = {
       screenshotSaved: "Captura guardada",
       linkCopied: "Enlace de esta vista copiado",
       linkInBar: "El enlace está en la barra de direcciones",
+    },
+    hydro: {
+      label: "Río o lago (IGN)",
+      unnamed: "Elemento sin nombre",
+      note: "Contexto geográfico del Instituto Geográfico Nacional. No implica ningún resultado NASA por cuenca.",
+      unavailable: "La información de ríos y lagos del IGN no está disponible ahora. El mapa puede seguir mostrándolos.",
+      close: "Cerrar",
     },
     proof: {
       start: "Del planeta a la evidencia · temperatura",
