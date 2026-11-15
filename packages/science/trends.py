@@ -217,6 +217,64 @@ def kendall_tau_b(x, y) -> float:
     return num / den if den else float("nan")
 
 
+@dataclass(frozen=True)
+class RankCorrelationResult:
+    """Spearman rho of Theil–Sen residuals with a two-sided permutation p-value."""
+
+    rho: float
+    p_value: float
+    n: int
+    n_permutations: int
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+def theil_sen_residuals(t, y) -> np.ndarray:
+    """y minus its own Theil–Sen line (removes the shared-trend part before correlating)."""
+    t = np.asarray(t, dtype=float)
+    y = np.asarray(y, dtype=float)
+    b, a, _, _ = theil_sen(t, y)
+    return y - (a + b * t)
+
+
+def _spearman(x: np.ndarray, y: np.ndarray) -> float:
+    rx = _ranks(x) - (len(x) + 1) / 2.0
+    ry = _ranks(y) - (len(y) + 1) / 2.0
+    den = math.sqrt(float(np.sum(rx * rx)) * float(np.sum(ry * ry)))
+    return float(np.sum(rx * ry)) / den if den else float("nan")
+
+
+def detrended_rank_correlation(
+    t, x, y, n_permutations: int = 9999, seed: int = 0
+) -> RankCorrelationResult | None:
+    """Interannual co-variability of two annual series (docs/RELATIONSHIP_MAPS.md).
+
+    Each series is detrended by its own Theil–Sen line, then Spearman rho of the residuals is
+    tested against `n_permutations` random pairings (two-sided, p = (k + 1) / (N + 1)).
+    Returns None when fewer than 3 paired years remain or a residual series is constant.
+    """
+    t = np.asarray(t, dtype=float)
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    m = np.isfinite(t) & np.isfinite(x) & np.isfinite(y)
+    t, x, y = t[m], x[m], y[m]
+    n = len(t)
+    if n < 3:
+        return None
+    rx = _ranks(theil_sen_residuals(t, x)) - (n + 1) / 2.0
+    ry = _ranks(theil_sen_residuals(t, y)) - (n + 1) / 2.0
+    den = math.sqrt(float(np.sum(rx * rx)) * float(np.sum(ry * ry)))
+    if den == 0:
+        return None
+    rho = float(np.sum(rx * ry)) / den
+    rng = np.random.default_rng(seed)
+    perms = np.argsort(rng.random((n_permutations, n)), axis=1)
+    null = (ry[perms] @ rx) / den
+    k = int(np.sum(np.abs(null) >= abs(rho) - 1e-12))
+    return RankCorrelationResult(rho=rho, p_value=(k + 1) / (n_permutations + 1), n=n, n_permutations=n_permutations)
+
+
 def minimum_detectable_trend(t, y, alpha: float = 0.05, power: float = 0.8, n_sim: int = 400, seed: int = 0) -> float:
     """Smallest |slope| per decade detected by MK with the given power, simulated by adding a
     linear trend to permutations of the observed Sen residuals (keeps their distribution,

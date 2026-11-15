@@ -128,6 +128,51 @@ def test_mdt_is_finite_and_detects():
     assert 0 < mdt < 20
 
 
+def test_detrended_rank_correlation_ignores_shared_trend():
+    """Two independent noise series on the same trend must not look correlated after detrending."""
+    rng = np.random.default_rng(11)
+    t = np.arange(2000, 2025, dtype=float)
+    x = 0.05 * (t - 2000) + rng.normal(0, 0.3, len(t))
+    y = 0.05 * (t - 2000) + rng.normal(0, 0.3, len(t))
+    raw = T._spearman(x, y)
+    res = T.detrended_rank_correlation(t, x, y, n_permutations=1999)
+    assert res is not None
+    assert raw > 0.5, raw  # the shared trend alone makes the raw rank correlation high
+    assert abs(res.rho) < 0.45 and res.p_value > 0.05, res
+
+
+def test_detrended_rank_correlation_finds_coupled_anomalies():
+    rng = np.random.default_rng(5)
+    t = np.arange(2000, 2025, dtype=float)
+    shared = rng.normal(0, 1, len(t))
+    x = 0.04 * (t - 2000) + shared
+    y = -0.03 * (t - 2000) - shared + rng.normal(0, 0.2, len(t))
+    res = T.detrended_rank_correlation(t, x, y, n_permutations=1999)
+    assert res is not None and res.rho < -0.8 and res.p_value < 0.01, res
+
+
+def test_detrended_rank_correlation_null_rate():
+    """Under independence the permutation test rejects at about alpha."""
+    rng = np.random.default_rng(21)
+    t = np.arange(2000, 2025, dtype=float)
+    rejects = 0
+    trials = 200
+    for i in range(trials):
+        res = T.detrended_rank_correlation(t, rng.normal(size=25), rng.normal(size=25), n_permutations=499, seed=i)
+        assert res is not None
+        rejects += res.p_value < 0.05
+    assert 0.01 <= rejects / trials <= 0.10, rejects
+
+
+def test_detrended_rank_correlation_degenerate_inputs():
+    t = np.arange(2000.0, 2010.0)
+    assert T.detrended_rank_correlation(t, 2 * t, np.full(len(t), 3.0)) is None  # constant residuals
+    assert T.detrended_rank_correlation(t[:2], t[:2], t[:2]) is None
+    x = np.array([1.0, np.nan, 3.0, 2.0, 5.0, 4.0])
+    res = T.detrended_rank_correlation(np.arange(6.0), x, x * 2, n_permutations=99)
+    assert res is not None and res.n == 5 and math.isclose(res.rho, 1.0)
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in list(globals().items()):

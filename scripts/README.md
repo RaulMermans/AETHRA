@@ -96,3 +96,17 @@ factors, scores or rankings.
 ```
 
 Re-run after `build_climate_bundle.py` or `build_admin_boundaries.py` change (their hashes are recorded).
+
+## Relationship maps (D74, `docs/RELATIONSHIP_MAPS.md`)
+
+Two-variable maps for the `/explore` "Relationship maps" tool: R1 MERRA-2 vs NOAA agreement (copied
+from `data/results/noaa_validation`), R2 warm vs dry years (MERRA-2 × GPM, per cell) and R3 hot days
+vs dry spells (NOAA stations). R2 and R3 are EXPLORATORY: detrended Spearman rho, permutation p,
+Benjamini–Hochberg. Deterministic (seed 0).
+
+```bash
+.venv/bin/python scripts/build_relationship_maps.py   # → apps/web/public/data/relationship-maps.json
+.venv/bin/python tests/test_relationship_maps.py
+```
+
+Re-run after `build_climate_bundle.py` or `validate_merra2_vs_noaa.py` change (input hashes are recorded).

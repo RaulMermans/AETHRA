@@ -47,6 +47,19 @@
     "Reanalysis (model + data assimilation), ~50 km cells: not a station measurement.",
     "26 years; magnitude depends on the window (range shown), the sign does not."
    ],
+   "external_check": {
+    "name": "NOAA GHCN-Daily external station comparison",
+    "n_stations": 64,
+    "stations_warming": 64,
+    "within_0_2_per_decade": 53,
+    "slope_diff_median_per_decade": 0.004,
+    "pearson_r_median": 0.934,
+    "period": "2001–2025",
+    "status": "EXPLORATORY until reviewed by a second team member (P0-S5)",
+    "independence_note": "Not claimed independent: MERRA-2 assimilates some land surface observations and the variables are not confirmed (SCIENTIFIC_REVIEW.md §3).",
+    "bundle": "data/results/noaa_validation/analysis_bundle.json",
+    "bundle_sha256": "bc58a9fb7eaccee0269a708cff3addd62042f0f9bdf60fd137cad83bca2f33da"
+   },
    "series": {
     "label": "Annual mean T2M",
     "units": "°C",

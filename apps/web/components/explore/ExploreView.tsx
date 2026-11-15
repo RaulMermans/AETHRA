@@ -74,6 +74,7 @@ import type {
   LayerState,
   LayerStateMap,
   OverlayFeature,
+  PreviewPoint,
   QualityMode,
   SceneDim,
   ToolId,
@@ -84,6 +85,7 @@ import { CameraControls } from "./CameraControls";
 import { EnergyCasePanel } from "./EnergyCasePanel";
 import { ExploreSpain } from "./ExploreSpain";
 import { MapMarkerLegend } from "./MapMarkerLegend";
+import { MapEncodingKey } from "./MapEncodingKey";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock } from "./DimensionDock";
 import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
@@ -95,7 +97,15 @@ import { ScaleThermometer } from "./ScaleThermometer";
 import { StationCatalogPanel } from "./StationCatalogPanel";
 import { AethraCorePanel } from "./AethraCorePanel";
 import { TaroPortrait } from "./TaroPortrait";
-import { EvidenceCardPanel } from "./EvidenceCardPanel";
+import { EvidenceCardPanel, type EvidenceTopic } from "./EvidenceCardPanel";
+import { RelationshipPanel } from "./RelationshipPanel";
+import {
+  buildRelationOverlay,
+  loadRelationships,
+  renderCouplingRaster,
+  type RelationMapId,
+  type RelationshipsFile,
+} from "@/lib/globe/relationships";
 import type { AgentSuggestedAction } from "@/lib/agent/types";
 import { useLocale } from "@/lib/i18n/locale";
 import type { Messages } from "@/lib/i18n/messages";
@@ -141,7 +151,10 @@ export function ExploreView() {
     "climate-heatmap": { visible: true, opacity: 0.62 },
     "climate-overlay": { visible: true, opacity: 0.95 },
   }));
+  const mapLayerVisible = layerStates["climate-heatmap"]?.visible ?? true;
+  const stationsLayerVisible = layerStates["climate-overlay"]?.visible ?? true;
   const [hover, setHover] = useState<GeoCoordinate | null>(null);
+  const [stationPreview, setStationPreview] = useState<PreviewPoint[]>([]);
   const [overlayHover, setOverlayHover] = useState<OverlayFeature | null>(null);
   const [selected, setSelected] = useState<GeoCoordinate | null>(null);
   const [status, setStatus] = useState<GlobeStatus | null>(null);
@@ -255,17 +268,16 @@ export function ExploreView() {
         // Check URL query params for initial scope (?scope=age|ccaa|provincia&id=...)
         const scopeParam = params.get("scope") as AdminScopeLevel | null;
         const idParam = params.get("id");
-        if (scopeParam && ["age", "ccaa", "provincia"].includes(scopeParam)) {
+        // Only switch scope when the id exists. An unknown id keeps the national view instead of
+        // silently showing another region's result (no scope substitution, D76).
+        const validCcaa = scopeParam === "ccaa" && idParam !== null && ab.ccaa.some((c) => c.id === idParam);
+        const validProvince = scopeParam === "provincia" && idParam !== null && ab.provinces.some((p) => p.id === idParam);
+        if (scopeParam === "age" || validCcaa || validProvince) {
           setAdminScope((prev) => {
-            const next = { ...prev, level: scopeParam };
-            if (scopeParam === "ccaa" && idParam && ab.ccaa.some((c) => c.id === idParam)) {
-              next.ccaaId = idParam;
-            } else if (scopeParam === "provincia" && idParam && ab.provinces.some((p) => p.id === idParam)) {
-              const prov = ab.provinces.find((p) => p.id === idParam);
-              next.provinceId = idParam;
-              if (prov) next.ccaaId = prov.ccaaId;
-            }
-            return next;
+            if (scopeParam === "age") return { ...prev, level: "age" };
+            if (validCcaa && idParam) return { ...prev, level: "ccaa", ccaaId: idParam };
+            const prov = ab.provinces.find((p) => p.id === idParam);
+            return prov ? { ...prev, level: "provincia", provinceId: prov.id, ccaaId: prov.ccaaId } : prev;
           });
         }
       })
@@ -298,10 +310,7 @@ export function ExploreView() {
       setTimelineReady(true);
       return;
     }
-    if (!dimensionHasSpatialGrid(climateConfig.dimension)) {
-      setPlaying(false);
-      return;
-    }
+    // Station-symbol dimensions have no raster: frames render as "" and only the symbols animate.
     let cancelled = false;
     setTimelineReady(false);
     const frameCfg = {
@@ -568,7 +577,14 @@ export function ExploreView() {
             activeEnergySiteId,
             adminBundle,
           )
-        : buildDimensionOverlayGeoJson(bundle, climateConfig, resolvedScope, adminBundle)
+        : buildDimensionOverlayGeoJson(
+            bundle,
+            climateConfig,
+            resolvedScope,
+            adminBundle,
+            // During playback the scale is locked to 2000–2025; symbols must use the same scale.
+            playing && climateConfig.mode === "value" ? periodColorDomain(bundle, climateConfig) : undefined,
+          )
       : { type: "FeatureCollection", features: [] };
 
     const conceptDatasetsLabel = conceptMeta.variablesCrossed.map((v) => v.dataset).join(" · ");
@@ -583,7 +599,7 @@ export function ExploreView() {
       id: "climate-heatmap",
       kind: "raster-field",
       group: "analysis",
-      title: isEnergyMode ? `${conceptMeta.shortTitle} Surface` : `${dimMeta.label} Heatmap`,
+      title: isEnergyMode ? `${conceptMeta.shortTitle} Surface` : `${dimMeta.label} map`,
       description: isEnergyMode ? conceptMeta.lensLabels[energyLens] : eff.subtitle,
       source: { name: isEnergyMode ? conceptDatasetsLabel : dimMeta.datasets },
       resolution: isEnergyMode ? "0.25° GLDAS / 0.1° GPM / 0.5° MERRA-2" : dimMeta.spatialNote,
@@ -609,7 +625,7 @@ export function ExploreView() {
       analysisLayers.push({
         ...heatmapBase,
         id: "climate-heatmap-blend",
-        title: `${dimMeta.label} Heatmap (next observed year)`,
+        title: `${dimMeta.label} map (next observed year)`,
         url: urlB,
       });
     }
@@ -759,6 +775,70 @@ export function ExploreView() {
       "energy-infrastructure": { visible: energyLayerOn, opacity: 1 },
     };
   }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA]);
+
+  // --- Relationship maps tool (D74): while open, the globe shows the chosen relationship ------
+  // Judge mode (D75): unreachable even if state is set some other way, not just hidden in the toolbar.
+  const relationsOpen = EXPLORATORY_FEATURES_ENABLED && activeTool === "relationships";
+  /** Topic the Evidence cards panel opens on: research cases are joint-low studies (demo step 4). */
+  const [evidenceTopic, setEvidenceTopic] = useState<EvidenceTopic>("temperature");
+  const [relationFile, setRelationFile] = useState<RelationshipsFile | null>(null);
+  const [relationError, setRelationError] = useState<string | null>(null);
+  const [relationMap, setRelationMap] = useState<RelationMapId>("temp-precip");
+  const [relationUrl, setRelationUrl] = useState("");
+  useEffect(() => {
+    if (!relationsOpen || relationFile || relationError) return;
+    let active = true;
+    loadRelationships()
+      .then((f) => {
+        if (active) setRelationFile(f);
+      })
+      .catch((err: unknown) => {
+        if (active) setRelationError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      active = false;
+    };
+  }, [relationsOpen, relationFile, relationError]);
+  useEffect(() => {
+    if (!relationFile || relationUrl) return;
+    let active = true;
+    renderCouplingRaster(relationFile)
+      .then((url) => {
+        if (active) setRelationUrl(url);
+      })
+      .catch((err: unknown) => console.error("[relationships] failed to render map", err));
+    return () => {
+      active = false;
+    };
+  }, [relationFile, relationUrl]);
+  const displayLayers = useMemo<LayerDescriptor[]>(() => {
+    if (!relationsOpen || !relationFile) return globeLayers;
+    const overlay = buildRelationOverlay(relationFile, relationMap, {
+      robust: m.relations.robustPoint,
+      notRobust: m.relations.notRobustPoint,
+      insufficient: m.relations.insufficientPoint,
+      agreement: m.relations.agreementPoint,
+      trendGap: m.relations.trendGapPoint,
+    });
+    const title = m.relations.maps[relationMap].title;
+    return globeLayers.map((l): LayerDescriptor => {
+      if (l.kind === "raster-field" && l.id === "climate-heatmap") {
+        return { ...l, title, url: relationMap === "temp-precip" ? relationUrl : "" };
+      }
+      if (l.kind === "raster-field" && l.id === "climate-heatmap-blend") return { ...l, url: "" };
+      if (l.kind === "point-values" && l.id === "climate-overlay") return { ...l, title, data: overlay };
+      return l;
+    });
+  }, [globeLayers, relationsOpen, relationFile, relationMap, relationUrl, m]);
+  const displayLayerStates = useMemo<LayerStateMap>(() => {
+    if (!relationsOpen) return globeLayerStates;
+    return {
+      ...globeLayerStates,
+      "climate-heatmap": { visible: true, opacity: 0.85 },
+      "climate-heatmap-blend": { visible: false, opacity: 0 },
+      "climate-overlay": { visible: true, opacity: 0.95 },
+    };
+  }, [globeLayerStates, relationsOpen]);
   const toggleTool = useCallback((tool: ToolId) => {
     setActiveTool((t) => (t === tool ? null : tool));
     setCoreOpen(false);
@@ -883,6 +963,7 @@ export function ExploreView() {
         return;
       }
       setCoreOpen(false);
+      setEvidenceTopic("temperature");
       setActiveTool("evidence");
       setEvidenceOpen(true);
     },
@@ -1032,9 +1113,10 @@ export function ExploreView() {
         <GlobeClient
           className="absolute inset-0 focus-ring"
           ariaLabel={m.explore.globeAria}
-          layers={globeLayers}
-          layerStates={globeLayerStates}
+          layers={displayLayers}
+          layerStates={displayLayerStates}
           selected={selected}
+          preview={stationPreview}
           qualityMode={qualityMode}
           viewMode={viewMode}
           onHover={setHover}
@@ -1198,16 +1280,30 @@ export function ExploreView() {
                 });
               }}
             />
-            {(layerStates["climate-heatmap"]?.visible ?? true) && dimensionHasSpatialGrid(climateConfig.dimension) && (
-              <aside className="pointer-events-none mt-1 pl-1" aria-label={m.explore.mapScale}>
-                <ScaleThermometer
-                  thin
-                  palette={scaleMeta.palette}
-                  domain={scaleMeta.domain}
-                  units={scaleMeta.units}
-                  height={220}
-                />
-              </aside>
+            {/* The climate scale and key describe the climate map, not a relationship map. */}
+            {!relationsOpen && (
+            <div className="mt-1 flex items-start gap-3 pl-1">
+              {/* The scale colours the raster or, for station-only dimensions, the station symbols. */}
+              {(dimensionHasSpatialGrid(climateConfig.dimension)
+                ? mapLayerVisible
+                : stationsLayerVisible) && (
+                <aside className="pointer-events-none" aria-label={m.explore.mapScale}>
+                  <ScaleThermometer
+                    thin
+                    palette={scaleMeta.palette}
+                    domain={scaleMeta.domain}
+                    units={scaleMeta.units}
+                    height={220}
+                  />
+                </aside>
+              )}
+              <MapEncodingKey
+                bundle={bundle}
+                config={climateConfig}
+                mapVisible={mapLayerVisible}
+                stationsVisible={stationsLayerVisible}
+              />
+            </div>
             )}
           </>
         )}
@@ -1227,8 +1323,8 @@ export function ExploreView() {
           <div
             className={`flex min-h-0 min-w-0 flex-col gap-2 ${
               workspaceMode === "energy"
-                ? "w-[min(30rem,calc(100vw-4.75rem))]"
-                : "w-[min(26rem,calc(100vw-4.75rem))]"
+                ? "w-[min(34rem,calc(100vw-4.75rem))]"
+                : "w-[min(30rem,calc(100vw-4.75rem))]"
             }`}
           >
             {secondaryPanel !== null && (
@@ -1241,17 +1337,29 @@ export function ExploreView() {
                     scope={resolvedScope}
                     selected={selected}
                     onInspect={inspectStation}
+                    onPreview={setStationPreview}
                     onClose={closeTool}
                   />
                 )}
                 {activeTool === "evidence" && (
                   <EvidenceCardPanel
                     scope={resolvedScope}
+                    key={evidenceTopic}
+                    initialTopic={evidenceTopic}
                     onOpenTrend={() => {
                       closeTool();
                       setTrendTab("series");
                       setEvidenceOpen(true);
                     }}
+                    onClose={closeTool}
+                  />
+                )}
+                {relationsOpen && (
+                  <RelationshipPanel
+                    file={relationFile}
+                    error={relationError}
+                    active={relationMap}
+                    onChange={setRelationMap}
                     onClose={closeTool}
                   />
                 )}
@@ -1266,7 +1374,7 @@ export function ExploreView() {
                     onClose={closeTool}
                   />
                 )}
-                {secondaryPanel === "core" && (
+                {EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core" && (
                   <AethraCorePanel
                     open={coreOpen}
                     regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
@@ -1293,6 +1401,7 @@ export function ExploreView() {
                     onOpenEvidence={() => {
                       setCasePanelOpen(false);
                       setCoreOpen(false);
+                      setEvidenceTopic("joint_low");
                       setActiveTool("evidence");
                     }}
                     onReturnOverview={returnToSpain}
@@ -1325,7 +1434,7 @@ export function ExploreView() {
                         role="tab"
                         aria-selected={trendTab === "series"}
                         onClick={() => setTrendTab("series")}
-                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[11px] ${
+                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[13px] ${
                           trendTab === "series" ? "bg-white/10 text-ink" : "text-muted hover:bg-white/6"
                         }`}
                       >
@@ -1336,7 +1445,7 @@ export function ExploreView() {
                         role="tab"
                         aria-selected={trendTab === "findings"}
                         onClick={() => setTrendTab("findings")}
-                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[11px] ${
+                        className={`focus-ring flex-1 rounded-md px-2 py-1.5 text-[13px] ${
                           trendTab === "findings" ? "bg-white/10 text-ink" : "text-muted hover:bg-white/6"
                         }`}
                       >
@@ -1362,6 +1471,7 @@ export function ExploreView() {
                           onClose={() => setEvidenceOpen(false)}
                           onOpenCard={() => {
                             setEvidenceOpen(false);
+                            setEvidenceTopic("temperature");
                             setActiveTool("evidence");
                           }}
                           onOpenCase={(id) => {
@@ -1415,6 +1525,8 @@ export function ExploreView() {
                   : m.explore.destSource(activeDestination.name, activeDestination.source.name)}
               </p>
             )}
+            {/* Competition cut (D76): TARO is research-build only; the timed demo never depends on it. */}
+            {EXPLORATORY_FEATURES_ENABLED && (
             <button
               type="button"
               onClick={() => {
@@ -1431,6 +1543,7 @@ export function ExploreView() {
             >
               <TaroPortrait className="size-11" />
             </button>
+            )}
             <ExploreSpain
               selectedId={destinationId}
               onSelect={handleSelectDestination}

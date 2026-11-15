@@ -146,6 +146,10 @@ function overlayFromProps(
     elevationM: typeof props.elevation === "number" ? props.elevation : undefined,
     basin: typeof props.basin === "string" ? props.basin : undefined,
     detail: typeof props.detail === "string" ? props.detail : undefined,
+    trendState:
+      props.trendState === "robust" || props.trendState === "not-robust" || props.trendState === "insufficient"
+        ? props.trendState
+        : undefined,
     latitude: lat,
     longitude: lon,
   };
@@ -168,6 +172,14 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
       const px = typeof props.pixelSize === "number" ? props.pixelSize : 7.5;
       const overlay = overlayFromProps(props, lon, lat);
       const plantMarker = props.marker === "wind" || props.marker === "solar" ? props.marker : null;
+      // Trend symbols (D73): filled = robust, ring = computed but not robust, small grey = no trend.
+      const ring = props.symbol === "ring";
+      const fillColor = ring ? Cesium.Color.fromCssColorString("#0b1424").withAlpha(0.82) : color;
+      const outlineColor = ring
+        ? color
+        : isBasinHub
+          ? Cesium.Color.fromCssColorString("#e0f2fe")
+          : Cesium.Color.fromCssColorString("#f8fafc");
       const entity = ds.entities.add({
         name: overlay?.name,
         position: Cesium.Cartesian3.fromDegrees(lon, lat, 120),
@@ -175,9 +187,9 @@ const pointValuesAdapter: Adapter<PointValuesLayerDescriptor> = async ({ Cesium,
           ? undefined
           : {
               pixelSize: isBasinHub ? px + 1.5 : px + 0.8,
-              color: color.withAlpha(Math.min(1, state.opacity + 0.08)),
-              outlineColor: isBasinHub ? Cesium.Color.fromCssColorString("#e0f2fe") : Cesium.Color.fromCssColorString("#f8fafc"),
-              outlineWidth: isBasinHub ? 2.2 : 1.6,
+              color: fillColor.withAlpha(Math.min(fillColor.alpha, state.opacity + 0.08)),
+              outlineColor,
+              outlineWidth: ring ? 3 : isBasinHub ? 2.2 : 1.6,
               scaleByDistance: new Cesium.NearFarScalar(4.0e4, 1.4, 1.8e6, 0.55),
               heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
               disableDepthTestDistance: Number.POSITIVE_INFINITY,
@@ -293,8 +305,9 @@ function computeLayerKey(d: LayerDescriptor, state: LayerState, mode: ViewMode):
     const fc = d.data as { features?: Array<{ properties?: Record<string, unknown> }> };
     const firstVal = fc?.features?.[0]?.properties?.value ?? "";
     const firstColor = fc?.features?.[0]?.properties?.color ?? "";
+    const firstSymbol = fc?.features?.[0]?.properties?.symbol ?? "";
     const lastName = fc?.features?.[fc.features.length - 1]?.properties?.name ?? "";
-    return `${fc?.features?.length ?? 0}|${firstVal}|${firstColor}|${lastName}`;
+    return `${fc?.features?.length ?? 0}|${firstVal}|${firstColor}|${firstSymbol}|${lastName}`;
   }
   return "";
 }

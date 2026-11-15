@@ -65,6 +65,19 @@ cd apps/web && npm install && npm run dev  # http://localhost:3000 → /explore 
 Rebuilding the climate bundle and downloading data: [scripts/README.md](scripts/README.md).
 Web app details: [apps/web/README.md](apps/web/README.md).
 
+## Verify (judge build)
+
+```bash
+.venv/bin/python -m pytest -q packages/science tests          # 68 tests: kernels, evidence chain, demo safety, release guards
+cd apps/web && npm run typecheck && npm run lint && npm run build
+npx next start -p 3518 &                                       # judge build (no NEXT_PUBLIC_ENABLE_EXPLORATORY)
+cd ../.. && .venv/bin/python scripts/e2e_judge_path.py --base http://localhost:3518 --out /tmp/e2e --runs 3
+cd apps/web && npm run e2e                                    # Playwright: 5 SIMULATED use cases + first screen (docs/SCENARIO_VALIDATION.md)
+```
+
+Last full validation: `docs/FINAL_RELEASE_VALIDATION.md` (15 Nov 2026). Submission text:
+`docs/SUBMISSION_PACKAGE.md`.
+
 ## License
 
 GPL-3.0 — see [LICENSE](LICENSE).

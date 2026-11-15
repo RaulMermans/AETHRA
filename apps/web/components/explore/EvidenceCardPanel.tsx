@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import { useLocale } from "@/lib/i18n/locale";
 import { localizeCardFace } from "@/lib/i18n/science-copy";
+import { parseExternalCheck } from "@/lib/agent/cards";
 import { ToolPanel, smallButton } from "./ToolPanel";
 
 /**
@@ -16,7 +17,8 @@ import { ToolPanel, smallButton } from "./ToolPanel";
  */
 type Outcome = "supported_increase" | "supported_decrease" | "no_robust_trend" | "insufficient_evidence";
 
-type Topic = "temperature" | "joint_low";
+export type EvidenceTopic = "temperature" | "joint_low";
+type Topic = EvidenceTopic;
 
 type EvidenceCard = {
   id: string;
@@ -61,6 +63,7 @@ type EvidenceCard = {
   trend_line: { intercept: number; slope_per_decade: number };
   sources: { name: string; role: string; url: string }[];
   provenance: { bundle: string; bundle_sha256: string; git: string };
+  external_check?: unknown;
 };
 
 const OUTCOME_STYLE: Record<Outcome, { glyph: string; cls: string }> = {
@@ -93,7 +96,7 @@ function isCard(v: unknown): v is EvidenceCard {
 }
 
 function signed(v: number, digits = 2): string {
-  return `${v > 0 ? "+" : v < 0 ? "−" : "±"}${Math.abs(v).toFixed(digits)}`;
+  return `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}`; // zero has no sign ("±" read as uncertainty)
 }
 
 function Series({ card, label, units, caption }: { card: EvidenceCard; label: string; units: string; caption: string }) {
@@ -127,7 +130,7 @@ function Series({ card, label, units, caption }: { card: EvidenceCard; label: st
           );
         })}
         {[x0, Math.round((x0 + x1) / 2), x1].map((yr) => (
-          <text key={yr} x={fx(yr)} y={h - 4} textAnchor="middle" className="fill-white/45 text-[8px]">
+          <text key={yr} x={fx(yr)} y={h - 4} textAnchor={yr === x1 ? "end" : yr === x0 ? "start" : "middle"} className="fill-white/45 text-[8px]">
             {yr}
           </text>
         ))}
@@ -149,119 +152,169 @@ function Series({ card, label, units, caption }: { card: EvidenceCard; label: st
         ))}
         <line x1={fx(x0)} y1={fy(line(x0))} x2={fx(x1)} y2={fy(line(x1))} stroke="rgb(251 191 36)" strokeDasharray="4 3" strokeWidth={1.4} />
       </svg>
-      <figcaption className="text-[10px] text-faint">
+      <figcaption className="text-[12px] text-faint">
         {caption}
       </figcaption>
     </figure>
   );
 }
 
+function ReceiptSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-line/70 pt-2">
+      <h3 className="mb-1 font-mono text-[11px] tracking-[0.12em] text-faint uppercase">{label}</h3>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * The EvidenceCard as an "evidence receipt" (D76): claim → verdict → size and uncertainty → what it
+ * does not show → method → NASA data and provenance. Same fields as before, reordered; every value is
+ * read from evidence-cards.json (Python export). The verdict sentence is keyed on the pipeline outcome.
+ */
 function CardBody({ card }: { card: EvidenceCard }) {
   const { locale, m } = useLocale();
   const face = localizeCardFace(card, locale);
   const seriesUnits = card.series.units === "days per year" && locale === "es" ? "días por año" : card.series.units;
+  const external = parseExternalCheck(card.external_check);
   return (
-    <article className="mt-3 space-y-3 text-xs text-muted">
-      <p className="text-ink">{face.question}</p>
-      <div className={`flex items-center gap-2 rounded-md border px-2 py-1.5 ${OUTCOME_STYLE[card.outcome].cls}`}>
-        <span aria-hidden className="font-mono">{OUTCOME_STYLE[card.outcome].glyph}</span>
-        <span className="font-semibold">{face.outcome_label}</span>
-      </div>
-      <p className="font-mono text-sm text-ink tabular-nums">
-        {signed(card.how_much.slope_per_decade)} {face.units}
-        <span className="block text-[11px] text-muted">
+    <article className="mt-3 space-y-2.5 text-xs text-muted" aria-label={m.cards.receipt}>
+      <ReceiptSection label={m.cards.sClaim}>
+        <p className="text-[13px] leading-snug text-ink">{face.question}</p>
+      </ReceiptSection>
+
+      <ReceiptSection label={m.cards.sVerdict}>
+        <div className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-[13px] ${OUTCOME_STYLE[card.outcome].cls}`}>
+          <span aria-hidden className="font-mono">{OUTCOME_STYLE[card.outcome].glyph}</span>
+          <span className="font-semibold">{face.outcome_label}</span>
+        </div>
+        <p className="mt-1 leading-snug">{m.cards.verdictMeaning[card.outcome]}</p>
+      </ReceiptSection>
+
+      <ReceiptSection label={m.cards.sSize}>
+        <p className="font-mono text-base font-semibold text-ink tabular-nums">
+          {signed(card.how_much.slope_per_decade)} {face.units}
+        </p>
+        <p className="text-[13px] text-ink">
           {m.cards.ci(signed(card.how_much.ci95_per_decade[0]), signed(card.how_much.ci95_per_decade[1]))}
           {card.how_much.window_range_per_decade &&
             ` · ${m.cards.window(signed(card.how_much.window_range_per_decade[0]), signed(card.how_much.window_range_per_decade[1]))}`}
-        </span>
-      </p>
-      <Series
-        card={card}
-        label={face.seriesLabel}
-        units={seriesUnits}
-        caption={
-          locale === "es"
-            ? `${face.seriesLabel} (${seriesUnits}), solo años observados. Discontinua: recta de Theil–Sen.`
-            : `${face.seriesLabel} (${seriesUnits}), observed years only. Dashed: Theil–Sen line.`
-        }
-      />
-      <dl className="space-y-1.5">
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.what}</dt><dd>{face.what}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.where}</dt><dd>{face.where}</dd></div>
-        <div><dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.when}</dt><dd>{face.when}</dd></div>
-        <div>
-          <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.evidence}</dt>
-          <dd>
-            {face.method}. n = {card.evidence.n_years} {m.cards.years}, p = {card.evidence.p}
-            {card.evidence.p_adjusted_bh !== undefined && ` ${m.cards.bh(card.evidence.p_adjusted_bh)}`}, lag-1 r ={" "}
-            {card.evidence.lag1_autocorr}
-            {card.evidence.min_detectable_trend_per_decade != null &&
-              m.cards.power(card.evidence.min_detectable_trend_per_decade, face.units)}
-            .
-          </dd>
-        </div>
+        </p>
+        <p className="mt-0.5">
+          {m.cards.period}: {face.when} · n = {card.evidence.n_years} {m.cards.years}
+        </p>
+        <p className="mt-0.5">
+          {m.cards.source}: {card.sources.map((src) => src.name).join(" · ")}
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-faint">{m.cards.ciMeaning}</p>
+      </ReceiptSection>
+
+      <ReceiptSection label={m.cards.sLimits}>
+        <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-amber-100">
+          {m.cards.doNot} {face.do_not_conclude}
+        </p>
+        <Series
+          card={card}
+          label={face.seriesLabel}
+          units={seriesUnits}
+          caption={
+            locale === "es"
+              ? `${face.seriesLabel} (${seriesUnits}), solo años observados. Discontinua: recta de Theil–Sen.`
+              : `${face.seriesLabel} (${seriesUnits}), observed years only. Dashed: Theil–Sen line.`
+          }
+        />
+      </ReceiptSection>
+
+      <ReceiptSection label={m.cards.sMethod}>
+        <p>
+          {face.method}. n = {card.evidence.n_years} {m.cards.years}, p = {card.evidence.p}
+          {card.evidence.p_adjusted_bh !== undefined && ` ${m.cards.bh(card.evidence.p_adjusted_bh)}`}, lag-1 r ={" "}
+          {card.evidence.lag1_autocorr}
+          {card.evidence.min_detectable_trend_per_decade != null &&
+            m.cards.power(card.evidence.min_detectable_trend_per_decade, face.units)}
+          .
+        </p>
         {card.complementarity && (
-          <div>
-            <dt className="text-[10px] tracking-[0.12em] text-faint uppercase">{m.cards.context}</dt>
-            <dd>
-              {m.cards.jointDays(
-                card.complementarity.observed_2001_2025,
-                card.complementarity.expected_if_independent_mean,
-                card.complementarity.expected_range_95[0],
-                card.complementarity.expected_range_95[1],
-                card.complementarity.ratio,
-              )}{" "}
-              {m.cards.nullModel(face.nullModel)}
-            </dd>
-          </div>
+          <p className="mt-1">
+            <span className="text-faint">{m.cards.context}: </span>
+            {m.cards.jointDays(
+              card.complementarity.observed_2001_2025,
+              card.complementarity.expected_if_independent_mean,
+              card.complementarity.expected_range_95[0],
+              card.complementarity.expected_range_95[1],
+              card.complementarity.ratio,
+            )}{" "}
+            {m.cards.nullModel(face.nullModel)}
+          </p>
         )}
-      </dl>
-      <p className="rounded-md border border-amber-300/25 bg-amber-400/8 px-2 py-1.5 text-amber-100">
-        {m.cards.doNot} {face.do_not_conclude}
-      </p>
-      <details>
-        <summary className="cursor-pointer text-ink">{m.cards.limits}</summary>
-        <ul className="mt-1 list-disc space-y-1 pl-4">
-          {face.limitations.map((l) => <li key={l}>{l}</li>)}
-          <li>
-            {m.cards.sensitivity}{" "}
-            {Object.entries(card.evidence.sensitivity).map(([k, v]) => `${k} ${signed(v)}`).join(" · ")}
-          </li>
-        </ul>
-      </details>
-      <details>
-        <summary className="cursor-pointer text-ink">{m.cards.sources}</summary>
-        <ul className="mt-1 space-y-1">
-          {card.sources.map((s) => (
-            <li key={s.name}>
-              <a className="underline decoration-white/30 hover:text-ink" href={s.url} target="_blank" rel="noreferrer">
-                {s.name}
-              </a>{" "}
-              — {locale === "es" && s.role === card.sources[0]?.role ? face.sourceRole : locale === "es" && s.role === "daily 50 m wind speed" ? "velocidad del viento a 50 m, diaria" : locale === "es" && s.role === "daily solar insolation" ? "insolación solar diaria" : s.role}
+        {external && (
+          <p className="mt-1">
+            {m.cards.externalCheck(
+              external.n_stations,
+              external.stations_warming,
+              external.within_0_2_per_decade,
+              signed(external.slope_diff_median_per_decade, 3),
+              external.period,
+            )}{" "}
+            <span className="text-faint">{m.cards.externalNote}</span>
+          </p>
+        )}
+      </ReceiptSection>
+
+      <ReceiptSection label={m.cards.sData}>
+        <dl className="space-y-1.5">
+          <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.what}</dt><dd>{face.what}</dd></div>
+          <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.where}</dt><dd>{face.where}</dd></div>
+          <div><dt className="text-[12px] tracking-[0.12em] text-faint uppercase">{m.cards.when}</dt><dd>{face.when}</dd></div>
+        </dl>
+        <details className="mt-2">
+          <summary className="cursor-pointer text-ink">{m.cards.sources}</summary>
+          <ul className="mt-1 space-y-1">
+            {card.sources.map((src) => (
+              <li key={src.name}>
+                <a className="underline decoration-white/30 hover:text-ink" href={src.url} target="_blank" rel="noreferrer">
+                  {src.name}
+                </a>{" "}
+                — {locale === "es" && src.role === card.sources[0]?.role ? face.sourceRole : locale === "es" && src.role === "daily 50 m wind speed" ? "velocidad del viento a 50 m, diaria" : locale === "es" && src.role === "daily solar insolation" ? "insolación solar diaria" : src.role}
+              </li>
+            ))}
+            <li className="font-mono text-[12px] break-all text-faint">
+              {card.provenance.bundle} · sha256 {card.provenance.bundle_sha256.slice(0, 12)}… · {card.provenance.git}
             </li>
-          ))}
-          <li className="font-mono text-[10px] break-all text-faint">
-            {card.provenance.bundle} · sha256 {card.provenance.bundle_sha256.slice(0, 12)}… · {card.provenance.git}
-          </li>
-          <li className="text-[10px] text-faint">{face.status}</li>
-        </ul>
-      </details>
+            <li className="text-[12px] text-faint">{face.status}</li>
+          </ul>
+        </details>
+        <details className="mt-1">
+          <summary className="cursor-pointer text-ink">{m.cards.limits}</summary>
+          <ul className="mt-1 list-disc space-y-1 pl-4">
+            {face.limitations.map((l) => <li key={l}>{l}</li>)}
+            <li>
+              {m.cards.sensitivity}{" "}
+              {Object.entries(card.evidence.sensitivity).map(([k, v]) => `${k} ${signed(v)}`).join(" · ")}
+            </li>
+          </ul>
+        </details>
+      </ReceiptSection>
     </article>
   );
 }
 
 export function EvidenceCardPanel({
   scope,
+  initialTopic = "temperature",
   onOpenTrend,
   onClose,
 }: {
   scope: ResolvedAdminScope;
+  /** Topic selected on open (a joint-low research case opens on its joint-low card). */
+  initialTopic?: Topic;
   onOpenTrend: () => void;
   onClose: () => void;
 }) {
   const [cards, setCards] = useState<EvidenceCard[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [topic, setTopic] = useState<Topic>("temperature");
+  const [topic, setTopic] = useState<Topic>(initialTopic);
   const [showReference, setShowReference] = useState(false);
   const { m } = useLocale();
 
@@ -289,7 +342,7 @@ export function EvidenceCardPanel({
 
   return (
     <ToolPanel icon="chart" title={m.cards.title} onClose={onClose}>
-      <p className="mt-2 text-[11px] text-muted">
+      <p className="mt-2 text-[13px] text-muted">
         {m.cards.selected} <span className="text-ink">{regionLabel}</span>
       </p>
       {error && <p role="alert" className="mt-3 text-xs text-ink">{m.cards.failed(error)}</p>}
@@ -303,7 +356,7 @@ export function EvidenceCardPanel({
               role="tab"
               aria-selected={id === topic}
               onClick={() => setTopic(id)}
-              className={`focus-ring flex-1 rounded-md px-2 py-1 text-[11px] ${
+              className={`focus-ring flex-1 rounded-md px-2 py-1 text-[13px] ${
                 id === topic ? "bg-white/12 text-ink" : "text-muted hover:bg-white/6"
               }`}
             >
@@ -314,7 +367,7 @@ export function EvidenceCardPanel({
       )}
       {cards && exact && (
         <>
-          <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[11px] text-ink">
+          <p className="mt-3 rounded-md border border-nav/30 bg-nav/10 px-2 py-1 text-[13px] text-ink">
             {m.cards.resultFor} <strong className="font-medium">{exact.region.name}</strong>
             {key === "age" && ` ${m.cards.canarias}`}
           </p>
@@ -341,14 +394,14 @@ export function EvidenceCardPanel({
               type="button"
               aria-expanded={showReference}
               onClick={() => setShowReference((v) => !v)}
-              className="focus-ring text-[11px] text-muted underline hover:text-ink"
+              className="focus-ring text-[13px] text-muted underline hover:text-ink"
             >
               {showReference ? m.cards.hide : m.cards.show} {m.cards.nationalRef(national.region.name, scope.name)}
             </button>
           )}
           {showReference && national && (
             <>
-              <p className="rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[11px] text-amber-100">
+              <p className="rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[13px] text-amber-100">
                 {m.cards.notFor(national.region.name, scope.name)}
               </p>
               <CardBody card={national} />

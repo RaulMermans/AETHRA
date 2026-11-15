@@ -1,0 +1,126 @@
+{
+ "generated": "2026-11-15T08:29:10.889Z",
+ "browser": "system Chrome, SwiftShader WebGL, 1440x900",
+ "build": "next build (judge)",
+ "scenarios": {
+  "S01": {
+   "runs": 3,
+   "interactions": 3,
+   "tte_ms": [
+    11157,
+    11486,
+    11903
+   ],
+   "median_tte_ms": 11486,
+   "ready_ms": [
+    1317,
+    1369,
+    2141
+   ],
+   "route": [
+    "Study findings → Castilla y León",
+    "Case → Open EvidenceCard",
+    "Receipt → Sources & provenance"
+   ],
+   "verified": [
+    "region",
+    "outcome",
+    "slope",
+    "95% CI",
+    "period",
+    "NASA POWER source",
+    "bundle path",
+    "no production/site claim"
+   ],
+   "limitations": [
+    "Checks displayed text against the artifact; does not re-run the statistics."
+   ]
+  },
+  "S02": {
+   "runs": 3,
+   "interactions": 1,
+   "tte_ms": [
+    1765,
+    1887,
+    2211
+   ],
+   "median_tte_ms": 1887,
+   "ready_ms": [
+    759,
+    935,
+    1013
+   ],
+   "route": [
+    "Study findings → Open Evidence cards"
+   ],
+   "verified": [
+    "outcome",
+    "slope + units",
+    "95% CI",
+    "period",
+    "geographic support",
+    "MERRA-2 source",
+    "NOAA comparison + independence note",
+    "no causal wording"
+   ],
+   "limitations": [
+    "NOAA comparison is supporting evidence, not independent validation (SCIENTIFIC_REVIEW.md §3)."
+   ]
+  },
+  "S03": {
+   "runs": 3,
+   "interactions": 0,
+   "tte_ms": [
+    1746,
+    2330,
+    3436
+   ],
+   "median_tte_ms": 2330,
+   "ready_ms": [
+    791,
+    870,
+    965
+   ],
+   "route": [],
+   "verified": [
+    "UI boundary block",
+    "assistant API status NOT_AVAILABLE",
+    "no currency/energy/percentage figures"
+   ],
+   "limitations": [
+    "Free-form assistant is not in the judge UI; its API is tested directly. Checks absence of figures, not answer quality."
+   ]
+  },
+  "S04": {
+   "runs": 3,
+   "interactions": 3,
+   "tte_ms": [
+    2413,
+    3117,
+    3529
+   ],
+   "median_tte_ms": 3117,
+   "ready_ms": [
+    870,
+    909,
+    926
+   ],
+   "route": [
+    "Keyboard: Castilla y León",
+    "Keyboard: Open EvidenceCard",
+    "Keyboard: Limitations"
+   ],
+   "verified": [
+    "keyboard activation",
+    "section order 1–6",
+    "text verdict + explanation",
+    "CI explanation",
+    "limits visible",
+    "limitations expandable"
+   ],
+   "limitations": [
+    "Checks that explanations are present and reachable. It cannot show that a person understands them."
+   ]
+  }
+ }
+}

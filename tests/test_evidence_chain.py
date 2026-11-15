@@ -90,6 +90,42 @@ def test_frontend_does_not_compute_statistics():
     assert "2030" not in panel and "decisions" not in panel
 
 
+def test_grid_fdr_labels_follow_the_pipeline_rule():
+    """Map stippling (D73) reads cell_significant_fdr; it must equal `significant` AND BH q < 0.05."""
+    m = BUNDLE["merra2"]
+    labels = m["cell_significant_fdr"]
+    assert len(labels) == len(m["valid_indices"])
+    for k, lab in enumerate(labels):
+        ci_excl = m["cell_ci_low_decade"][k] > 0 or m["cell_ci_high_decade"][k] < 0
+        expected = m["cell_p_value"][k] < 0.05 and ci_excl and m["cell_q_value"][k] < 0.05
+        assert lab == expected, ("merra2", k)
+    g = BUNDLE["gpm"]
+    assert len(g["cell_significant_fdr"]) == len(g["valid_indices"])
+    for k, lab in enumerate(g["cell_significant_fdr"]):
+        if lab:  # GPM ships no per-cell CI; a robust label still needs p and q below 0.05
+            assert g["cell_p_value"][k] < 0.05 and g["cell_q_value"][k] < 0.05, ("gpm", k)
+
+
+def test_anomaly_trend_map_is_slope_over_cell_sd():
+    g = BUNDLE["gpm"]
+    for k, v in enumerate(g["cell_anomaly_slope_decade"]):
+        sd = g["cell_std"][k]
+        if v is None:
+            assert sd <= 0
+            continue
+        # cell_std is rounded to 0.1 mm in the bundle; Python divides by the unrounded SD.
+        assert math.isclose(v, g["cell_slope_decade"][k] / sd, rel_tol=0.02, abs_tol=2e-3), k
+
+
+def test_frontend_does_not_threshold_q_values():
+    """Significance labels come from the pipeline; the browser never compares p or q to alpha."""
+    forbidden = re.compile(r"(p_value|q_value\w*)\s*(\[[^\]]*\])?\s*[<>]=?")
+    for f in ["apps/web/lib/globe/climate.ts", "apps/web/components/explore/MapEncodingKey.tsx",
+              "apps/web/lib/globe/cesium/layer-manager.ts"]:
+        hits = forbidden.findall((ROOT / f).read_text())
+        assert not hits, (f, hits)
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in list(globals().items()):

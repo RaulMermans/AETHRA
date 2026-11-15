@@ -1,4 +1,4 @@
-# Judging Readiness (15 Nov 2026, ~02:00)
+# Judging Readiness (15 Nov 2026; updated by the recovery sprint D75 and the competition sprint D76)
 
 Qualitative self-assessment against the five official criteria. **Not a predicted score; no weights
 assumed.** Confidence = our confidence that the criterion is *ready to be judged*, not that we win.
@@ -7,11 +7,21 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
 
 | Criterion | Readiness | Blocking risk |
 |---|---|---|
-| Impact | Low–medium | No user evidence; must not be overclaimed |
-| Creativity | Medium | Differentiation must be *shown* (contrast), not asserted |
-| Validity | Medium–high (technically) / **blocked on process** | Human review unsigned; D53 open; stale provenance hashes |
+| Impact | Medium (functional) / low (human) | Simulated use cases pass; no user evidence — must not be overclaimed |
+| Creativity | Medium–high | Claim Test (supported · insufficient · outside the evidence) now visible on screen |
+| Validity | High (technically) / **human review pending** | D53 closed, D64 rebuilt, Gate A/B reproduced (15 Nov); §5 unsigned |
 | Relevance | High | Curated scope must be stated honestly |
-| Presentation | Medium | New first view not yet rehearsed 3×; slides not built; no public URL |
+| Presentation | Medium–high | Automated 3× rehearsal + stills done; venue rehearsal, slide file and public URL pending |
+
+## Scorecard (15 Nov, after D75/D76) — evidence per criterion, no scores
+
+| Criterion | Main claim | Supporting evidence | How it is demonstrated | Remaining weakness | Release blocker | Validation status |
+|---|---|---|---|---|---|---|
+| **Impact** | Helps a (hypothetical) regional energy-resource analyst decide whether "more joint lows" is a supported finding or stays a hypothesis | CyL receipt: insufficient evidence; Claim C boundary | S01–S04 simulated use cases (`SCENARIO_VALIDATION.md`) | Persona unvalidated; 0 participant sessions | None (claim stays "unvalidated") | Functional ✔ · human ✘ |
+| **Creativity** | Evidence status *is* the product output: a non-obvious joint-low indicator, an honest null, a supported contrast and a boundary, each with a "do not conclude" line | Evidence receipt (D76), first-screen Claim Test | Live path step 4–7; stills 03/04/05 | Trend tests and cards exist elsewhere; novelty is the workflow, not the maths | None | Shown in build ✔ |
+| **Validity** | Real NASA data, area-weighted, Theil–Sen + Mann–Kendall + Hamed–Rao, BH where required, CIs, provenance | Gate A/B bundles; reproduction 15 Nov; 70 Python tests | Receipt sections 3, 5, 6; Sources & provenance | Reanalysis/satellite support; 25–26 years; NOAA not independent; human review | `SCIENTIFIC_REVIEW.md` §5 (or keep EXPLORATORY labels) | Reproduced ✔ · human review ✘ |
+| **Relevance** | Covers the challenge chain: indicator → NASA data → geography → long series → trend magnitude → significance → communication | `PITCH_FINAL.md` §4 slide 3; DATASETS | Receipt 1–6 maps onto the chain | Curated, precomputed; not arbitrary variable search | Official Resources list check | Mapped ✔ · rules check ✘ |
+| **Presentation** | One question, one answer, one contrast, one boundary in 2 minutes | `JUDGE_EXPERIENCE.md`; stills; 3× automated runs | 2-minute script; Claim Test | Slide file not built here; venue machine untested | Deploy URL; 3 live rehearsals | Automated ✔ · live ✘ |
 
 ## Impact
 
@@ -47,10 +57,10 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
   stations not homogenized; MERRA-2 independence of the station check not yet confirmed in GMAO docs.
 - **Blocking risks (must be closed or disclosed):**
   1. `SCIENTIFIC_REVIEW.md` §5: **0/8 signed**. Slide 5 depends on it (non-negotiable 17).
-  2. D53: **OPEN**.
-  3. Provenance: `climate-bundle.json` and Gate B bundle record a pre-D64 `spain-admin.json` hash;
-     province-scope results are on old polygons; Gate A bundle records no boundary hash; Gate A/B
-     record an older `trends.py` hash. Headline unaffected (verified), provinces not presentable.
+  2. D53: **CLOSED 15 Nov** (conservative judge policy, D75).
+  3. Provenance: **resolved for the climate bundle** (rebuilt on D64 boundaries, 15 Nov); Gate A
+     reproduced with current code (all fields identical). Remaining limitation: the exact
+     `trends.py` (c43f59e1…) that produced Gate A/B was never committed (D75).
   4. Gate B CCAA regions not re-runnable on this machine (POWER raw data absent).
 - **Smallest acceptable improvement:** a teammate signs §5 and records D53 before 14:00; until then,
   everything is presented as EXPLORATORY. Re-run of `build_climate_bundle.py` is P1, not required for
@@ -82,9 +92,9 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
 ## Release check: what must be true before Submit for Judging
 
 - [ ] `SCIENTIFIC_REVIEW.md` §5 signed by a named teammate (or every result labelled EXPLORATORY in slides/page)
-- [ ] D53 recorded in `DECISIONS.md`
+- [x] D53 recorded in `DECISIONS.md` (closed 15 Nov, D75)
 - [ ] Judge build deployed; URL works in a private window; `/explore?lab=energy` shows no Energy Lab
-- [ ] Demo path in `JUDGE_EXPERIENCE.md` run 3× on the presenting machine; fallback recorded
+- [ ] Demo path in `JUDGE_EXPERIENCE.md` run 3× on the presenting machine; fallback recorded *(substitute: 3 automated browser runs on a dev machine passed 15 Nov; venue machine still pending; a 1440×900 recording of run 1 exists, see `FINAL_RELEASE_VALIDATION.md`)*
 - [ ] 7 slides built from `PITCH_FINAL.md`; every number checked against §6 of that file
 - [ ] Submission checklist in `DEMO_AND_SUBMISSION.md` ticked by a human
 - [ ] Submit for Judging pressed by 21:00; confirmation captured

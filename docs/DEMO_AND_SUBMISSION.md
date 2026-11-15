@@ -59,7 +59,7 @@ Use these sentences as written. Each traces to a recorded file.
    0.31–0.87 °C; Theil–Sen with Mann–Kendall, p < 0.001; 26 complete years). The trend is positive in
    all six analysis windows we tested, with magnitudes from 0.41 to 0.83 °C per decade."
    — `data/results/gate_a_temperature/analysis_bundle.json`
-2. **Independent check.** "All 64 long-record NOAA weather stations we compared also warmed, and for 53
+2. **External station comparison** (not claimed independent, D75). "All 64 long-record NOAA weather stations we compared also warmed, and for 53
    of them the station trend is within 0.2 °C per decade of the reanalysis cell around it."
    — `data/results/noaa_validation/analysis_bundle.json`
 3. **Energy question (Gate B, honest null).** "We found **no detectable change** in how often solar and
@@ -141,7 +141,7 @@ output, not forecasts, not causes. Next: link real infrastructure and observed g
 |---|---|---|
 | 1 | Cover | Name, team, Challenge #02. One line: "Plenty of sun and wind on average is not the same as having them when needed." (context, not a finding) |
 | 2 | The blind spot | Averages hide timing and joint shortfalls. Our questions: what changed, where, how much, is it supported? |
-| 3 | NASA data + method | MERRA-2 M2TMNXSLV 5.12.4 (reanalysis), NASA POWER (CERES SYN1deg + MERRA-2 wind); NOAA GHCN-Daily as independent check. Evidence chain diagram: source → QA → series → Theil–Sen/MK + CI → outcome → EvidenceCard |
+| 3 | NASA data + method | MERRA-2 M2TMNXSLV 5.12.4 (reanalysis), NASA POWER (CERES SYN1deg + MERRA-2 wind); NOAA GHCN-Daily as an external station comparison (MERRA-2 independence from land stations not confirmed, D75). Evidence chain diagram: source → QA → series → Theil–Sen/MK + CI → outcome → EvidenceCard |
 | 4 | Verified finding | Claim 1 + chart (`gate_a_temperature/t2m.svg`) + claim 2 with `noaa_validation/slopes.svg` |
 | 5 | Energy investigation | Claim 3 with the E1 chart; claim 4 in smaller type, labelled "descriptive" |
 | 6 | Product | Screenshot: region → series → EvidenceCard with "Result for …", sources and "do not conclude" |

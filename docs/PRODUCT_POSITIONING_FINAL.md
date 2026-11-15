@@ -62,7 +62,7 @@ unconfirmed hypothesis. Source: card `energy-gap-ES41`, `data/results/energy_gap
 | Where | Peninsula + Balearics, area-weighted | 5 pre-registered regions: Peninsula + Balearics, Galicia, Castilla y León, Aragón, Andalucía |
 | When | 2000–2025 annual means (26 complete years) | 2001–2025 daily → annual counts (25 years) |
 | Outcome | **Supported increase**: +0.60 °C per decade (95 % CI +0.31 to +0.87; p < 0.001); positive in all 6 windows (+0.41 to +0.83) | **Insufficient evidence** in 5/5 regions (e.g. Peninsula + Balearics 0.0 days/decade, CI −1.8 to +2.2) |
-| Independent check | 64/64 NOAA GHCN-Daily stations also warm; 53 within ±0.2 °C/decade of their cell | Pre-registered definition and sensitivity (P10, P30, alt. reference): no variant significant |
+| External station comparison | 64/64 NOAA GHCN-Daily stations also warm (not claimed independent of MERRA-2, D75); 53 within ±0.2 °C/decade of their cell | Pre-registered definition and sensitivity (P10, P30, alt. reference): no variant significant |
 | Descriptive context (not a trend) | — | Joint lows occur about half as often as if solar and wind were independent (Peninsula: 183 vs ≈ 370 expected over 25 years; Aragón ratio 0.79) |
 | What it is not | Not a cause, not a forecast, not energy evidence | Not generation, not grid reliability, not site suitability, not a forecast |
 
@@ -111,5 +111,5 @@ decisions (no user study yet; see `IMPACT_VALIDATION.md`) · that the results ar
 - 25–26 years: limited power for small trends.
 - Resource ≠ generation. No power curves, PV model, capacity, curtailment or grid.
 - Results are EXPLORATORY until a second team member signs the review.
-- Province-level numbers are pending a rebuild after the D64 boundary change (`MVP_ALIGNMENT_AUDIT.md` §4.3).
+- Province-level numbers were rebuilt on the D64 boundaries on 15 Nov (D75). Non-temperature regional labels stay EXPLORATORY (D53).
 - TARO is a deterministic assistant that quotes EvidenceCards. It does not analyse data.

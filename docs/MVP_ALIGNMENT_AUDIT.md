@@ -79,7 +79,14 @@ judge build**: keep D60 and present only temperature and the Gate B family as fi
 no pipeline change and matches what the demo shows. Option (b) re-exports the bundle 13 h before
 freeze and should not be chosen silently.
 
-### 4.3 Province boundaries and bundle provenance after D64 — **metadata stale, headline unaffected**
+### 4.3 Province boundaries and bundle provenance after D64 — **RESOLVED 15 Nov (D75)**
+
+> **Update 15 Nov (recovery sprint, D75):** `build_climate_bundle.py` was re-run on the NUTS-3 file.
+> National and all 19 CCAA scope values are identical; 41/52 provinces changed (max |Δ| temperature
+> slope 0.035 °C/decade, no outcome flips). The bundle now records `spain-admin.json` `12bdd074…`.
+> CCAA polygons in the pre-D64 file (`15d7893`) and the current file were compared: identical, so the
+> Gate B regions are unaffected. Details: `docs/FINAL_RELEASE_VALIDATION.md`. The text below is the
+> original 02:00 finding, kept for the record.
 - `climate-bundle.json` and `energy_gap/analysis_bundle.json` record `spain-admin.json`
   SHA-256 `88fe72de…`. The file on disk is `12bdd074…` (NUTS-3 provinces, D64).
 - **Consequence for provinces:** the 52 province-scope results in `climate-bundle.json` were

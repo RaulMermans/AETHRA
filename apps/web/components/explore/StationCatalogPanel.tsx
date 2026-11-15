@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AdminBundle, ResolvedAdminScope } from "@/lib/globe/admin-scope";
 import { LAST_COMPLETE_YEAR, type ActiveClimateConfig, type ClimateBundle } from "@/lib/globe/climate";
 import {
@@ -10,7 +10,7 @@ import {
   stationMetricFor,
   type StationEntry,
 } from "@/lib/globe/stations";
-import type { GeoCoordinate } from "@/lib/globe/types";
+import type { GeoCoordinate, PreviewPoint } from "@/lib/globe/types";
 import { useLocale } from "@/lib/i18n/locale";
 import { ToolPanel } from "./ToolPanel";
 
@@ -27,6 +27,9 @@ function formatTrend(e: StationEntry, units: string): string {
  * Catalog of NOAA GHCN-Daily stations: the full list behind the map's reference markers.
  * Grouped by CCAA (national view) or province (inside a scope), each row shows the station's
  * record length and its own trend for the active metric.
+ *
+ * While the list scrolls, the rows in view are pointed out on the globe (`onPreview`): a ring per
+ * visible station, and the hovered/focused row (else the row in the middle of the view) labelled.
  */
 export function StationCatalogPanel({
   bundle,
@@ -35,6 +38,7 @@ export function StationCatalogPanel({
   scope,
   selected,
   onInspect,
+  onPreview,
   onClose,
 }: {
   bundle: ClimateBundle | null;
@@ -43,6 +47,7 @@ export function StationCatalogPanel({
   scope: ResolvedAdminScope;
   selected: GeoCoordinate | null;
   onInspect: (coord: GeoCoordinate) => void;
+  onPreview: (points: PreviewPoint[]) => void;
   onClose: () => void;
 }) {
   const { m } = useLocale();
@@ -87,6 +92,71 @@ export function StationCatalogPanel({
       ] as const);
   }, [inScope, query, filter, scoped, t.other]);
 
+  // Rows currently inside the list's scroll viewport (IntersectionObserver clips by the
+  // overflow container even with the implicit root).
+  const [visible, setVisible] = useState<ReadonlySet<string>>(() => new Set());
+  const [pointed, setPointed] = useState<string | null>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const getObserver = useCallback(() => {
+    if (!observer.current && typeof IntersectionObserver !== "undefined") {
+      observer.current = new IntersectionObserver(
+        (entries) =>
+          setVisible((prev) => {
+            const next = new Set(prev);
+            for (const en of entries) {
+              const id = en.target instanceof HTMLElement ? en.target.dataset.stationId : undefined;
+              if (!id) continue;
+              if (en.isIntersecting) next.add(id);
+              else next.delete(id);
+            }
+            return next;
+          }),
+        { threshold: 0.5 },
+      );
+    }
+    return observer.current;
+  }, []);
+  useEffect(() => () => observer.current?.disconnect(), []);
+  const observeRow = useCallback(
+    (el: HTMLLIElement | null) => {
+      const io = getObserver();
+      if (!el || !io) return;
+      io.observe(el);
+      const id = el.dataset.stationId;
+      return () => {
+        io.unobserve(el);
+        if (id) setVisible((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      };
+    },
+    [getObserver],
+  );
+
+  const ordered = useMemo(() => groups.flatMap(([, items]) => items), [groups]);
+  const inView = useMemo(() => ordered.filter((e) => visible.has(e.station.id)), [ordered, visible]);
+  const focusId =
+    pointed && inView.some((e) => e.station.id === pointed)
+      ? pointed
+      : inView[Math.floor((inView.length - 1) / 2)]?.station.id ?? null;
+  const preview = useMemo<PreviewPoint[]>(
+    () =>
+      inView.map((e) => ({
+        id: e.station.id,
+        latitude: e.station.lat,
+        longitude: e.station.lon,
+        heightMetres: e.station.elevation,
+        label: e.label,
+        focus: e.station.id === focusId,
+      })),
+    [inView, focusId],
+  );
+  useEffect(() => onPreview(preview), [preview, onPreview]);
+  useEffect(() => () => onPreview([]), [onPreview]);
+
   const refCount = inScope.filter((e) => e.reference).length;
   const shown = groups.reduce((n, [, items]) => n + items.length, 0);
   const isActive = (e: StationEntry) =>
@@ -94,7 +164,7 @@ export function StationCatalogPanel({
 
   return (
     <ToolPanel icon="station" title={t.title} onClose={onClose}>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted">
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">
         {t.intro(MIN_REFERENCE_YEARS)}
       </p>
 
@@ -111,7 +181,7 @@ export function StationCatalogPanel({
               type="button"
               aria-pressed={filter === v}
               onClick={() => setFilter(v)}
-              className={`focus-ring rounded-full px-2.5 py-0.5 text-[11px] transition-colors ${
+              className={`focus-ring rounded-full px-2.5 py-0.5 text-[13px] transition-colors ${
                 filter === v ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"
               }`}
             >
@@ -119,7 +189,7 @@ export function StationCatalogPanel({
             </button>
           ))}
         </div>
-        {scoped && <span className="truncate text-[10px] text-faint">{t.inScope(scope.name)}</span>}
+        {scoped && <span className="truncate text-[12px] text-faint">{t.inScope(scope.name)}</span>}
       </div>
 
       <input
@@ -131,13 +201,13 @@ export function StationCatalogPanel({
         className="focus-ring mt-2 w-full rounded-md border border-line bg-white/5 px-2.5 py-1.5 text-xs text-ink placeholder:text-faint"
       />
 
-      <div className="mt-2 flex items-baseline justify-between text-[10px] tracking-[0.12em] text-faint uppercase">
+      <div className="mt-2 flex items-baseline justify-between text-[12px] tracking-[0.12em] text-faint uppercase">
         <span>{t.record}</span>
         <span title={t.trendTitle(LAST_COMPLETE_YEAR)}>
           {t.trend}
         </span>
       </div>
-      <p className="text-[10px] text-faint">
+      <p className="text-[12px] text-faint">
         {metricLabel} ({units}){!dimMetric && t.noEquivalent}
       </p>
 
@@ -149,34 +219,42 @@ export function StationCatalogPanel({
         <div className="mt-1.5 space-y-2.5">
           {groups.map(([name, items]) => (
             <section key={name} aria-label={name}>
-              <h3 className="sticky top-0 bg-[rgb(8_12_20/0.96)] py-0.5 text-[10px] font-medium tracking-[0.1em] text-muted uppercase">
+              <h3 className="sticky top-0 bg-[rgb(8_12_20/0.96)] py-0.5 text-[12px] font-medium tracking-[0.1em] text-muted uppercase">
                 {name}
               </h3>
               <ul>
                 {items.map((e) => (
-                  <li key={e.station.id}>
+                  <li key={e.station.id} ref={observeRow} data-station-id={e.station.id}>
                     <button
                       type="button"
+                      onMouseEnter={() => setPointed(e.station.id)}
+                      onMouseLeave={() => setPointed((p) => (p === e.station.id ? null : p))}
+                      onFocus={() => setPointed(e.station.id)}
+                      onBlur={() => setPointed((p) => (p === e.station.id ? null : p))}
                       onClick={() => onInspect({ latitude: e.station.lat, longitude: e.station.lon })}
                       title={`${e.station.id} · ${e.station.lat.toFixed(3)}, ${e.station.lon.toFixed(3)}`}
                       className={`focus-ring flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-left ${
-                        isActive(e) ? "bg-accent/20" : "hover:bg-white/8"
+                        isActive(e)
+                          ? "bg-accent/20"
+                          : e.station.id === focusId
+                            ? "bg-white/8 shadow-[inset_2px_0_0_#f5c26b]"
+                            : "hover:bg-white/8"
                       }`}
                     >
                       <span className="min-w-0">
-                        <span className="flex items-center gap-1.5 text-[12px] text-ink">
+                        <span className="flex items-center gap-1.5 text-[14px] text-ink">
                           <span className="truncate">{e.label}</span>
                           {e.reference && (
-                            <span className="shrink-0 rounded border border-nav/40 px-1 text-[9px] text-nav">{t.refBadge}</span>
+                            <span className="shrink-0 rounded border border-nav/40 px-1 text-[11px] text-nav">{t.refBadge}</span>
                           )}
                         </span>
-                        <span className="block truncate text-[10px] text-faint">
+                        <span className="block truncate text-[12px] text-faint">
                           {scoped ? "" : `${e.provinceName} · `}
                           {Math.round(e.station.elevation)} m · {e.years} {t.yr}
                           {e.years < MIN_REFERENCE_YEARS && ` · ${t.shortRecord}`}
                         </span>
                       </span>
-                      <span className="shrink-0 font-mono text-[11px] text-ink tabular-nums">
+                      <span className="shrink-0 font-mono text-[13px] text-ink tabular-nums">
                         {formatTrend(e, units)}
                         <span
                           aria-label={e.trend?.significant_fdr ? t.supported : t.noRobust}
@@ -193,7 +271,7 @@ export function StationCatalogPanel({
           ))}
         </div>
       )}
-      <p className="mt-3 text-[10px] leading-relaxed text-faint">
+      <p className="mt-3 text-[12px] leading-relaxed text-faint">
         {t.footnote(LAST_COMPLETE_YEAR)}
       </p>
     </ToolPanel>
