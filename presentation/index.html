@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AETHRA · NASA Space Apps Challenge 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #070B14;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(0, 242, 254, 0.3);
+      --border-gold: rgba(255, 183, 3, 0.3);
+      --cyan: #00F2FE;
+      --cyan-glow: rgba(0, 242, 254, 0.3);
+      --gold: #FFB703;
+      --gold-glow: rgba(255, 183, 3, 0.3);
+      --green: #10B981;
+      --green-glow: rgba(16, 185, 129, 0.3);
+      --red: #EF4444;
+      --red-glow: rgba(239, 68, 68, 0.3);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    .cosmic-bg {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 15% 20%, rgba(0, 242, 254, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(255, 183, 3, 0.07) 0%, transparent 40%),
+        linear-gradient(180deg, #070B14 0%, #0B1222 50%, #05080F 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cosmic-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      max-width: 1920px;
+      max-height: 1080px;
+      padding: 2.5rem 4rem;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transform: scale(0.99);
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo-small {
+      height: 34px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid var(--border-accent);
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .brand-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    .header-context {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-pill {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      color: #CBD5E1;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1.5rem 0;
+    }
+
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .footer-highlight {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .progress-bar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 100;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+      box-shadow: 0 0 10px var(--cyan);
+      transition: width 0.3s ease;
+    }
+
+    .controls-panel {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      padding: 0.35rem 0.7rem;
+      border-radius: 9999px;
+      z-index: 90;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.3rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s;
+    }
+
+    .ctrl-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .ctrl-btn.active {
+      color: var(--cyan);
+      background: rgba(0, 242, 254, 0.15);
+    }
+
+    .slide-indicator {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-main);
+      padding: 0 0.4rem;
+      font-weight: 700;
+    }
+
+    /* Modal dialogs */
+    .speaker-notes-modal {
+      position: fixed;
+      bottom: 4.5rem;
+      right: 2rem;
+      width: 420px;
+      max-height: 440px;
+      background: rgba(11, 19, 35, 0.96);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-accent);
+      border-radius: 14px;
+      padding: 1.25rem;
+      z-index: 95;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      overflow-y: auto;
+    }
+
+    .speaker-notes-modal.visible { display: flex; }
+
+    .grid-overview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 11, 20, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 150;
+      display: none;
+      padding: 3rem;
+      overflow-y: auto;
+    }
+
+    .grid-overview-modal.visible { display: block; }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .grid-card-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .grid-card-item:hover, .grid-card-item.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Typography & Titles */
+    h1.hero-title {
+      font-family: var(--font-display);
+      font-size: 3.8rem;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h2.slide-title {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      margin-bottom: 0.35rem;
+      color: #FFFFFF;
+    }
+
+    .title-gradient-cyan {
+      background: linear-gradient(135deg, #00F2FE 0%, #38BDF8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-gradient-gold {
+      background: linear-gradient(135deg, #FFB703 0%, #FB8500 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 1.1rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+
+    .glass-card-accent {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.08);
+    }
+
+    .glass-card-gold {
+      border-color: var(--border-gold);
+      box-shadow: 0 0 25px rgba(255, 183, 3, 0.08);
+    }
+
+    /* Giant Numbers */
+    .metric-val {
+      font-family: var(--font-display);
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-val.cyan { color: var(--cyan); text-shadow: 0 0 20px var(--cyan-glow); }
+    .metric-val.gold { color: var(--gold); text-shadow: 0 0 20px var(--gold-glow); }
+    .metric-val.green { color: var(--green); text-shadow: 0 0 20px var(--green-glow); }
+    .metric-val.red { color: var(--red); text-shadow: 0 0 20px var(--red-glow); }
+
+    .metric-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .tag-green { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-red { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .tag-cyan { background: rgba(0, 242, 254, 0.15); color: var(--cyan); border: 1px solid var(--border-accent); }
+    .tag-gold { background: rgba(255, 183, 3, 0.15); color: var(--gold); border: 1px solid var(--border-gold); }
+
+    .story-hook-box {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.7) 100%);
+      border-left: 4px solid var(--gold);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-top: 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-right: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .story-hook-quote {
+      font-size: 1.15rem;
+      line-height: 1.5;
+      font-weight: 400;
+      color: #F1F5F9;
+      font-style: italic;
+    }
+
+    /* Print / PDF Export */
+    @media print {
+      html, body {
+        background: #070B14 !important;
+        color: #F8FAFC !important;
+        overflow: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .cosmic-bg, .cosmic-grid {
+        position: fixed !important;
+        inset: 0 !important;
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .controls-panel, .speaker-notes-modal, .progress-bar-container, .grid-overview-modal {
+        display: none !important;
+      }
+
+      .deck-container {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        position: static !important;
+      }
+
+      .slide {
+        display: flex !important;
+        opacity: 1 !important;
+        transform: none !important;
+        position: relative !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        max-height: 100vh !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        break-after: page !important;
+        padding: 3rem 4rem !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      @page {
+        size: 16in 9in;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cosmic-bg"></div>
+  <div class="cosmic-grid"></div>
+
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="deck-container">
+
+    <!-- ==========================================
+         SLIDE 1: COVER & THE HOOK
+         ========================================== -->
+    <div class="slide active" id="slide-1" data-title="Cover & The Hook" data-timing="0:00 - 0:25">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> NASA SPACE APPS 2026</span>
+        </div>
+        <div class="header-context">
+          <span>CHALLENGE #02: EARTH SYSTEM TREND DETECTIVE</span>
+          <span class="header-pill">MISSION 01 · SPAIN</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 3rem;">
+          <div style="flex: 1.2;">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <span class="tag tag-cyan">EARTH SYSTEM INTELLIGENCE</span>
+              <span class="tag tag-gold">UTILITY SOLAR DUE DILIGENCE</span>
+            </div>
+            
+            <h1 class="hero-title">AETHRA</h1>
+            
+            <p style="font-family: var(--font-display); font-size: 1.6rem; color: #E2E8F0; font-weight: 600; line-height: 1.25; margin-bottom: 1rem;">
+              The ground due diligence for utility solar powered by <span class="title-gradient-cyan">25 years of NASA Earth data</span>.
+            </p>
+
+            <div class="story-hook-box">
+              <p class="story-hook-quote">
+                "My grandfather Antonio bought his dream house in Seville. Ten years later, cracks appeared, a corner sank, and the doors jammed. Nobody had checked the ground: it was shifting clay. And the house did not survive."
+              </p>
+              <div style="margin-top: 0.6rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--gold);">
+                THE HOOK (0:00–0:25) · The invisible crack nobody notices on day one
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 0.8; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center;">
+              <div style="position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(0,242,254,0.18) 0%, transparent 70%);"></div>
+              <img src="assets/logo_primary.png" alt="AETHRA Crest" style="width: 250px; height: 250px; object-fit: contain; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 1px solid var(--border-accent);">
+            </div>
+            <span style="margin-top: 1rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);">
+              NASA MERRA-2 · NASA POWER · MITECO · 64 NOAA STATIONS
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>TEAM AETHRA</span>
+          <span class="footer-highlight">NASA Space Apps Challenge 2026</span>
+          <span>Pitch Duration: 3:00 min</span>
+        </div>
+        <div>
+          <span>01 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 2: THE 30-YEAR BLIND SPOT
+         ========================================== -->
+    <div class="slide" id="slide-2" data-title="The 30-Year Blind Spot" data-timing="0:25 - 0:55">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> THE CORE PROBLEM</span>
+        </div>
+        <div class="header-context">
+          <span>30-YEAR ASSET LIFETIME</span>
+          <span class="header-pill">CLIMATE & PERMITTING DRIFT</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div style="margin-bottom: 1.75rem;">
+          <h2 class="slide-title">
+            "Will this also end up <span class="title-gradient-gold">cracking</span>?"
+          </h2>
+          <p class="slide-subtitle" style="margin-bottom: 0;">
+            A utility solar farm operates under a 30-year lease, but developers evaluate sites using today's static snapshot. Over 30 years, two risks break the business case:
+          </p>
+        </div>
+
+        <div class="grid-2" style="gap: 2rem;">
+          <!-- Risk 1: Thermal Loss -->
+          <div class="glass-card glass-card-gold" style="padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span class="tag tag-gold">THERMAL DERATING</span>
+              <span style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--gold); font-weight: 700;">-0.4%/°C</span>
+            </div>
+            <div class="metric-val gold" style="font-size: 2.8rem;">+0.67 °C</div>
+            <div class="metric-label" style="color: var(--gold); margin-bottom: 0.75rem;">Summer warming per decade (p &lt; 0.001)</div>
+            <p style="font-size: 0.95rem; color: #CBD5E1; line-height: 1.5;">
+              Overheated panels lose conversion efficiency. That produces a cumulative ~-0.27% production loss per decade—costing millions in unmodeled lifetime revenue.
+            </p>
+          </div>
+
+          <!-- Risk 2: Environmental Sensitivity -->
+          <div class="glass-card" style="border-top: 4px solid var(--red); padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span class="tag tag-red">PERMITTING EXCLUSION</span>
+              <span style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--red); font-weight: 700;">MITECO 2024</span>
+            </div>
+            <div class="metric-val red" style="font-size: 2.8rem;">29.0%</div>
+            <div class="metric-label" style="color: #F87171; margin-bottom: 0.75rem;">Of operating MW built in sensitive zones</div>
+            <p style="font-size: 0.95rem; color: #CBD5E1; line-height: 1.5;">
+              High solar irradiance means nothing if environmental permits are denied. 29% of Spain's operational capacity sits in areas with acute ecological restrictions.
+            </p>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; background: rgba(0, 242, 254, 0.05); border: 1px solid var(--border-accent); border-radius: 10px; padding: 0.85rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.9rem; color: #E2E8F0;">
+            <strong>NASA measured every coordinate for 25 years:</strong> But raw scientific archives do not give developers an actionable pre-construction answer.
+          </span>
+          <span class="tag tag-cyan">AETHRA BRIDGES THE GAP</span>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>THE PROBLEM (0:25–0:55)</span>
+          <span class="footer-highlight">Do not build for today's climate: build for the next 30 years</span>
+        </div>
+        <div>
+          <span>02 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 3: THE SOLUTION — AETHRA
+         ========================================== -->
+    <div class="slide" id="slide-3" data-title="The Solution: AETHRA" data-timing="0:55 - 1:20">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> THE SOLUTION</span>
+        </div>
+        <div class="header-context">
+          <span>EARTH SYSTEM INTELLIGENCE</span>
+          <span class="header-pill">3-LAYER INTEGRATION</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div style="margin-bottom: 1.75rem;">
+          <h2 class="slide-title">
+            AETHRA: The <span class="title-gradient-cyan">ground due diligence</span> for utility solar
+          </h2>
+          <p class="slide-subtitle" style="margin-bottom: 0;">
+            Crossing 25 years of NASA Earth observations with official environmental zoning and 2,700 operating plants:
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <!-- Pillar 1 -->
+          <div class="glass-card" style="border-top: 4px solid var(--cyan);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span class="tag tag-cyan">LAYER 01</span>
+              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan);">2000–2025</span>
+            </div>
+            <h3 style="font-size: 1.25rem; color: #FFF; font-weight: 700; margin-bottom: 0.5rem;">NASA Earth Science</h3>
+            <ul style="list-style: none; font-size: 0.88rem; color: #CBD5E1; line-height: 1.6;">
+              <li>• <strong>MERRA-2</strong>: 2m air temperature & radiation reanalysis.</li>
+              <li>• <strong>CERES SYN1deg</strong>: Daily satellite surface irradiance.</li>
+              <li>• <strong>64 NOAA Stations</strong>: Ground empirical cross-check.</li>
+            </ul>
+          </div>
+
+          <!-- Pillar 2 -->
+          <div class="glass-card" style="border-top: 4px solid var(--gold);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span class="tag tag-gold">LAYER 02</span>
+              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold);">OFFICIAL 2024</span>
+            </div>
+            <h3 style="font-size: 1.25rem; color: #FFF; font-weight: 700; margin-bottom: 0.5rem;">MITECO Regulation</h3>
+            <ul style="list-style: none; font-size: 0.88rem; color: #CBD5E1; line-height: 1.6;">
+              <li>• <strong>Sensitivity Zoning</strong>: Natura 2000 & bird corridors.</li>
+              <li>• <strong>Permitting Filter</strong>: Early exclusion of red flags.</li>
+              <li>• <strong>Legal Certainty</strong>: Protects pre-development capital.</li>
+            </ul>
+          </div>
+
+          <!-- Pillar 3 -->
+          <div class="glass-card" style="border-top: 4px solid var(--green);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span class="tag tag-green">LAYER 03</span>
+              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--green);">OPERATING ASSETS</span>
+            </div>
+            <h3 style="font-size: 1.25rem; color: #FFF; font-weight: 700; margin-bottom: 0.5rem;">~2,700 Solar Farms</h3>
+            <ul style="list-style: none; font-size: 0.88rem; color: #CBD5E1; line-height: 1.6;">
+              <li>• <strong>~36,000 MW Mapped</strong>: Matched to native grid cells.</li>
+              <li>• <strong>Portfolio Audit</strong>: Real track record benchmark.</li>
+              <li>• <strong>Global Energy Monitor</strong>: Full national registry.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.75rem; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--border-accent); border-radius: 10px; padding: 1rem 1.5rem; text-align: center;">
+          <span style="font-size: 1.05rem; color: #F1F5F9;">
+            <strong>The Core Deliverable:</strong> A bankable pre-construction audit: <em>Build here or not? And how will the site change over 30 years?</em>
+          </span>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>THE SOLUTION (0:55–1:20)</span>
+          <span class="footer-highlight">Synthesizing space observation, environmental law, and grid infrastructure</span>
+        </div>
+        <div>
+          <span>03 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 4: THE NATIONAL SOLAR AUDIT (App Screenshot)
+         ========================================== -->
+    <div class="slide" id="slide-4" data-title="National Audit: Solar Map" data-timing="1:20 - 1:50">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> NATIONAL AUDIT</span>
+        </div>
+        <div class="header-context">
+          <span>246 CELLS (~50 KM)</span>
+          <span class="header-pill">GREEN VS RED CELLS</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="align-items: center; gap: 2.5rem;">
+          <!-- Large App Screenshot -->
+          <div class="glass-card" style="padding: 0.6rem; background: rgba(6, 11, 20, 0.95); border: 1px solid var(--border-accent);">
+            <div style="border-radius: 8px; overflow: hidden;">
+              <img src="assets/app_screenshot.png" alt="AETHRA Solar Platform Interface" style="width: 100%; height: 420px; object-fit: cover; display: block;">
+            </div>
+          </div>
+
+          <!-- Big Metric Callouts -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div>
+              <h2 style="font-family: var(--font-display); font-size: 2.1rem; line-height: 1.2; color: #FFF; margin-bottom: 0.5rem;">
+                Where Spain Got It Right, and Where <span class="title-gradient-gold">Blind Risk Was Taken</span>
+              </h2>
+              <p style="font-size: 0.95rem; color: var(--text-muted);">
+                246 cells mapped. Green = High sun & zero environmental conflict. Red = Sensitive conservation land or sub-optimal resource.
+              </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+              <div class="glass-card" style="border-left: 4px solid var(--green); padding: 1.25rem;">
+                <div class="metric-val green">47.6%</div>
+                <div class="metric-label" style="color: #34D399; margin-bottom: 0.35rem;">OF MW IN GREEN CELLS</div>
+                <p style="font-size: 0.85rem; color: #CBD5E1;">
+                  <strong>46 optimal zones</strong>: The smart segment of the sector concentrated half of Spain's capacity here.
+                </p>
+              </div>
+
+              <div class="glass-card" style="border-left: 4px solid var(--red); padding: 1.25rem;">
+                <div class="metric-val red">29.0%</div>
+                <div class="metric-label" style="color: #F87171; margin-bottom: 0.35rem;">OF MW IN RED CELLS</div>
+                <p style="font-size: 0.85rem; color: #CBD5E1;">
+                  Nearly one-third of operational capacity was constructed in red cells facing high ecological sensitivity.
+                </p>
+              </div>
+            </div>
+
+            <div class="glass-card glass-card-accent" style="padding: 1rem 1.25rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--cyan); font-weight: 700;">PRACTICAL VALUE:</span>
+              <span style="font-size: 0.85rem; color: #E2E8F0; margin-left: 0.5rem;">
+                Originate in green cells (South, Guadalquivir, La Mancha); drop red cells before spending pre-development capital.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>NATIONAL AUDIT (1:20–1:50)</span>
+          <span class="footer-highlight">Live at https://nasa-project-spain.vercel.app/</span>
+        </div>
+        <div>
+          <span>04 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 5: GRANULAR EVIDENCE (Antonio's Land)
+         ========================================== -->
+    <div class="slide" id="slide-5" data-title="Granular Evidence: Seville" data-timing="1:50 - 2:20">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> GRANULAR EVIDENCE</span>
+        </div>
+        <div class="header-context">
+          <span>CAMPIÑA DE SEVILLA (ANTONIO'S LAND)</span>
+          <span class="header-pill">EMPIRICAL PROOF 2000–2025</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div style="margin-bottom: 1.25rem;">
+          <h2 class="slide-title">
+            The Ground Truth: <span class="title-gradient-cyan">Stable Sun</span>, <span class="title-gradient-gold">Rising Heat</span>
+          </h2>
+          <p class="slide-subtitle" style="margin-bottom: 0;">
+            Antonio's land in Seville isolates the scientific reality: the solar resource is rock-solid (0/195 cells declining), but summer heat rises +0.67 °C/decade.
+          </p>
+        </div>
+
+        <div class="grid-2" style="gap: 2rem; align-items: stretch;">
+          
+          <!-- Chart 1: NASA MERRA-2 -->
+          <div class="glass-card" style="border-top: 4px solid var(--cyan); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span class="tag tag-cyan">NASA MERRA-2 REANALYSIS</span>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan); font-weight: 700;">+0.60 °C / DECADE</span>
+              </div>
+              <h3 style="font-size: 1.15rem; color: #FFF; font-weight: 700; margin-bottom: 0.25rem;">
+                Near-Surface Air Temperature (2000–2025)
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                26 complete years. Theil–Sen slope: +0.60 °C/decade (95% CI 0.31–0.87, p &lt; 0.001).
+              </p>
+            </div>
+
+            <!-- Big Prominent Chart -->
+            <div style="background: #FFFFFF; border-radius: 8px; padding: 0.75rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 0.75rem;">
+              <img src="assets/t2m.svg" alt="NASA MERRA-2 Time Series Chart" style="width: 100%; height: 230px; object-fit: contain; display: block;">
+            </div>
+
+            <div style="background: rgba(0, 242, 254, 0.08); border-radius: 6px; padding: 0.5rem 0.75rem; border: 1px solid var(--border-accent); font-family: var(--font-mono); font-size: 0.72rem; color: #E2E8F0;">
+              Summer heat warms by <strong>+0.67 °C/decade</strong> in 120/195 cells → ~-0.27% decade loss from module overheating.
+            </div>
+          </div>
+
+          <!-- Chart 2: NOAA Ground Stations -->
+          <div class="glass-card" style="border-top: 4px solid var(--gold); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span class="tag tag-gold">NOAA GHCN-DAILY VALIDATION</span>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold); font-weight: 700;">64 / 64 AGREE</span>
+              </div>
+              <h3 style="font-size: 1.15rem; color: #FFF; font-weight: 700; margin-bottom: 0.25rem;">
+                Station vs. Reanalysis Cell Agreement
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                64 long-record NOAA ground stations compared directly against enclosing satellite cells.
+              </p>
+            </div>
+
+            <!-- Big Prominent Chart -->
+            <div style="background: #FFFFFF; border-radius: 8px; padding: 0.75rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 0.75rem;">
+              <img src="assets/slopes.svg" alt="NOAA Ground Station Slopes Scatter Plot" style="width: 100%; height: 230px; object-fit: contain; display: block;">
+            </div>
+
+            <div style="background: rgba(255, 183, 3, 0.08); border-radius: 6px; padding: 0.5rem 0.75rem; border: 1px solid var(--border-gold); font-family: var(--font-mono); font-size: 0.72rem; color: #E2E8F0;">
+              <strong>100% of NOAA stations</strong> show positive warming trends (57 significant). 53 match within ±0.2 °C/decade.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>GRANULAR EVIDENCE (1:50–2:20)</span>
+          <span class="footer-highlight">Theil-Sen slope estimator with Mann-Kendall significance</span>
+        </div>
+        <div>
+          <span>05 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 6: AUDITABLE TRUST (EvidenceCard & TARO)
+         ========================================== -->
+    <div class="slide" id="slide-6" data-title="Auditable Trust: TARO AI" data-timing="2:20 - 2:40">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> DEFENSIVE RIGOR</span>
+        </div>
+        <div class="header-context">
+          <span>EVIDENCECARD STANDARD & TARO AGENT</span>
+          <span class="header-pill">ZERO BLACK BOXES</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="align-items: center; gap: 2.5rem;">
+          <!-- EvidenceCard Standard -->
+          <div>
+            <h2 style="font-family: var(--font-display); font-size: 2.2rem; color: #FFF; line-height: 1.2; margin-bottom: 0.5rem;">
+              Every Number Backed by an <span class="title-gradient-cyan">Audit Receipt</span>
+            </h2>
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+              No black-box extrapolations. Every result adheres to NASA's Earth system evaluation contract:
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div class="glass-card" style="padding: 0.75rem 1rem;">
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan); font-weight: 700;">WHAT & WHERE:</span>
+                <span style="font-size: 0.85rem; color: #E2E8F0; margin-left: 0.5rem;">Exact physical variable, 2000–2025 window, native 0.5° × 0.625° grid.</span>
+              </div>
+              <div class="glass-card" style="padding: 0.75rem 1rem;">
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold); font-weight: 700;">HOW MUCH & EVIDENCE:</span>
+                <span style="font-size: 0.85rem; color: #E2E8F0; margin-left: 0.5rem;">Theil-Sen slope, 95% confidence intervals, Mann-Kendall test.</span>
+              </div>
+              <div class="glass-card" style="padding: 0.75rem 1rem; border-left: 3px solid var(--red);">
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: #F87171; font-weight: 700;">WHAT THIS DOES NOT PROVE:</span>
+                <span style="font-size: 0.85rem; color: #E2E8F0; margin-left: 0.5rem;">Satellite reanalysis, not metered generation; zero invented causality.</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1rem; font-family: var(--font-display); font-size: 1.05rem; color: #F8FAFC;">
+              <em>"We do not tell you what you want to hear. We show you what NASA's data support."</em>
+            </div>
+          </div>
+
+          <!-- TARO AI Agent -->
+          <div class="glass-card glass-card-accent" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.75rem;">
+            <img src="assets/taro_explaining.png" alt="TARO 3D Assistant" style="width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,242,254,0.3)); margin-bottom: 0.75rem;">
+
+            <div style="margin-bottom: 0.25rem;">
+              <span class="tag tag-cyan">AUTONOMOUS SCIENCE AGENT</span>
+            </div>
+            <h3 style="font-family: var(--font-display); font-size: 1.5rem; color: #FFF; margin-bottom: 0.5rem;">
+              TARO
+            </h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem; max-width: 340px;">
+              Audits user questions, quotes NASA dataset DOIs, and enforces statistical boundaries against hallucinations.
+            </p>
+
+            <div style="background: rgba(7, 11, 20, 0.85); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.75rem; width: 100%; text-align: left; font-size: 0.75rem; font-family: var(--font-mono);">
+              <div style="color: var(--cyan); margin-bottom: 0.2rem;">&gt; "Summer heat trend for this cell?"</div>
+              <div style="color: #CBD5E1;">TARO: +0.67 °C/decade (NASA MERRA-2 M2TMNXSLV 5.12.4, p &lt; 0.001). Notice: Avoid linear extrapolation into 2050.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>AUDITABLE TRUST (2:20–2:40)</span>
+          <span class="footer-highlight">Clean-slate reproducible Python pipeline</span>
+        </div>
+        <div>
+          <span>06 / 07</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 7: BANKABLE VALUE & CALL TO ACTION
+         ========================================== -->
+    <div class="slide" id="slide-7" data-title="Bankable Value & CTA" data-timing="2:40 - 3:00">
+      <div class="slide-header">
+        <div class="brand-group">
+          <img src="assets/logo_transparent.png" alt="AETHRA Logo" class="brand-logo-small">
+          <span class="brand-badge"><span class="brand-badge-dot"></span> PILOT ONBOARDING</span>
+        </div>
+        <div class="header-context">
+          <span>NASA SPACE APPS MÁLAGA 2026</span>
+          <span class="header-pill">LET'S CONNECT</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="align-items: center; gap: 3rem;">
+          <div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <span class="tag tag-gold">THE CONCLUSION</span>
+              <span class="tag tag-green">LIVE APPLICATION</span>
+            </div>
+
+            <h2 style="font-family: var(--font-display); font-size: 2.3rem; color: #FFF; line-height: 1.2; margin-bottom: 1rem;">
+              "Do not build for today's climate: <span class="title-gradient-cyan">build for the next 30 years</span>."
+            </h2>
+
+            <div class="story-hook-box" style="margin-top: 0; margin-bottom: 1.25rem; border-left-color: var(--cyan); padding: 1rem 1.25rem;">
+              <p class="story-hook-quote" style="font-size: 1.05rem;">
+                "My grandfather Antonio was not unlucky. He was missing one piece of evidence: how the ground beneath his feet was going to change. This time, we have it."
+              </p>
+            </div>
+
+            <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem;">
+              We are onboarding solar developers, renewable consultancies, and infrastructure funds to pilot AETHRA across active pipeline portfolios this week.
+            </p>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="tag tag-green">DEPLOYED ON VERCEL</span>
+              <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--cyan); font-weight: 700;">nasa-project-spain.vercel.app</span>
+            </div>
+          </div>
+
+          <!-- QR Card -->
+          <div class="glass-card glass-card-accent" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2rem;">
+            <div style="background: rgba(13, 21, 39, 0.9); padding: 0.75rem; border-radius: 14px; border: 1px solid var(--border-accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+              <img src="assets/qr_code.svg" alt="Scan QR for Live App" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+
+            <span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--cyan); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.2rem;">
+              SCAN TO LAUNCH LIVE APP
+            </span>
+            <span style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+              https://nasa-project-spain.vercel.app/
+            </span>
+
+            <div style="display: flex; gap: 0.75rem; width: 100%;">
+              <a href="https://nasa-project-spain.vercel.app/" target="_blank" style="flex: 1; text-decoration: none; background: rgba(0, 242, 254, 0.15); border: 1px solid var(--border-accent); color: var(--cyan); padding: 0.55rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; font-family: var(--font-mono);">
+                Launch App
+              </a>
+              <button onclick="window.print()" style="flex: 1; background: rgba(255, 183, 3, 0.15); border: 1px solid var(--border-gold); color: var(--gold); padding: 0.55rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; font-family: var(--font-mono); cursor: pointer;">
+                Export PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="footer-left">
+          <span>CLOSING (2:40–3:00)</span>
+          <span class="footer-highlight">AETHRA · Be An Earth System Trend Detective! · NASA Space Apps Málaga 2026</span>
+        </div>
+        <div>
+          <span>07 / 07</span>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- /deck-container -->
+
+  <!-- Floating Controls -->
+  <div class="controls-panel">
+    <button class="ctrl-btn" onclick="prevSlide()" title="Previous Slide (Left Arrow)">
+      Prev
+    </button>
+    <div class="slide-indicator" id="slideIndicator" onclick="toggleGridOverview()" style="cursor: pointer;" title="View all slides (G key)">1 / 7</div>
+    <button class="ctrl-btn" onclick="nextSlide()" title="Next Slide (Right Arrow or Space)">
+      Next
+    </button>
+    <div style="width: 1px; height: 16px; background: var(--border-subtle); margin: 0 0.25rem;"></div>
+    <button class="ctrl-btn" id="gridToggleBtn" onclick="toggleGridOverview()" title="Slide Grid Overview (G key)">
+      Grid
+    </button>
+    <button class="ctrl-btn" id="notesToggleBtn" onclick="toggleNotes()" title="Speaker Script (N key)">
+      Script
+    </button>
+    <button class="ctrl-btn" onclick="toggleFullscreen()" title="Fullscreen (F key)">
+      Full
+    </button>
+    <button class="ctrl-btn" onclick="printDeck()" title="Export PDF (P key)">
+      PDF
+    </button>
+  </div>
+
+  <!-- Speaker Notes Modal -->
+  <div class="speaker-notes-modal" id="speakerNotes">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle);">
+      <span style="font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--cyan);">Speaker Pitch Script</span>
+      <span style="font-family: var(--font-mono); font-size: 0.72rem; background: rgba(255, 183, 3, 0.15); color: var(--gold); padding: 0.15rem 0.4rem; border-radius: 4px;" id="notesTiming">0:00 - 0:25</span>
+    </div>
+    <div style="font-size: 0.82rem; line-height: 1.5; color: #E2E8F0;" id="notesBody"></div>
+  </div>
+
+  <!-- Grid Overview Modal -->
+  <div class="grid-overview-modal" id="gridOverviewModal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+      <div>
+        <h2 style="font-family: var(--font-display); font-size: 1.4rem; color: #FFF;">Slide Deck Overview (7 Slides)</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Select any slide to jump directly (or press Esc to close)</p>
+      </div>
+      <button class="ctrl-btn" onclick="toggleGridOverview()" style="background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem;">
+        Close
+      </button>
+    </div>
+    <div class="grid-cards" id="gridCardsContainer"></div>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    const speakerNotesData = [
+      {
+        timing: "0:00 – 0:25 (The Hook)",
+        text: `<strong>THE HOOK: My grandfather Antonio (0:00–0:25)</strong><br><br>
+        "My grandfather Antonio bought his dream home in Seville. Bright, beautiful. <em>(pause)</em> Ten years later, cracks appeared. A corner sank. The doors jammed. <em>(pause)</em> Nobody had checked the ground: it was shifting clay. And the house did not survive."`,
+        tip: "Direct eye contact. Establish the physical analogy of the shifting foundation."
+      },
+      {
+        timing: "0:25 – 0:55 (The Blind Spot)",
+        text: `<strong>THE PIVOT & PROBLEM (0:25–0:55)</strong><br><br>
+        "Last year, an energy developer offered to lease his land for a solar farm: a 30-year contract. Do you know what Antonio asked? <em>(pause)</em> 'Will this also crack?' <em>(pause)</em> He was right. Solar plants are chosen looking only at how the site looks today. But over 30 years, summers warm (+0.67 °C/decade), panels overheat (-0.4%/°C derating), and sensitive environmental zones block permits. NASA measured Spain for 25 years, but nobody synthesizes it into a decision."`,
+        tip: "Anchor the 30-year lease duration versus today's static snapshot."
+      },
+      {
+        timing: "0:55 – 1:20 (The Solution)",
+        text: `<strong>THE SOLUTION: AETHRA (0:55–1:20)</strong><br><br>
+        "That is why we built AETHRA: the ground due diligence for utility solar. It cross-analyzes 25 years of NASA solar and temperature data with the Government's official MITECO environmental zoning and nearly 2,700 operating plants. It answers Antonio's question before signing: Build here or not? And how will the site change over 30 years?"`,
+        tip: "Authoritative introduction of the product name and its 3 integrated data layers."
+      },
+      {
+        timing: "1:20 – 1:50 (National Audit)",
+        text: `<strong>PLATFORM DEMO & EMPIRICAL AUDIT (1:20–1:50)</strong><br><br>
+        "On our live map, 246 cells across Spain. Green: optimal sun, zero environmental conflict. Red: sensitive or low-yield land.<br><br>
+        The striking discovery: nearly half of Spain's operational solar fleet (47.6%) sits in green cells—those who got it right, deployed here. But nearly one-third (29%) was built in red cells facing latent risk."`,
+        tip: "Point out the 47.6% green versus 29% red metric cards."
+      },
+      {
+        timing: "1:50 – 2:20 (Granular Evidence)",
+        text: `<strong>GRANULAR AUDIT: Antonio's Land in Seville (1:50–2:20)</strong><br><br>
+        "Clicking Antonio's land reveals the truth. Solar irradiance is solid: 0 of 195 cells declining. But summer heat is rising by +0.67 °C per decade—a statistically proven shift (p < 0.001), confirmed by 64 out of 64 NOAA weather stations. That is the invisible crack: ~-0.27% production loss per decade."`,
+        tip: "Direct attention to the two large scientific charts on screen."
+      },
+      {
+        timing: "2:20 – 2:40 (Auditable Trust)",
+        text: `<strong>EVIDENCECARD & TARO AI (2:20–2:40)</strong><br><br>
+        "Every single number carries an audit receipt: source, confidence interval, and what it does NOT prove. TARO, our AI science agent, audits developer questions and quotes NASA DOIs without hallucinating. We don't tell you what you want to hear; we show what NASA's data support."`,
+        tip: "Highlight bankability: defensible due diligence for investment committees."
+      },
+      {
+        timing: "2:40 – 3:00 (Closing & CTA)",
+        text: `<strong>CLOSING & CALL TO ACTION (2:40–3:00)</strong><br><br>
+        "My grandfather was not unlucky: he was missing one piece of evidence. This time, we have it. <em>(pause)</em><br><br>
+        Do not build for today's climate: build for the next 30 years. We are onboarding solar developers and funds to pilot AETHRA this week. Scan the QR code, explore the live app, and let's talk."`,
+        tip: "Conclude with conviction. The QR code links directly to https://nasa-project-spain.vercel.app/."
+      }
+    ];
+
+    function updateSlide() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+
+      document.getElementById('slideIndicator').innerText = `${currentSlide + 1} / ${totalSlides}`;
+      const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+      const notes = speakerNotesData[currentSlide];
+      document.getElementById('notesTiming').innerText = notes.timing;
+      document.getElementById('notesBody').innerHTML = `
+        <p>${notes.text}</p>
+        <div style="margin-top: 0.6rem; padding: 0.5rem; background: rgba(0,242,254,0.08); border-left: 2px solid var(--cyan); font-size: 0.75rem; color: #CBD5E1;">
+          <strong>Tip:</strong> ${notes.tip}
+        </div>
+      `;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function toggleNotes() {
+      const modal = document.getElementById('speakerNotes');
+      const btn = document.getElementById('notesToggleBtn');
+      modal.classList.toggle('visible');
+      btn.classList.toggle('active');
+    }
+
+    function toggleGridOverview() {
+      const modal = document.getElementById('gridOverviewModal');
+      const btn = document.getElementById('gridToggleBtn');
+      const isVisible = modal.classList.toggle('visible');
+      btn.classList.toggle('active', isVisible);
+
+      if (isVisible) {
+        renderGridCards();
+      }
+    }
+
+    function renderGridCards() {
+      const container = document.getElementById('gridCardsContainer');
+      container.innerHTML = '';
+      slides.forEach((slide, idx) => {
+        const title = slide.getAttribute('data-title') || `Slide ${idx + 1}`;
+        const timing = slide.getAttribute('data-timing') || '';
+        const card = document.createElement('div');
+        card.className = `grid-card-item ${idx === currentSlide ? 'active' : ''}`;
+        card.onclick = () => {
+          currentSlide = idx;
+          updateSlide();
+          toggleGridOverview();
+        };
+        card.innerHTML = `
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--cyan); font-weight: 700;">SLIDE 0${idx + 1}</div>
+            <div style="font-family: var(--font-display); font-size: 1rem; color: #FFF; font-weight: 600; line-height: 1.25; margin-top: 0.4rem;">${title}</div>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim);">${timing}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.warn("Fullscreen request error:", err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function printDeck() {
+      window.print();
+    }
+
+    // Touch swipe support
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchEndX - touchStartX;
+      if (Math.abs(diff) > 50) {
+        if (diff < 0) nextSlide();
+        else prevSlide();
+      }
+    }, false);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const gridModal = document.getElementById('gridOverviewModal');
+        const notesModal = document.getElementById('speakerNotes');
+        if (gridModal.classList.contains('visible')) toggleGridOverview();
+        if (notesModal.classList.contains('visible')) toggleNotes();
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'n' || e.key === 'N') {
+        toggleNotes();
+      } else if (e.key === 'g' || e.key === 'G') {
+        toggleGridOverview();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'p' || e.key === 'P') {
+        printDeck();
+      } else if (e.key >= '1' && e.key <= '7') {
+        currentSlide = parseInt(e.key) - 1;
+        updateSlide();
+      }
+    });
+
+    // Initialize
+    updateSlide();
+  </script>
+</body>
+</html>
