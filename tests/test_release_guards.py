@@ -45,9 +45,15 @@ def test_d53_judge_build_never_promotes_unadjusted_regional_support():
     assert m["temperature"]["supported_after_bh"] == m["temperature"]["n_scopes"]
 
 
-def test_taro_quotes_cards_not_regional_scope_statistics():
-    for f in (WEB / "lib/agent").rglob("*.ts"):
-        assert not re.search(r"\.scopes\b|scopes\[", f.read_text(encoding="utf-8")), f
+def test_taro_regional_scope_statistics_stay_labelled():
+    # D86 (modifies D53(5)): TARO may quote precomputed regional bundle statistics, but rain and
+    # modelled-runoff regional results are multiplicity-unadjusted and must reach the reader labelled.
+    ctx = (WEB / "lib/agent/visualization-context.ts").read_text(encoding="utf-8")
+    for field in ("precipitation", "water_rivers"):
+        entry = re.search(r'\{ field: "' + field + r'"[^\n]*\}', ctx)
+        assert entry and 'note: "EXPLORATORY' in entry.group(0), field
+    assert "${m.exploratoryNote ? ` [${m.exploratoryNote}]` : \"\"}" in ctx  # the note is printed
+    assert "outcome = ${m.outcome})" in ctx
 
 
 def test_exploratory_relationship_tool_is_closed_in_judge_mode():
@@ -98,7 +104,7 @@ def test_competition_cut_d76():
     order = [panel.index(k) for k in ("m.cards.sClaim", "m.cards.sVerdict", "m.cards.sSize", "m.cards.sLimits", "m.cards.sMethod", "m.cards.sData")]
     assert order == sorted(order), "evidence receipt sections out of order"
     assert "m.cards.verdictMeaning[card.outcome]" in panel  # keyed on the pipeline outcome, not on values
-    assert "m.findings.boundaryVerdict" in src("components/explore/FindingsBriefPanel.tsx")
+    # D87: the 2040 "Claim Test boundary" block left the findings panel with the PV pivot (2043334).
 
 
 def test_external_check_copies_the_noaa_artifact():

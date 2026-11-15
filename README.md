@@ -59,7 +59,8 @@ advice. Details: [docs/EVIDENCE_SCREENING_PLAN.md](docs/EVIDENCE_SCREENING_PLAN.
 [docs/PV_SEVILLA_CASE.md](docs/PV_SEVILLA_CASE.md), [docs/PV_HISTORY.md](docs/PV_HISTORY.md).
 
 **TARO** is the in-app research companion. It is rule-based (no LLM in the judge build) and answers
-from published EvidenceCards ([docs/TARO_KNOWLEDGE_ARCHITECTURE.md](docs/TARO_KNOWLEDGE_ARCHITECTURE.md)).
+from published EvidenceCards and precomputed regional statistics; regional rain and runoff figures are
+labelled EXPLORATORY (D86, [docs/TARO_KNOWLEDGE_ARCHITECTURE.md](docs/TARO_KNOWLEDGE_ARCHITECTURE.md)).
 
 ## Data
 

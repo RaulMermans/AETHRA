@@ -1096,7 +1096,7 @@ function formatMetricSummaryLine(m: MetricTrendDigest, lang: AgentLanguage): str
       ? ` [serie ${m.series.firstYear}: ${m.series.firstValue} ${m.units} → ${m.series.lastYear}: ${m.series.lastValue} ${m.units}; mín ${m.series.minYear} (${m.series.minValue} ${m.units}), máx ${m.series.maxYear} (${m.series.maxValue} ${m.units})${m.series.queriedYear !== undefined ? `, año ${m.series.queriedYear}: ${m.series.queriedValue} ${m.units}` : ""}]`
       : ` [series ${m.series.firstYear}: ${m.series.firstValue} ${m.units} → ${m.series.lastYear}: ${m.series.lastValue} ${m.units}; min ${m.series.minYear} (${m.series.minValue} ${m.units}), max ${m.series.maxYear} (${m.series.maxValue} ${m.units})${m.series.queriedYear !== undefined ? `, year ${m.series.queriedYear}: ${m.series.queriedValue} ${m.units}` : ""}]`
     : "";
-  return `${m.label} (${m.dataset}, ${m.period}): ${signed(m.slopePerDecade)} ${m.trendUnits} (${ciLabel} ${signed(m.ci95[0])}..${signed(m.ci95[1])}; p = ${m.pValue}; n = ${m.n}; outcome = ${m.outcome})${seriesPart}`;
+  return `${m.label} (${m.dataset}, ${m.period}): ${signed(m.slopePerDecade)} ${m.trendUnits} (${ciLabel} ${signed(m.ci95[0])}..${signed(m.ci95[1])}; p = ${m.pValue}; n = ${m.n}; outcome = ${m.outcome})${m.exploratoryNote ? ` [${m.exploratoryNote}]` : ""}${seriesPart}`;
 }
 
 export function buildVisualizationContext(opts: {
