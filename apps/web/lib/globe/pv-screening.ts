@@ -1,3 +1,5 @@
+import { fetchPvCase, type PvCaseFile } from "./pv-case";
+
 /**
  * Evidence-based solar PV screening (contract: research/2026-11-15_pv-screening-contrato.md, v1).
  * The browser only renders what the Python pipeline wrote (render, don't compute): verdicts,
@@ -135,6 +137,8 @@ export interface SolarPlant {
   lon: number;
   accuracy?: string;
   miteco_class?: number | null;
+  /** GEM reported start year of the phase (D85); null/absent when the register gives none. Not a commissioning census. */
+  start_year?: number | null;
 }
 
 export interface SolarPlantsFile {
@@ -257,6 +261,7 @@ export interface PvScreeningData {
   dust: GiovanniDustFile | null;
   history: PvHistoryFile | null;
   capacity: SolarCapacityTrendFile | null;
+  sevillaCase: PvCaseFile | null;
 }
 
 export const PV_SCREENING_URL = "/data/pv-screening.json";
@@ -353,15 +358,16 @@ function isSolarCapacityTrendFile(x: unknown): x is SolarCapacityTrendFile {
 }
 
 export async function loadPvScreeningData(): Promise<PvScreeningData> {
-  const [screening, plants, miteco, dust, history, capacity] = await Promise.all([
+  const [screening, plants, miteco, dust, history, capacity, sevillaCase] = await Promise.all([
     fetchJsonOrNull<PvScreeningFile>(PV_SCREENING_URL, (x) => isObj(x) && Array.isArray(x.cells) && isObj(x.summary)),
     fetchJsonOrNull<SolarPlantsFile>(SOLAR_PLANTS_URL, (x) => isObj(x) && Array.isArray(x.plants)),
     fetchJsonOrNull<MitecoSensitivityFile>(MITECO_SENSITIVITY_URL, (x) => isObj(x) && Array.isArray(x.images)),
     fetchDust(),
     fetchHistory(),
     fetchJsonOrNull<SolarCapacityTrendFile>(SOLAR_CAPACITY_TREND_URL, isSolarCapacityTrendFile),
+    fetchPvCase(),
   ]);
-  return { screening, plants, miteco, dust, history, capacity };
+  return { screening, plants, miteco, dust, history, capacity, sevillaCase };
 }
 
 /** MITECO PNGs are referenced by file name next to the JSON in /data. */

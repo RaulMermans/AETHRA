@@ -610,7 +610,8 @@ export const LAST_COMPLETE_YEAR = 2025;
 
 /**
  * How a dimension is drawn on the globe, chosen to match its native spatial support (D30, D73):
- * - "grid-cells": gridded product, one flat colour per native cell (no smoothing finer than the grid).
+ * - "grid-cells": gridded product. Drawn as a display-only bilinear gradient between native cell
+ *   centres (D84, supersedes the flat-cell look of D73); clicks, outlines and values stay per native cell.
  * - "basin-boxes": eight basin bounding boxes, one flat colour each (a choropleth, not a field).
  * - "station-symbols": point observations only; nothing is painted between gauges.
  */
@@ -966,6 +967,79 @@ function nativeCellIndex(nLat: number, nLon: number, lats: number[], lons: numbe
   return r * nLon + c;
 }
 
+/**
+ * Display-only bilinear blend between the four native cell centres around (lat, lon) (D84).
+ * Returns NaN when the native cell under the pixel has no value, so the gradient never paints
+ * colour into a cell without data. Neighbours without data are dropped and the weights renormalised.
+ * This only shapes the picture: hover, selection and every number stay on the native cell.
+ */
+function bilinearDisplayValue(
+  grid: Float32Array,
+  nLat: number,
+  nLon: number,
+  lats: number[],
+  lons: number[],
+  lat: number,
+  lon: number,
+): number {
+  const own = nativeCellIndex(nLat, nLon, lats, lons, lat, lon);
+  if (own < 0 || !Number.isFinite(grid[own])) return Number.NaN;
+  const latStep = lats.length > 1 ? lats[1] - lats[0] : 0.5;
+  const lonStep = lons.length > 1 ? lons[1] - lons[0] : 0.5;
+  const fr = (lat - lats[0]) / latStep;
+  const fc = (lon - lons[0]) / lonStep;
+  const r0 = Math.floor(fr);
+  const c0 = Math.floor(fc);
+  const tr = fr - r0;
+  const tc = fc - c0;
+  let num = 0;
+  let den = 0;
+  for (let dr = 0; dr <= 1; dr++) {
+    const r = Math.min(nLat - 1, Math.max(0, r0 + dr));
+    const wr = dr === 0 ? 1 - tr : tr;
+    for (let dc = 0; dc <= 1; dc++) {
+      const c = Math.min(nLon - 1, Math.max(0, c0 + dc));
+      const w = wr * (dc === 0 ? 1 - tc : tc);
+      const v = grid[r * nLon + c];
+      if (w <= 0 || !Number.isFinite(v)) continue;
+      num += v * w;
+      den += w;
+    }
+  }
+  return den > 0 ? num / den : grid[own];
+}
+
+/** Outline of one native grid cell, for showing which cell a click selected. */
+export type NativeCellOutline = {
+  /** [west, south, east, north] in degrees. */
+  bounds: readonly [number, number, number, number];
+  /** Native cell size, e.g. "0.5° × 0.625°". */
+  resolution: string;
+  dataset: string;
+};
+
+/**
+ * The native cell under (lat, lon) for gridded dimensions (temperature: MERRA-2, precipitation and
+ * dry/wet: GPM IMERG). Null for station and basin dimensions, outside the grid, or on cells the
+ * pipeline marks as having no data.
+ */
+export function nativeCellAt(bundle: ClimateBundle, dimension: DimensionId, lat: number, lon: number): NativeCellOutline | null {
+  if (mapEncodingFor(dimension) !== "grid-cells") return null;
+  const g = dimension === "temperature" ? bundle.merra2 : bundle.gpm;
+  const dataset = dimension === "temperature" ? "NASA MERRA-2" : "NASA GPM IMERG V07";
+  const idx = nativeCellIndex(g.n_lat, g.n_lon, g.lats, g.lons, lat, lon);
+  if (idx < 0 || !g.valid_indices.includes(idx)) return null;
+  const latStep = g.lats.length > 1 ? Math.abs(g.lats[1] - g.lats[0]) : 0.5;
+  const lonStep = g.lons.length > 1 ? Math.abs(g.lons[1] - g.lons[0]) : 0.5;
+  const cLat = g.lats[Math.floor(idx / g.n_lon)];
+  const cLon = g.lons[idx % g.n_lon];
+  return {
+    bounds: [cLon - lonStep / 2, cLat - latStep / 2, cLon + lonStep / 2, cLat + latStep / 2],
+    resolution: `${Number(latStep.toFixed(3))}° × ${Number(lonStep.toFixed(3))}°`,
+    dataset,
+  };
+}
+
 /** Map-ink colour for stippling and hatching: dark enough on every palette, never mistaken for data. */
 const MAP_INK: RGB = [11, 20, 36];
 /** Neutral fill for "no trend computed" so it never reads as a zero slope. */
@@ -977,7 +1051,8 @@ const heatmapCache = new Map<string, string>();
 
 /**
  * Paints the dimension's raster layer, clipped to Spain (and to the admin scope when requested).
- * Grid dimensions: one flat colour per native cell; in trend mode, cells that are not robust after
+ * Grid dimensions: display-only bilinear gradient between native cell centres (D84; values and
+ * selection stay per native cell, cells without data stay empty); in trend mode, cells that are not robust after
  * FDR carry a dot (stippling, as in IPCC AR6 maps). Basin dimension: one flat colour per basin box;
  * non-robust trends are hatched and basins without a trend are neutral grey. Station dimensions have
  * no raster: returns "" (the stations are drawn as point symbols by the overlay).
@@ -1041,9 +1116,7 @@ export async function renderDimensionHeatmapDataUrl(
       if (lat > 30.0 && lon < -10.0) continue;
 
       if (samples.kind === "grid" && samples.grid && samples.lats && samples.lons && samples.nLat && samples.nLon) {
-        const idx = nativeCellIndex(samples.nLat, samples.nLon, samples.lats, samples.lons, lat, lon);
-        if (idx < 0) continue;
-        const val = samples.grid[idx];
+        const val = bilinearDisplayValue(samples.grid, samples.nLat, samples.nLon, samples.lats, samples.lons, lat, lon);
         if (Number.isFinite(val)) put(px, py, colourOf(val), 190);
       } else if (samples.kind === "basins" && samples.basins && basinOwner) {
         // Boxes overlap; a pixel belongs to the box whose centre is nearest (same rule as before).

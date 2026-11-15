@@ -17,13 +17,13 @@ Everything else is context or off the judge path. Judge build = `NEXT_PUBLIC_ENA
 | Station catalog, Trend panel ("This place") | **SECONDARY** | Drill-down | Network FDR labels |
 | Energy Tech Lab (rankings, suitability, 2030) | **HIDDEN IN JUDGE MODE** | Not a validated result | EXPLORATORY (D44) |
 | Energy infrastructure layer, plant register, illustrative 3D turbine | **HIDDEN IN JUDGE MODE** | Context, not evidence | D49, D54 |
-| TARO assistant (portrait + panel) | **HIDDEN IN JUDGE MODE** | Demo must not depend on it (D76); API kept for tests | Deterministic, LLM off |
+| TARO assistant (portrait + panel) | **ALWAYS VISIBLE** (D81, supersedes D76a) | Shown in every build and state; the demo still must not depend on it | Deterministic, LLM off |
 | Relationship maps (R1–R3) | **HIDDEN IN JUDGE MODE** | New, unreviewed exploratory analyses | R2/R3 0 robust after FDR (D74) |
 | 2032–2040 planning horizon in case chart | **HIDDEN IN JUDGE MODE** | Invites forecast reading | Not a projection |
 | Rain / rain anomaly / runoff "Supported" labels | **BLOCKED** (shown as EXPLORATORY — multiplicity unadjusted) | Do not survive BH across regions | D53 closed |
 | Province statistics | Rebuilt, **SECONDARY** | D64 boundaries now match | Rebuilt 15 Nov (D75) |
 | AETHRA Intelligence / LLM agent, projections, generation models | **DEFERRED** | Out of MVP | D63, ROADMAP P2 |
 
-What a judge does **not** see: rankings, scores, production numbers, 2030/2040 values, TARO, the
+What a judge does **not** see: rankings, scores, production numbers, 2030/2040 values, the
 relationship maps, unadjusted rain/runoff "Supported" badges. Verified by
 `apps/web/e2e/scenarios.spec.ts` (S05) and `tests/test_release_guards.py`.

@@ -32,7 +32,7 @@ it shows `renders/front.png`.
 | `export/taro.glb` | glTF binary, skinned, with the clips below |
 | `export/report.json` | Counts from the export that produced the GLB |
 | `renders/*.png` | EEVEE stills from that same build |
-| `web/` | Standalone Three.js viewer. Not imported by `apps/web` |
+| `web/` | Standalone Three.js viewer. `apps/web` loads its own copy of the GLB (`public/taro/taro.glb`) in `components/explore/TaroModel3D.tsx` (D81) |
 
 Clips: `idle`, `greeting`, `listening`, `thinking`, `explaining`, `discovery`,
 `insufficient`, `error`, `guiding`, plus a `*_reduced` hold for each.

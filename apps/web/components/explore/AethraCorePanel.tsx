@@ -8,6 +8,7 @@ import type { Messages } from "@/lib/i18n/messages";
 import { AethraCoreFace } from "./AethraCoreFace";
 import type { CoreVisualState } from "./AethraCoreMark";
 import { Icon } from "./Icon";
+import { TaroModel3D } from "./TaroModel3D";
 
 type ChatItem = {
   id: string;
@@ -154,6 +155,11 @@ export function AethraCorePanel({
           <Icon name="close" className="size-3.5" />
         </button>
       </div>
+
+      <TaroModel3D
+        state={state}
+        className="mt-2 h-40 shrink-0 overflow-hidden rounded-lg border border-line bg-gradient-to-b from-white/[0.04] to-black/25"
+      />
 
       <div ref={listRef} className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto" role="log" aria-live="polite">
         {items.length === 0 ? (

@@ -1,10 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale";
 import { ExecutiveSummary } from "./ExecutiveSummary";
 import { formatScreeningNumber, screeningCopy, type Bullet } from "@/lib/i18n/screening-copy";
-import type { ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
+import { plantsUpToYear, screeningPlants, type ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
+import { PvCaseStudy, PvCaseTeaser } from "./PvCaseStudy";
+import type { PvCaseFile } from "@/lib/globe/pv-case";
 import { MITECO_FALLBACK_COLORS, VERDICT_COLORS, type GiovanniDustFile, type PvCell, type PvHistoryFile, type PvHistoryYear, type PvScreeningData, type PvVerdict, type SolarPlant } from "@/lib/globe/pv-screening";
 
 // IGN ETRS89 geodetic vertices inside r20c23; geographic references, not PV candidate parcels.
@@ -88,6 +90,8 @@ export function SolarScreeningPanel({
   toggles,
   onToggle,
   selectedCell,
+  plantYear,
+  onPlantYear,
   selectedPlant,
   onClearSelection,
   onSelectFeatured,
@@ -98,6 +102,8 @@ export function SolarScreeningPanel({
   toggles: ScreeningToggles;
   onToggle: (key: keyof ScreeningToggles) => void;
   selectedCell: PvCell | null;
+  plantYear: number | null;
+  onPlantYear: (year: number | null) => void;
   selectedPlant: SolarPlant | null;
   onClearSelection: () => void;
   onSelectFeatured: (cellId: string) => void;
@@ -159,10 +165,11 @@ export function SolarScreeningPanel({
         ) : selectedPlant ? (
           <PlantCard plant={selectedPlant} t={t} mitecoColor={mitecoColor} onBack={onClearSelection} />
         ) : selectedCell && s ? (
-          <CellCard cell={selectedCell} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
+          <CellCard cell={selectedCell} pvCase={data?.sevillaCase ?? null} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
         ) : s ? (
           <div className="space-y-1.5 text-[13px] leading-snug text-ink">
             {data && <ExecutiveSummary data={data} locale={locale} />}
+            {data?.sevillaCase && <PvCaseTeaser locale={locale} onOpen={() => onSelectFeatured(data.sevillaCase?.cell_id ?? "")} />}
             {featuredCase && featuredCell && (
               <div className="mb-3 rounded-lg border border-emerald-400/45 bg-emerald-400/10 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-200">{t.featuredHeading}</p>
@@ -233,6 +240,9 @@ export function SolarScreeningPanel({
             disabled={!data?.plants && !s?.landmarks?.length}
             onChange={() => onToggle("plants")}
           />
+          {toggles.plants && data?.plants && (
+            <PlantChronology data={data} year={plantYear} onYear={onPlantYear} t={t} locale={locale} />
+          )}
         </div>
 
         <ul className="mt-3 space-y-1.5 border-t border-line pt-3 text-xs text-ink" aria-label="Legend">
@@ -255,6 +265,107 @@ export function SolarScreeningPanel({
         </details>
       </div>
     </section>
+  );
+}
+
+const CHRONO_FIRST_YEAR = 2000;
+const CHRONO_LAST_YEAR = 2025; // last complete year; later start years are planned construction dates
+const CHRONO_SPIKE_YEAR = 2017;
+/** Rightmost slider notch, one past the last year: shows all phases, including undated and planned ones. */
+const CHRONO_ALL_NOTCH = CHRONO_LAST_YEAR + 1;
+const CHRONO_STEP_MS = 900;
+
+/**
+ * Year control for the solar plant points (D85): shows registered phases whose GEM start year is
+ * at most the chosen year. Counts are of drawn points only; no growth rate is computed.
+ */
+function PlantChronology({ data, year, onYear, t, locale }: { data: PvScreeningData; year: number | null; onYear: (year: number | null) => void; t: Copy; locale: Language }) {
+  const [playing, setPlaying] = useState(false);
+  const all = useMemo(() => screeningPlants(data), [data]);
+  const undated = useMemo(() => all.filter(({ plant }) => typeof plant.start_year !== "number").length, [all]);
+  const shown = useMemo(() => plantsUpToYear(all, year).length, [all, year]);
+  const spike = data.history?.annual.find((row) => row.year === CHRONO_SPIKE_YEAR)?.total_phases ?? null;
+  // Official national installed PV capacity (Eurostat, rendered as published; MW).
+  const official = data.capacity?.spain ?? null;
+  const officialIdx = year === null || !official ? -1 : official.years.indexOf(year);
+  const officialMw = officialIdx >= 0 ? official?.mw[officialIdx] : undefined;
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = window.setTimeout(() => {
+      if (year !== null && year >= CHRONO_LAST_YEAR) {
+        setPlaying(false);
+        return;
+      }
+      onYear(year === null ? CHRONO_FIRST_YEAR : year + 1);
+    }, year === null ? 0 : CHRONO_STEP_MS);
+    return () => window.clearTimeout(id);
+  }, [playing, year, onYear]);
+
+  return (
+    <div className="mt-1 ml-1.5 rounded-md border border-line bg-white/3 p-2.5" role="group" aria-label={t.chronoHeading}>
+      <p className="text-[11px] font-semibold text-ink">{t.chronoHeading}</p>
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (!playing && year !== null && year >= CHRONO_LAST_YEAR) onYear(CHRONO_FIRST_YEAR);
+            setPlaying((p) => !p);
+          }}
+          aria-label={playing ? t.chronoPause : t.chronoPlay}
+          aria-pressed={playing}
+          className="focus-ring grid size-7 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-100 hover:bg-amber-400/30"
+        >
+          {playing ? (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+          )}
+        </button>
+        <input
+          type="range"
+          min={CHRONO_FIRST_YEAR}
+          max={CHRONO_ALL_NOTCH}
+          step={1}
+          value={year ?? CHRONO_ALL_NOTCH}
+          onChange={(e) => {
+            setPlaying(false);
+            const v = Number(e.target.value);
+            onYear(v > CHRONO_LAST_YEAR ? null : v);
+          }}
+          aria-label={t.chronoSlider}
+          aria-valuetext={year === null ? t.chronoAll : String(year)}
+          className="focus-ring min-w-0 flex-1 accent-amber-300"
+        />
+        <span className="w-10 shrink-0 text-right font-mono text-xs tabular-nums text-ink">{year ?? t.chronoAll}</span>
+        <button
+          type="button"
+          onClick={() => {
+            setPlaying(false);
+            onYear(null);
+          }}
+          aria-pressed={year === null}
+          className={`focus-ring shrink-0 rounded-md px-2 py-1 text-[11px] ${year === null ? "bg-white/12 text-ink" : "text-muted hover:bg-white/6 hover:text-ink"}`}
+        >
+          {t.chronoAll}
+        </button>
+      </div>
+      <p className="mt-2 text-[11px] leading-snug text-muted" role="status" aria-live="polite">
+        {year === null ? t.chronoAllShown(all.length) : t.chronoShown(shown, year)}
+      </p>
+      {year !== null && undated > 0 && <p className="mt-1 text-[10px] leading-snug text-faint">{t.chronoUndated(undated)}</p>}
+      {year !== null && official && (
+        <p className="mt-1.5 rounded-md bg-sky-400/10 px-2 py-1.5 text-[11px] leading-snug text-sky-100">
+          {typeof officialMw === "number"
+            ? t.chronoOfficial(year, Math.round(officialMw).toLocaleString(locale === "es" ? "es" : "en"))
+            : t.chronoOfficialMissing(year, official.latest.year)}
+        </p>
+      )}
+      {year !== null && year >= CHRONO_SPIKE_YEAR && (
+        <p className="mt-1.5 flex gap-1.5 text-[10px] leading-snug text-amber-200"><span aria-hidden>▲</span><span>{t.chronoSpike(spike)}</span></p>
+      )}
+      <p className="mt-1.5 text-[10px] leading-snug text-faint">{t.chronoLimit}</p>
+    </div>
   );
 }
 
@@ -357,6 +468,7 @@ function BackButton({ label, onClick }: { label: string; onClick: () => void }) 
 
 function CellCard({
   cell,
+  pvCase,
   featuredCaseId,
   dust,
   locale,
@@ -367,6 +479,7 @@ function CellCard({
   onBack,
 }: {
   cell: PvCell;
+  pvCase: PvCaseFile | null;
   featuredCaseId?: string;
   dust: GiovanniDustFile | null;
   locale: Language;
@@ -406,6 +519,7 @@ function CellCard({
       {cell.miteco_low_moderate_pct !== null && (
         <p className="mt-3 rounded-md border border-emerald-400/25 bg-emerald-400/5 px-2.5 py-2 text-xs leading-relaxed text-muted">{t.environmentalMeaning}</p>
       )}
+      {pvCase?.cell_id === cell.id && <PvCaseStudy data={pvCase} locale={locale} />}
       {dust?.featured_cell.id === cell.id && <DustContext dust={dust} locale={locale} t={t} />}
       {!dust && cell.id === featuredCaseId && <p className="mt-3 text-[11px] text-amber-200" role="status">{t.dustUnavailable}</p>}
 
