@@ -268,17 +268,16 @@ export function ExploreView() {
         // Check URL query params for initial scope (?scope=age|ccaa|provincia&id=...)
         const scopeParam = params.get("scope") as AdminScopeLevel | null;
         const idParam = params.get("id");
-        if (scopeParam && ["age", "ccaa", "provincia"].includes(scopeParam)) {
+        // Only switch scope when the id exists. An unknown id keeps the national view instead of
+        // silently showing another region's result (no scope substitution, D76).
+        const validCcaa = scopeParam === "ccaa" && idParam !== null && ab.ccaa.some((c) => c.id === idParam);
+        const validProvince = scopeParam === "provincia" && idParam !== null && ab.provinces.some((p) => p.id === idParam);
+        if (scopeParam === "age" || validCcaa || validProvince) {
           setAdminScope((prev) => {
-            const next = { ...prev, level: scopeParam };
-            if (scopeParam === "ccaa" && idParam && ab.ccaa.some((c) => c.id === idParam)) {
-              next.ccaaId = idParam;
-            } else if (scopeParam === "provincia" && idParam && ab.provinces.some((p) => p.id === idParam)) {
-              const prov = ab.provinces.find((p) => p.id === idParam);
-              next.provinceId = idParam;
-              if (prov) next.ccaaId = prov.ccaaId;
-            }
-            return next;
+            if (scopeParam === "age") return { ...prev, level: "age" };
+            if (validCcaa && idParam) return { ...prev, level: "ccaa", ccaaId: idParam };
+            const prov = ab.provinces.find((p) => p.id === idParam);
+            return prov ? { ...prev, level: "provincia", provinceId: prov.id, ccaaId: prov.ccaaId } : prev;
           });
         }
       })
@@ -1375,7 +1374,7 @@ export function ExploreView() {
                     onClose={closeTool}
                   />
                 )}
-                {secondaryPanel === "core" && (
+                {EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core" && (
                   <AethraCorePanel
                     open={coreOpen}
                     regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
@@ -1526,6 +1525,8 @@ export function ExploreView() {
                   : m.explore.destSource(activeDestination.name, activeDestination.source.name)}
               </p>
             )}
+            {/* Competition cut (D76): TARO is research-build only; the timed demo never depends on it. */}
+            {EXPLORATORY_FEATURES_ENABLED && (
             <button
               type="button"
               onClick={() => {
@@ -1542,6 +1543,7 @@ export function ExploreView() {
             >
               <TaroPortrait className="size-11" />
             </button>
+            )}
             <ExploreSpain
               selectedId={destinationId}
               onSelect={handleSelectDestination}

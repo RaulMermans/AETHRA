@@ -81,6 +81,8 @@ Nothing is ticked unless verified in this repo. Current state is noted in *itali
 
 **15 Nov 02:00:** MVP alignment audit, readiness and submission docs written: `MVP_ALIGNMENT_AUDIT.md`, `JUDGING_READINESS.md` (release checklist), `JUDGE_EXPERIENCE.md`, `PITCH_FINAL.md`. New blocker found: province-scope results predate the D64 boundary change (audit §4.3).
 
+**15 Nov (competition sprint, D76):** competition cut (TARO and relationship maps off the judge path), EvidenceCard as numbered evidence receipt, NOAA external comparison on the temperature card, Claim C boundary, invalid URL scope ids fixed, Playwright suite with 5 SIMULATED use cases (16/16), 7-slide deck generated from artifacts. Records: `COMPETITION_CUT.md`, `SCENARIO_VALIDATION.md`.
+
 **15 Nov morning (recovery sprint, D75):** D53 closed (conservative judge policy); D64 province scopes rebuilt and dependent artifacts regenerated; Gate A reproduced with current code; NOAA check reworded "external station comparison"; judge-mode gates extended (relationship maps, 2040 horizon); browser e2e of the full judge path passes 3×. Record: `docs/FINAL_RELEASE_VALIDATION.md`. Still human-only: `SCIENTIFIC_REVIEW.md` §5, venue rehearsal, deployment credentials, submission.
 
 **Immediate next action (updated 14 Nov, late evening):** a named second team member works through the

@@ -80,3 +80,16 @@ reused; if any was, list it here.
 4. AI-generated image status of brand assets.
 5. Independent scientific sign-off (`SCIENTIFIC_REVIEW.md` §5) — until then all findings are labelled
    EXPLORATORY.
+
+## 7. Presentation assets (generated and checked 15 Nov, D76)
+
+| Asset | Path | How it was made / checked |
+|---|---|---|
+| 7-slide deck (PDF, 1280 × 720) | `docs/release/2026-11-15/deck/aethra-deck.pdf` (+ `.html`, `slide-1…7.png`) | `scripts/build_deck.py` reads every number from `evidence-cards.json`; each slide rendered to PNG and inspected; 7 pages |
+| Real screenshots of the judge build | `docs/release/2026-11-15/slides/01…06` | `npm run e2e:capture` on the production judge build |
+| Fallback screen recording (no audio) | `docs/release/2026-11-15/judge-path-run1-1440x900.webm` | Automated run of the judge path; record a narrated version on the presenting machine if time allows |
+| Automated functional validation | `docs/SCENARIO_VALIDATION.md` | 5 SIMULATED use cases, Playwright |
+| Judge Q&A, 30-s and 2-min scripts, Claim Test | `docs/PITCH_FINAL.md` | — |
+
+The deck states "EXPLORATORY until independent review" on the contrast and closing slides; keep that
+until `SCIENTIFIC_REVIEW.md` §5 is signed. No NASA logo is used.

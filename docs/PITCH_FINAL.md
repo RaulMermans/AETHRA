@@ -48,6 +48,20 @@ construction decision. Every number opens into an EvidenceCard with its source, 
 uncertainty and limits. We don't tell you what you want to hear. We show you what NASA's evidence
 supports."
 
+## 3b. The Claim Test (story structure, not a feature)
+
+Three claims, three different answers from the same evidence discipline. All three are visible on the
+first screen (Study findings) and in the receipts.
+
+| Claim | AETHRA's answer | Where |
+|---|---|---|
+| **A** "Days with both low sun and low wind are becoming more frequent in Castilla y León." | **? Insufficient evidence** — 0.00 days/decade, 95 % CI −1.55 to +1.67, 2001–2025. Not proof of stability. | CyL case → EvidenceCard |
+| **B** "Near-surface air temperature is increasing over the Peninsula and Balearics." | **▲ Supported increase** — +0.60 °C/decade, 95 % CI +0.31 to +0.87, 2000–2025; 64/64 NOAA stations also warmed (external comparison, not independent). | Study findings → Open Evidence cards |
+| **C** "So this hybrid plant will be less profitable in 2040." | **⊘ Outside the evidence** — no plant generation, price, grid or 2040 analysis exists; no estimate is given. | Study findings, Boundary block |
+
+Line for the pitch: *"AETHRA doesn't turn a plausible hypothesis into a fact, it does recognise a
+supported change when the data warrant it, and it says where the evidence stops."*
+
 ## 4. Seven slides (cover included; confirm format with organizers)
 
 | # | Title | Content | Artifact / visual |
@@ -56,9 +70,9 @@ supports."
 | 2 | **Are low solar and wind resource conditions becoming more frequent?** | Why joint lows: averages hide timing. A resource indicator, *not* electricity-system reliability. The decision: investigate further, or not | Simple diagram, no data |
 | 3 | **The investigation** | WHAT: `ALLSKY_SFC_SW_DWN` (CERES SYN1deg Ed4.2) + `WS50M` (MERRA-2), via NASA POWER · WHERE: 5 pre-registered regions, area-weighted · WHEN: 2001–2025, daily → annual · Definition: both below monthly P20 (ref 2001–2020) · HOW: Theil–Sen + Gilbert 95 % CI, Mann–Kendall, Hamed–Rao, BH across 5 regions | Evidence-chain strip: source → QA → series → test → outcome → EvidenceCard |
 | 4 | **No statistically supported trend in joint-low frequency** | Approved claim 3. CyL card: 0.0 days/decade (CI −1.55 to +1.67). Line: "Failing to detect a change is not proof of stability (detectable ≈ 2–3 days/decade)." Small, labelled *descriptive*: claim 4 | `energy_gap/e1_joint_low_days.svg` |
-| 5 | **The detector also says yes when the data say yes** | Approved claims 1 + 2: +0.6 °C/decade (CI 0.31–0.87), all 6 windows positive; 64/64 NOAA stations warming. "Not linked to energy, not causal." EvidenceCard anatomy callouts | `gate_a_temperature/t2m.svg`, `noaa_validation/slopes.svg`. **Only if second-person review is signed; otherwise label "EXPLORATORY — pending independent review"** |
-| 6 | **The product: one investigation, end to end** | 3 screenshots in sequence: first view (question + answer + contrast) → CyL case sheet → CyL EvidenceCard with Sources open | Real screenshots from the judge build |
-| 7 | **Why it matters** | What the evidence supports / does not support / next study needed (observed generation, station wind, longer record). Limits: curated, reanalysis/satellite, resource ≠ generation. Credits: NASA MERRA-2, NASA POWER (CERES, MERRA-2), NOAA GHCN-Daily, GISCO, Cesium/Esri/EOX. AI use declared. Close: **"We don't tell you what you want to hear. We show you what NASA's evidence supports."** | Text |
+| 5 | **The detector also says yes when the data say yes** (`04-evidence-receipt-temperature.png` beside `03-…cyl.png`) | Approved claims 1 + 2: +0.6 °C/decade (CI 0.31–0.87), all 6 windows positive; 64/64 NOAA stations warming. "Not linked to energy, not causal." EvidenceCard anatomy callouts | `gate_a_temperature/t2m.svg`, `noaa_validation/slopes.svg`. **Only if second-person review is signed; otherwise label "EXPLORATORY — pending independent review"** |
+| 6 | **The product: one investigation, end to end** | Question → CyL case → evidence receipt (1 claim · 2 verdict · 3 how much · 4 what it does not show · 5 method · 6 NASA data & provenance) | `docs/release/2026-11-15/slides/01-question-and-answer.png`, `02-castilla-y-leon-case.png`, `03-evidence-receipt-cyl.png` (real judge build) |
+| 7 | **What this means for research decisions** | Claim Test row C (`05-boundary-claim.png`): where the evidence stops. What the evidence supports / does not support / next study needed (observed generation, station wind, longer record). Limits: curated, reanalysis/satellite, resource ≠ generation. Credits: NASA MERRA-2, NASA POWER (CERES, MERRA-2), NOAA GHCN-Daily, GISCO, Cesium/Esri/EOX. AI use declared. Close: **"We don't tell you what you want to hear. We show you what NASA's evidence supports."** | Text |
 
 ## 5. Key takeaway
 
@@ -89,5 +103,8 @@ supports."
 | "Why insufficient evidence instead of no trend?" | "Our frozen rule only says 'no robust trend' when the test had enough power to see a meaningful change. With 25 years it didn't." |
 | "Who reviewed this?" | Answer truthfully with the state of `SCIENTIFIC_REVIEW.md` §5 at pitch time. |
 | "What's new vs Giovanni/Worldview?" | "They're excellent for access and exploration. We focus on the end of the workflow: a pre-registered estimand, an outcome state with uncertainty, and a 'do not conclude' line attached to the result." |
-| "What's TARO?" | "A deterministic guide that quotes EvidenceCards. No language model is generating numbers." |
-| "What's the impact?" | "A clear research decision for a defined analyst. We haven't measured impact yet; we have a usability protocol ready." |
+| "What's TARO?" | "A deterministic guide that quotes EvidenceCards; it is switched off in the judge build so the demo never depends on it." |
+| "Are the NOAA stations independent of MERRA-2?" | "We don't claim that. MERRA-2 assimilates some land surface observations and we couldn't confirm which variables, so we call it an external station comparison: supporting evidence, not proof." |
+| "So will a plant earn less in 2040?" | "Outside our evidence. We have no generation, price, grid or 2040 analysis, and the app says so instead of guessing (Claim C)." |
+| "How do you know the app works?" | "Five simulated use cases run automatically in a real browser: 16 checks pass, including URL attacks and a data outage. They show the app works; they don't show people understand it better — that needs a user study we haven't run." |
+| "What's the impact?" | "A clear research decision for a defined analyst: treat 'more joint lows' as an unconfirmed hypothesis. We've verified the workflow functionally, not with real users; the usability protocol is ready." |

@@ -18,6 +18,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 EG = ROOT / "data/results/energy_gap"
 GA = ROOT / "data/results/gate_a_temperature"
+NOAA = ROOT / "data/results/noaa_validation/analysis_bundle.json"
 OUT = ROOT / "apps/web/public/data/evidence-cards.json"
 INDEP = EG / "independence_check.json"  # scripts/check_energy_gap_independence.py
 WEIGHTS = ROOT / "data/processed/spain/power/region_weights.json"
@@ -122,6 +123,24 @@ def e1_fmt(t: dict) -> str:
     return f"{t['slope_per_decade']:+.3f} (95% CI {t['ci_low_per_decade']:+.3f} to {t['ci_high_per_decade']:+.3f}; p = {t['p']:.2f})"
 
 
+def noaa_check() -> dict:
+    v = json.loads(NOAA.read_text())
+    s = v["summary"]
+    return {
+        "name": "NOAA GHCN-Daily external station comparison",
+        "n_stations": s["n_stations"],
+        "stations_warming": s["stations_positive"],
+        "within_0_2_per_decade": s["abs_slope_diff_le_0_2"],
+        "slope_diff_median_per_decade": s["slope_diff_median"],
+        "pearson_r_median": s["pearson_r_median"],
+        "period": v["inclusion"]["period"],
+        "status": v["status"],
+        "independence_note": "Not claimed independent: MERRA-2 assimilates some land surface observations and the variables are not confirmed (SCIENTIFIC_REVIEW.md §3).",
+        "bundle": str(NOAA.relative_to(ROOT)),
+        "bundle_sha256": sha(NOAA),
+    }
+
+
 def temperature_card(bundle_path: Path) -> dict:
     b = json.loads(bundle_path.read_text())
     res = b["result"]
@@ -157,6 +176,8 @@ def temperature_card(bundle_path: Path) -> dict:
             "Reanalysis (model + data assimilation), ~50 km cells: not a station measurement.",
             "26 years; magnitude depends on the window (range shown), the sign does not.",
         ],
+        # External station comparison (P0-S5, D52); wording per D75: not claimed independent of MERRA-2.
+        "external_check": noaa_check(),
         "series": {"label": "Annual mean T2M", "units": "°C", "years": a.year.tolist(), "values": a.t2m_annual_mean_c.tolist(), "complete": [True] * len(a)},
         "trend_line": {"intercept": res["intercept"], "slope_per_decade": res["slope_per_decade"]},
         "sources": [{"name": "NASA MERRA-2 M2TMNXSLV 5.12.4 (DOI 10.5067/AP1B0BA5PD2K)", "role": "monthly 2 m air temperature", "url": "https://doi.org/10.5067/AP1B0BA5PD2K"}],

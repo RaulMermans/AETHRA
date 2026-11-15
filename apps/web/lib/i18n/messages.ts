@@ -297,6 +297,10 @@ type Copy = {
     notPresentable: string;
     notPresentableBody: string;
     mapNote: string;
+    boundary: string;
+    boundaryClaim: string;
+    boundaryVerdict: string;
+    boundaryBody: string;
     openCards: string;
   };
   cards: {
@@ -336,6 +340,19 @@ type Copy = {
     sources: string;
     ci: (lo: string, hi: string) => string;
     window: (lo: string, hi: string) => string;
+    receipt: string;
+    sClaim: string;
+    sVerdict: string;
+    sSize: string;
+    sLimits: string;
+    sMethod: string;
+    sData: string;
+    verdictMeaning: Record<"supported_increase" | "supported_decrease" | "no_robust_trend" | "insufficient_evidence", string>;
+    ciMeaning: string;
+    externalCheck: (n: number, warming: number, within: number, diff: string, period: string) => string;
+    externalNote: string;
+    period: string;
+    source: string;
   };
   stations: {
     title: string;
@@ -782,6 +799,11 @@ export const messages: Record<Locale, Copy> = {
         "GPM rain and GLDAS modelled runoff exist on the map, but their regional “Supported” labels do not survive a multiple-testing adjustment, so we do not present them as findings. They are not linked to either question here.",
       mapNote:
         "The globe shows the climate map selected on the left (air temperature by default) as context. Joint solar + wind lows are results for five regions, not a map layer.",
+      boundary: "Boundary · a claim this evidence cannot test",
+      boundaryClaim: "“So this hybrid plant will be less profitable in 2040.”",
+      boundaryVerdict: "Outside the evidence: no estimate given",
+      boundaryBody:
+        "AETHRA has no plant-level generation, electricity-price, grid or 2040 analysis. The historical results above can frame the next study; they cannot answer this.",
       openCards: "Open Evidence cards",
     },
     cards: {
@@ -822,6 +844,25 @@ export const messages: Record<Locale, Copy> = {
       sources: "Sources & provenance",
       ci: (lo, hi) => `95% CI ${lo} to ${hi}`,
       window: (lo, hi) => `window range ${lo} to ${hi}`,
+      receipt: "Evidence receipt",
+      sClaim: "1 · Claim tested",
+      sVerdict: "2 · Verdict",
+      sSize: "3 · How much, how sure",
+      sLimits: "4 · What this does not show",
+      sMethod: "5 · Method",
+      sData: "6 · NASA data & provenance",
+      verdictMeaning: {
+        supported_increase: "The trend met the pre-registered support rule: its 95% interval lies entirely above zero (rule in Method).",
+        supported_decrease: "The trend met the pre-registered support rule: its 95% interval lies entirely below zero (rule in Method).",
+        no_robust_trend: "The trend did not meet the pre-registered support rule (see Method). This is not proof that nothing changed.",
+        insufficient_evidence: "The trend did not meet the pre-registered support rule (see Method), and the record is too short to rule out small changes. This is not proof of stability.",
+      },
+      ciMeaning: "The 95% interval is the range of trends compatible with the data. The wider it is, the less precise the estimate.",
+      period: "Period",
+      source: "NASA source",
+      externalCheck: (n, warming, within, diff, period) =>
+        `External station comparison (NOAA GHCN-Daily, ${period}): ${warming} of ${n} stations also warmed; ${within} of ${n} within ±0.2 °C/decade of their MERRA-2 cell (median difference ${diff} °C/decade).`,
+      externalNote: "Supporting evidence, not proof, and not claimed independent of MERRA-2 (it assimilates some land surface observations). Stations are not homogenized.",
     },
     stations: {
       title: "Station catalog",
@@ -1308,6 +1349,11 @@ export const messages: Record<Locale, Copy> = {
         "La lluvia GPM y la escorrentía modelada GLDAS están en el mapa, pero sus etiquetas regionales de «respaldado» no superan un ajuste por comparaciones múltiples, así que no las presentamos como resultados. Aquí no se vinculan con ninguna de las dos preguntas.",
       mapNote:
         "El globo muestra como contexto el mapa climático elegido a la izquierda (temperatura del aire por defecto). Las bajadas conjuntas de sol y viento son resultados de cinco regiones, no una capa del mapa.",
+      boundary: "Límite · una afirmación que esta evidencia no puede evaluar",
+      boundaryClaim: "«Así que esta planta híbrida será menos rentable en 2040».",
+      boundaryVerdict: "Fuera de la evidencia: no se da ninguna estimación",
+      boundaryBody:
+        "AETHRA no tiene análisis de producción por planta, precios de la electricidad, red ni 2040. Los resultados históricos de arriba pueden orientar el siguiente estudio; no pueden responder a esto.",
       openCards: "Abrir las fichas de evidencia",
     },
     cards: {
@@ -1350,6 +1396,25 @@ export const messages: Record<Locale, Copy> = {
       sources: "Fuentes y procedencia",
       ci: (lo, hi) => `IC del 95 % de ${lo} a ${hi}`,
       window: (lo, hi) => `rango entre ventanas de ${lo} a ${hi}`,
+      receipt: "Recibo de evidencia",
+      sClaim: "1 · Afirmación evaluada",
+      sVerdict: "2 · Veredicto",
+      sSize: "3 · Cuánto y con qué seguridad",
+      sLimits: "4 · Lo que esto no muestra",
+      sMethod: "5 · Método",
+      sData: "6 · Datos NASA y procedencia",
+      verdictMeaning: {
+        supported_increase: "La tendencia cumplió la regla de respaldo prerregistrada: su intervalo del 95 % está por completo por encima de cero (regla en Método).",
+        supported_decrease: "La tendencia cumplió la regla de respaldo prerregistrada: su intervalo del 95 % está por completo por debajo de cero (regla en Método).",
+        no_robust_trend: "La tendencia no cumplió la regla de respaldo prerregistrada (ver Método). No es prueba de que nada haya cambiado.",
+        insufficient_evidence: "La tendencia no cumplió la regla de respaldo prerregistrada (ver Método) y el registro es demasiado corto para descartar cambios pequeños. No es prueba de estabilidad.",
+      },
+      ciMeaning: "El intervalo del 95 % es el rango de tendencias compatibles con los datos. Cuanto más ancho, menos precisa es la estimación.",
+      period: "Periodo",
+      source: "Fuente NASA",
+      externalCheck: (n, warming, within, diff, period) =>
+        `Comparación externa con estaciones (NOAA GHCN-Daily, ${period}): ${warming} de ${n} estaciones también se calentaron; ${within} de ${n} a menos de ±0,2 °C/década de su celda MERRA-2 (diferencia mediana ${diff} °C/década).`,
+      externalNote: "Evidencia de apoyo, no una prueba, y no se presenta como independiente de MERRA-2 (asimila algunas observaciones de superficie terrestre). Las estaciones no están homogeneizadas.",
     },
     stations: {
       title: "Catálogo de estaciones",

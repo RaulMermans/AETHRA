@@ -142,11 +142,33 @@ export function FindingsBriefPanel({
                 {signed(temp.how_much.slope_per_decade)} {face.units} ({m.cards.ci(signed(temp.how_much.ci95_per_decade[0]), signed(temp.how_much.ci95_per_decade[1]))}; n = {temp.evidence.n_years}). {face.when}.
               </p>
               <p className="mt-1 text-[12px] leading-snug text-muted">{face.what}. {face.where}.</p>
+              {temp.external_check && (
+                <p className="mt-1 text-[12px] leading-snug text-muted">
+                  {m.cards.externalCheck(
+                    temp.external_check.n_stations,
+                    temp.external_check.stations_warming,
+                    temp.external_check.within_0_2_per_decade,
+                    `${temp.external_check.slope_diff_median_per_decade > 0 ? "+" : ""}${temp.external_check.slope_diff_median_per_decade.toFixed(3)}`,
+                    temp.external_check.period,
+                  )}
+                </p>
+              )}
               <p className="mt-1 text-[12px] leading-snug text-faint">{face.do_not_conclude}</p>
             </>
           ) : (
             <p className="mt-1 text-[13px] text-faint">{m.findings.loadingGate}</p>
           )}
+        </article>
+
+        {/* Claim C of the Claim Test (D76): a boundary, not a third study. No estimate is produced. */}
+        <article className="rounded-md border border-dashed border-white/30 bg-black/25 p-2.5" aria-label={m.findings.boundary}>
+          <p className="font-mono text-[12px] tracking-[0.14em] text-faint uppercase">{m.findings.boundary}</p>
+          <p className="mt-1 text-[14px] text-ink italic">{m.findings.boundaryClaim}</p>
+          <p className="mt-1 text-[15px] font-medium text-ink">
+            <span aria-hidden className="mr-1 font-mono">⊘</span>
+            {m.findings.boundaryVerdict}
+          </p>
+          <p className="mt-1 text-[13px] leading-snug text-muted">{m.findings.boundaryBody}</p>
         </article>
 
         <article className="rounded-md border border-line bg-black/20 p-2.5">

@@ -9,7 +9,10 @@
     "lint": "eslint",
     "predev": "node scripts/copy-cesium-assets.mjs",
     "prebuild": "node scripts/copy-cesium-assets.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "e2e:scenarios": "playwright test --grep \"S0[1-4]\" --repeat-each=3",
+    "e2e:capture": "E2E_CAPTURE=1 E2E_VIDEO=0 playwright test --grep @capture"
   },
   "dependencies": {
     "cesium": "^1.140.0",
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

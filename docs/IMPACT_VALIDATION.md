@@ -1,8 +1,19 @@
 # Impact Validation
 
-**Status: UNVALIDATED.** No participant sessions have been run (15 Nov 2026, 02:00). Nothing in
-this file is a result. Do not quote impact numbers, testimonials or "faster than X" anywhere until
-§5 contains real observations.
+**Status: HUMAN IMPACT UNVALIDATED.** No participant sessions have been run (15 Nov 2026). Do not
+quote impact numbers, testimonials or "faster than X" anywhere until §5 contains real observations.
+
+## 0. What is and is not demonstrated (updated 15 Nov, D76)
+
+| Layer | Claim we can make | Evidence | Status |
+|---|---|---|---|
+| **Intended value** | AETHRA helps an analyst tell apart an apparent pattern, a quantified trend, a statistically supported finding, an inconclusive result and an unsupported inference before an assumption enters a study | Product design; Claim Test (A insufficient evidence · B supported increase · C outside the evidence) | Hypothesis |
+| **Functional capability** | The judge build completes the flagship tasks and shows the required evidence | 5 SIMULATED use cases, Playwright, 16/16 + 12/12 passes (`SCENARIO_VALIDATION.md`) | Verified (automated) |
+| **Scientific validity** | The displayed numbers are what the pipeline produced and reproduce | Gate A/B re-runs identical (`FINAL_RELEASE_VALIDATION.md`) | Verified by reproduction; human review pending |
+| **Human impact** | Real users interpret evidence correctly / faster / decide better | — | **Not measured** |
+
+The automated "time-to-evidence proxy" (median 1.9–11.5 s per scenario) is a software timing on a
+dev machine, not a human reading time, and is never compared with another product.
 
 ## 1. Intended beneficiary (hypothesis)
 

@@ -35,7 +35,36 @@ export type EvidenceCard = {
   do_not_conclude: string;
   limitations: string[];
   provenance: { bundle: string; bundle_sha256: string };
+  /** Temperature card only: NOAA station comparison copied by export_evidence_cards.py (D52, D76). */
+  external_check?: ExternalCheck;
 };
+
+export type ExternalCheck = {
+  n_stations: number;
+  stations_warming: number;
+  within_0_2_per_decade: number;
+  slope_diff_median_per_decade: number;
+  period: string;
+  status: string;
+  bundle: string;
+};
+
+/** Validates the optional `external_check` block; returns undefined when absent or malformed. */
+export function parseExternalCheck(v: unknown): ExternalCheck | undefined {
+  if (!isRecord(v)) return undefined;
+  const nums = ["n_stations", "stations_warming", "within_0_2_per_decade", "slope_diff_median_per_decade"] as const;
+  if (!nums.every((k) => typeof v[k] === "number")) return undefined;
+  if (typeof v.period !== "string" || typeof v.status !== "string" || typeof v.bundle !== "string") return undefined;
+  return {
+    n_stations: Number(v.n_stations),
+    stations_warming: Number(v.stations_warming),
+    within_0_2_per_decade: Number(v.within_0_2_per_decade),
+    slope_diff_median_per_decade: Number(v.slope_diff_median_per_decade),
+    period: v.period,
+    status: v.status,
+    bundle: v.bundle,
+  };
+}
 
 export type EvidenceCatalog = {
   cards: readonly EvidenceCard[];
@@ -104,6 +133,7 @@ export function parseEvidenceCard(v: unknown): EvidenceCard | null {
     do_not_conclude: v.do_not_conclude,
     limitations: v.limitations,
     provenance: { bundle: v.provenance.bundle, bundle_sha256: v.provenance.bundle_sha256 },
+    external_check: parseExternalCheck(v.external_check),
   };
 }
 

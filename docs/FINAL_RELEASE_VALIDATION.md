@@ -107,3 +107,19 @@ committed on the release branch as found. Its author should review it.
 review pending and labelled) and B (product/engineering) pass on automated evidence. Gate C needs a
 public deployment and a venue rehearsal; Gate D needs a human to verify the official rules/Resources
 list and to submit.
+
+## 8. Competition sprint addendum (D76)
+
+| Item | Status | Evidence |
+|---|---|---|
+| Competition cut (TARO, relationship maps, Energy Lab, 2040 horizon off the judge path) | **VERIFIED** | `docs/COMPETITION_CUT.md`; S05 tests; `test_competition_cut_d76` |
+| Evidence receipt (claim → verdict → size → limits → method → provenance) | **FIXED** | S04 checks the order; stills `slides/03`, `slides/04` |
+| NOAA external comparison on the temperature card | **FIXED** | `external_check` exported by Python; `test_external_check_copies_the_noaa_artifact` |
+| Claim C boundary (2040 profitability) | **FIXED** | S03 (UI + assistant API) |
+| Invalid URL ids switched scope (Málaga / Andalucía) | **FIXED** | S05 `id=ZZ`, `ES99` |
+| "±0.00" zero display, clipped "2025" axis labels | **FIXED** | stills |
+| Playwright suite (5 SIMULATED use cases + first screen) | **VERIFIED** | 16/16; S01–S04 × 3 = 12/12; `docs/SCENARIO_VALIDATION.md` |
+| Python tests | **VERIFIED** | 70 passed |
+| Legacy e2e script | **VERIFIED** | 35/35 (1 run) |
+| typecheck / lint / build | **VERIFIED** | 0 errors / 0 errors (2 pre-existing warnings) / OK, `/explore` 96.8 kB |
+| Deployment, official rules, venue rehearsal, submission | **BLOCKED — HUMAN ACTION / MISSING RESOURCE** | unchanged from §1 |

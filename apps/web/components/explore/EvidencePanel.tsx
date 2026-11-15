@@ -43,7 +43,7 @@ function fmt(n: number, digits?: number): string {
 }
 
 function signed(n: number): string {
-  return `${n > 0 ? "+" : n < 0 ? "−" : "±"}${fmt(Math.abs(n))}`;
+  return `${n > 0 ? "+" : n < 0 ? "−" : ""}${fmt(Math.abs(n))}`; // zero has no sign
 }
 
 function placeLabel(label: string, copy: Messages): string {

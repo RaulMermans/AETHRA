@@ -1,4 +1,4 @@
-# Judging Readiness (15 Nov 2026, ~02:00; updated by the recovery sprint, see `FINAL_RELEASE_VALIDATION.md`)
+# Judging Readiness (15 Nov 2026; updated by the recovery sprint D75 and the competition sprint D76)
 
 Qualitative self-assessment against the five official criteria. **Not a predicted score; no weights
 assumed.** Confidence = our confidence that the criterion is *ready to be judged*, not that we win.
@@ -7,11 +7,21 @@ assumed.** Confidence = our confidence that the criterion is *ready to be judged
 
 | Criterion | Readiness | Blocking risk |
 |---|---|---|
-| Impact | Low–medium | No user evidence; must not be overclaimed |
-| Creativity | Medium | Differentiation must be *shown* (contrast), not asserted |
-| Validity | Medium–high (technically) / **blocked on process** | Human review unsigned; D53 open; stale provenance hashes |
+| Impact | Medium (functional) / low (human) | Simulated use cases pass; no user evidence — must not be overclaimed |
+| Creativity | Medium–high | Claim Test (supported · insufficient · outside the evidence) now visible on screen |
+| Validity | High (technically) / **human review pending** | D53 closed, D64 rebuilt, Gate A/B reproduced (15 Nov); §5 unsigned |
 | Relevance | High | Curated scope must be stated honestly |
-| Presentation | Medium | New first view not yet rehearsed 3×; slides not built; no public URL |
+| Presentation | Medium–high | Automated 3× rehearsal + stills done; venue rehearsal, slide file and public URL pending |
+
+## Scorecard (15 Nov, after D75/D76) — evidence per criterion, no scores
+
+| Criterion | Main claim | Supporting evidence | How it is demonstrated | Remaining weakness | Release blocker | Validation status |
+|---|---|---|---|---|---|---|
+| **Impact** | Helps a (hypothetical) regional energy-resource analyst decide whether "more joint lows" is a supported finding or stays a hypothesis | CyL receipt: insufficient evidence; Claim C boundary | S01–S04 simulated use cases (`SCENARIO_VALIDATION.md`) | Persona unvalidated; 0 participant sessions | None (claim stays "unvalidated") | Functional ✔ · human ✘ |
+| **Creativity** | Evidence status *is* the product output: a non-obvious joint-low indicator, an honest null, a supported contrast and a boundary, each with a "do not conclude" line | Evidence receipt (D76), first-screen Claim Test | Live path step 4–7; stills 03/04/05 | Trend tests and cards exist elsewhere; novelty is the workflow, not the maths | None | Shown in build ✔ |
+| **Validity** | Real NASA data, area-weighted, Theil–Sen + Mann–Kendall + Hamed–Rao, BH where required, CIs, provenance | Gate A/B bundles; reproduction 15 Nov; 70 Python tests | Receipt sections 3, 5, 6; Sources & provenance | Reanalysis/satellite support; 25–26 years; NOAA not independent; human review | `SCIENTIFIC_REVIEW.md` §5 (or keep EXPLORATORY labels) | Reproduced ✔ · human review ✘ |
+| **Relevance** | Covers the challenge chain: indicator → NASA data → geography → long series → trend magnitude → significance → communication | `PITCH_FINAL.md` §4 slide 3; DATASETS | Receipt 1–6 maps onto the chain | Curated, precomputed; not arbitrary variable search | Official Resources list check | Mapped ✔ · rules check ✘ |
+| **Presentation** | One question, one answer, one contrast, one boundary in 2 minutes | `JUDGE_EXPERIENCE.md`; stills; 3× automated runs | 2-minute script; Claim Test | Slide file not built here; venue machine untested | Deploy URL; 3 live rehearsals | Automated ✔ · live ✘ |
 
 ## Impact
 

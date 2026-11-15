@@ -72,6 +72,7 @@ Web app details: [apps/web/README.md](apps/web/README.md).
 cd apps/web && npm run typecheck && npm run lint && npm run build
 npx next start -p 3518 &                                       # judge build (no NEXT_PUBLIC_ENABLE_EXPLORATORY)
 cd ../.. && .venv/bin/python scripts/e2e_judge_path.py --base http://localhost:3518 --out /tmp/e2e --runs 3
+cd apps/web && npm run e2e                                    # Playwright: 5 SIMULATED use cases + first screen (docs/SCENARIO_VALIDATION.md)
 ```
 
 Last full validation: `docs/FINAL_RELEASE_VALIDATION.md` (15 Nov 2026). Submission text:

@@ -82,7 +82,29 @@ def test_url_params_cannot_open_exploratory_workspaces():
     assert 'EXPLORATORY_FEATURES_ENABLED ? rawWorkspaceMode : "climate"' in view
     # unknown scope ids are ignored, not trusted
     assert 'ab.ccaa.some((c) => c.id === idParam)' in view and 'ab.provinces.some((p) => p.id === idParam)' in view
+    assert 'if (scopeParam === "age" || validCcaa || validProvince)' in view  # invalid ids never switch scope
 
+
+
+def test_competition_cut_d76():
+    view = src("components/explore/ExploreView.tsx")
+    assert "{EXPLORATORY_FEATURES_ENABLED && (\n            <button" in view, "TARO button must be research-build only"
+    assert 'EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core"' in view
+    panel = src("components/explore/EvidenceCardPanel.tsx")
+    order = [panel.index(k) for k in ("m.cards.sClaim", "m.cards.sVerdict", "m.cards.sSize", "m.cards.sLimits", "m.cards.sMethod", "m.cards.sData")]
+    assert order == sorted(order), "evidence receipt sections out of order"
+    assert "m.cards.verdictMeaning[card.outcome]" in panel  # keyed on the pipeline outcome, not on values
+    assert "m.findings.boundaryVerdict" in src("components/explore/FindingsBriefPanel.tsx")
+
+
+def test_external_check_copies_the_noaa_artifact():
+    cards = json.loads((WEB / "public/data/evidence-cards.json").read_text())["cards"]
+    noaa = json.loads((ROOT / "data/results/noaa_validation/analysis_bundle.json").read_text())["summary"]
+    ext = next(c for c in cards if c["id"] == "gate-a-temperature-R0")["external_check"]
+    assert ext["n_stations"] == noaa["n_stations"] and ext["stations_warming"] == noaa["stations_positive"]
+    assert ext["within_0_2_per_decade"] == noaa["abs_slope_diff_le_0_2"]
+    assert ext["slope_diff_median_per_decade"] == noaa["slope_diff_median"]
+    assert "Not claimed independent" in ext["independence_note"]
 
 if __name__ == "__main__":
     fails = 0
