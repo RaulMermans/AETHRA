@@ -105,10 +105,20 @@ export function screeningPlants(data: PvScreeningData): { plant: SolarPlant; lan
   return landmarks.map(fromLandmark);
 }
 
+/**
+ * Plants shown for a chosen registered start year (D85): phases whose GEM `start_year` is at most
+ * `year`. Phases without a start year are hidden while a year is chosen. `year === null` shows all.
+ */
+export function plantsUpToYear<T extends { plant: SolarPlant }>(plants: readonly T[], year: number | null): T[] {
+  if (year === null) return [...plants];
+  return plants.filter(({ plant }) => typeof plant.start_year === "number" && plant.start_year <= year);
+}
+
 export function buildScreeningLayers(
   data: PvScreeningData,
   selectedCell: PvCell | null,
   plantDetail: (p: SolarPlant) => string,
+  plantYear: number | null = null,
 ): LayerDescriptor[] {
   const out: LayerDescriptor[] = [];
   const s = data.screening;
@@ -158,7 +168,7 @@ export function buildScreeningLayers(
     }
   }
 
-  const plants = screeningPlants(data);
+  const plants = plantsUpToYear(screeningPlants(data), plantYear);
   if (plants.length) {
     out.push({
       id: SCREENING_LAYER_IDS.plants,

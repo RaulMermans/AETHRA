@@ -88,8 +88,10 @@ def test_url_params_cannot_open_exploratory_workspaces():
 
 def test_competition_cut_d76():
     view = src("components/explore/ExploreView.tsx")
-    assert "{EXPLORATORY_FEATURES_ENABLED && (\n            <button" in view, "TARO button must be research-build only"
-    assert 'EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core"' in view
+    # D81 supersedes D76(a): TARO button and panel are always rendered, in every build.
+    assert 'aria-label="TARO"' in view
+    assert '{secondaryPanel === "core" && (' in view
+    assert 'EXPLORATORY_FEATURES_ENABLED && secondaryPanel === "core"' not in view
     panel = src("components/explore/EvidenceCardPanel.tsx")
     order = [panel.index(k) for k in ("m.cards.sClaim", "m.cards.sVerdict", "m.cards.sSize", "m.cards.sLimits", "m.cards.sMethod", "m.cards.sData")]
     assert order == sorted(order), "evidence receipt sections out of order"

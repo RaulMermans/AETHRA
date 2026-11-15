@@ -16,6 +16,7 @@
 | `capacity_mw` | Size in megawatts |
 | `technology_type` | `PV`, `Assumed PV` (probably PV) or `Solar Thermal` (CSP) |
 | `status` | `operating`, `construction`, `pre-construction`, `announced`, `shelved`, `cancelled`… |
+| `start_year` | Year the phase started (stored as e.g. `2020.0`; empty when unknown). Exported per plant to `apps/web/public/data/solar-plants.json` by `scripts/build_solar_plants.py` for the map's year slider (D85). **Not a yearly census:** 792 operating `Assumed PV` rows are dated 2017 (cataloguing); use Eurostat (`../eurostat_solar_capacity_spain/`) for growth. |
 | `latitude`, `longitude`, `location_accuracy` | Position; `exact` or `approximate` |
 | `state_province` | Autonomous community |
 | `miteco_pv_sensitivity_class` | **Added by us:** MITECO class at the plant's point (0 = not recommended … 4 = low), see `../miteco_pv_sensitivity_2024/` |

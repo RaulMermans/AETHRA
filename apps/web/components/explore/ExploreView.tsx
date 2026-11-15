@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import GlobeClient from "@/components/globe/GlobeClient";
 import { HydroFeatureCard } from "@/components/explore/HydroFeatureCard";
 import {
@@ -35,6 +35,7 @@ import {
   HEATMAP_BOUNDS,
   LAST_COMPLETE_YEAR,
   loadClimateBundle,
+  nativeCellAt,
   periodColorDomain,
   renderDimensionHeatmapDataUrl,
   type ActiveClimateConfig,
@@ -100,7 +101,7 @@ import { Icon } from "./Icon";
 import { ScaleThermometer } from "./ScaleThermometer";
 import { StationCatalogPanel } from "./StationCatalogPanel";
 import { AethraCorePanel } from "./AethraCorePanel";
-import { TaroPortrait } from "./TaroPortrait";
+import { TaroModel3D } from "./TaroModel3D";
 import { EvidenceCardPanel, type EvidenceTopic } from "./EvidenceCardPanel";
 import { PlanetToProof, type ProofStage } from "./PlanetToProof";
 import { RelationshipPanel } from "./RelationshipPanel";
@@ -201,6 +202,17 @@ export function ExploreView() {
     const observer = new ResizeObserver(() => setBottomBarHeight(Math.ceil(el.getBoundingClientRect().height)));
     observer.observe(el);
     bottomBarObserver.current = observer;
+  }, []);
+  // Height of the bottom menu row alone (Explore Spain · solar · trend · TARO). Side panels end above it.
+  const [menuRowHeight, setMenuRowHeight] = useState(0);
+  const menuRowObserver = useRef<ResizeObserver | null>(null);
+  const menuRowRef = useCallback((el: HTMLDivElement | null) => {
+    menuRowObserver.current?.disconnect();
+    menuRowObserver.current = null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setMenuRowHeight(Math.ceil(el.getBoundingClientRect().height)));
+    observer.observe(el);
+    menuRowObserver.current = observer;
   }, []);
   const [proofCard, setProofCard] = useState<EvidenceCard | null>(null);
   // First view leads with the research question and its answer (Study findings), not a bare globe.
@@ -778,6 +790,8 @@ export function ExploreView() {
   const screeningAutoFocusRef = useRef(false);
   const [screeningToggles, setScreeningToggles] = useState<ScreeningToggles>({ cells: true, miteco: false, plants: false });
   const [screeningCellId, setScreeningCellId] = useState<string | null>(null);
+  /** Registered start year filter for the solar plant points (D85); null = all phases. */
+  const [plantYear, setPlantYear] = useState<number | null>(null);
   const [screeningPlant, setScreeningPlant] = useState<SolarPlant | null>(null);
   useEffect(() => {
     if (!screeningOpen || screeningData) return;
@@ -828,6 +842,29 @@ export function ExploreView() {
       data: { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: selectedHydro.geometry }] },
       style: { stroke: "#67e8f9", fill: "#67e8f933", strokeWidth: 4 },
     }] : [];
+    // The gradient is display-only (D84): a click still selects one native cell, outlined here.
+    const cell =
+      workspaceMode !== "energy" && bundle && selected
+        ? nativeCellAt(bundle, climateConfig.dimension, selected.latitude, selected.longitude)
+        : null;
+    if (cell) {
+      const [w, s, e, n] = cell.bounds;
+      hydrologySelection.push({
+        id: "climate-selected-cell",
+        kind: "geojson",
+        group: "analysis",
+        title: "Selected native cell",
+        description: `Outline of the selected ${cell.dataset} native cell (${cell.resolution}). The map gradient is smoothed for display only.`,
+        cacheKey: `climate-cell:${climateConfig.dimension}:${w}:${s}`,
+        source: { name: cell.dataset },
+        resolution: `${cell.dataset} native cell, ${cell.resolution}`,
+        data: {
+          type: "FeatureCollection",
+          features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [[w, s], [e, s], [e, n], [w, n], [w, s]] } }],
+        },
+        style: { stroke: "#f8fafc", strokeWidth: 3 },
+      });
+    }
     if (!infraFile || !energyLayerOn) return [...allLayers, ...hydrologySelection];
     const infraLayer: LayerDescriptor = {
       id: "energy-infrastructure",
@@ -853,7 +890,7 @@ export function ExploreView() {
       },
     };
     return [...allLayers, infraLayer, ...hydrologySelection];
-  }, [allLayers, infraFile, energyLayerOn, selectedInstallation, selectedHydro]);
+  }, [allLayers, infraFile, energyLayerOn, selectedInstallation, selectedHydro, workspaceMode, bundle, selected, climateConfig.dimension]);
   const globeLayerStates = useMemo<LayerStateMap>(() => {
     const heat = layerStates["climate-heatmap"] ?? { visible: true, opacity: 0.62 };
     const blending = Boolean(urlB) && playing;
@@ -871,8 +908,9 @@ export function ExploreView() {
       },
       "energy-infrastructure": { visible: energyLayerOn, opacity: 1 },
       "ign-selected-feature": { visible: selectedHydro !== null, opacity: 1 },
+      "climate-selected-cell": { visible: (layerStates["climate-heatmap"]?.visible ?? true) && selected !== null, opacity: 1 },
     };
-  }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA, selectedHydro]);
+  }, [layerStates, energyLayerOn, urlB, playing, blendT, frontIsA, selectedHydro, selected]);
 
   // --- Relationship maps tool (D74): while open, the globe shows the chosen relationship ------
   // Judge mode (D75): unreachable even if state is set some other way, not just hidden in the toolbar.
@@ -1119,6 +1157,18 @@ export function ExploreView() {
   const secondaryPanel = activeTool ? "tool" : screeningOpen ? "screening" : activeCase ? "case" : null;
   const screeningActive = secondaryPanel === "screening";
   const inspectorOpen = evidenceOpen || secondaryPanel !== null;
+  const renderTaroButton = (placement: string) => (
+    <button
+      type="button"
+      onClick={() => setCoreOpen((o) => !o)}
+      aria-expanded={coreOpen}
+      aria-controls="taro"
+      aria-label="TARO"
+      className={`focus-ring panel pointer-events-auto size-11 shrink-0 items-center overflow-hidden !rounded-full p-0 text-xs text-ink transition-colors hover:bg-white/6 ${placement}`}
+    >
+      <TaroModel3D state="idle" framing="head" greet={false} className="size-11 rounded-full bg-gradient-to-b from-sky-900/60 to-slate-950" />
+    </button>
+  );
 
   // "Open in Trend panel": the province scope whose precomputed MERRA-2 result the panel shows.
   const openInstallationRegion = useCallback(
@@ -1306,8 +1356,8 @@ export function ExploreView() {
 
   const screeningText = useMemo(() => screeningCopy(locale), [locale]);
   const screeningLayers = useMemo<LayerDescriptor[]>(
-    () => (screeningActive && screeningData ? buildScreeningLayers(screeningData, screeningCell, screeningText.plantDetail) : []),
-    [screeningActive, screeningData, screeningCell, screeningText],
+    () => (screeningActive && screeningData ? buildScreeningLayers(screeningData, screeningCell, screeningText.plantDetail, plantYear) : []),
+    [screeningActive, screeningData, screeningCell, screeningText, plantYear],
   );
   const sceneLayers = useMemo(
     () => (screeningLayers.length ? [...displayLayers, ...screeningLayers] : displayLayers),
@@ -1610,7 +1660,15 @@ export function ExploreView() {
       </div>
 
       <div
-        className={`pointer-events-none absolute top-[4.75rem] right-3 bottom-24 z-20 isolate flex min-h-0 max-w-[calc(100vw-1.25rem)] items-stretch justify-end gap-2 sm:right-6 ${
+        // Ends above the bottom menu so the menu never moves when a panel opens (D82). Phones: the whole bar
+        // (readout stacks above the menu); sm+: the menu row only (2rem bottom padding + 0.75rem gap).
+        style={
+          {
+            "--bar-clear": `max(6rem, calc(${bottomBarHeight}px + 0.75rem))`,
+            "--menu-clear": `max(6rem, calc(${menuRowHeight}px + 2.75rem))`,
+          } as CSSProperties
+        }
+        className={`pointer-events-none absolute top-[4.75rem] right-3 bottom-[var(--bar-clear)] z-20 isolate sm:bottom-[var(--menu-clear)] flex min-h-0 max-w-[calc(100vw-1.25rem)] items-stretch justify-end gap-2 sm:right-6 ${
           proofStage ? "max-lg:hidden" : ""
         }`}
       >
@@ -1674,6 +1732,8 @@ export function ExploreView() {
                     toggles={screeningToggles}
                     onToggle={(key) => setScreeningToggles((tg) => ({ ...tg, [key]: !tg[key] }))}
                     selectedCell={screeningCell}
+                    plantYear={plantYear}
+                    onPlantYear={setPlantYear}
                     selectedPlant={screeningPlant}
                     onClearSelection={() => {
                       setScreeningCellId(null);
@@ -1682,7 +1742,8 @@ export function ExploreView() {
                     onSelectFeatured={(cellId) => {
                       const cell = screeningData?.screening?.cells.find((item) => item.id === cellId);
                       if (!cell) return;
-                      setScreeningToggles((current) => ({ ...current, cells: true }));
+                      const isPvCase = cell.id === screeningData?.sevillaCase?.cell_id;
+                      setScreeningToggles((current) => ({ ...current, cells: true, plants: isPvCase || current.plants }));
                       setScreeningCellId(cell.id);
                       setScreeningPlant(null);
                       controller?.flyTo({
@@ -1828,35 +1889,30 @@ export function ExploreView() {
         </p>
       )}
 
-      {EXPLORATORY_FEATURES_ENABLED && (
-        <div
-          className={`pointer-events-none absolute top-[4.75rem] right-3 z-40 flex max-h-[min(28rem,calc(100dvh-10.5rem))] w-[min(25rem,calc(100vw-1.5rem))] flex-col sm:right-6 ${
-            inspectorOpen
-              ? workspaceMode === "energy"
-                ? "xl:right-[36.5rem]"
-                : "xl:right-[32.5rem]"
-              : ""
-          } ${coreOpen ? "" : "hidden"}`}
-        >
-          <AethraCorePanel
-            open={coreOpen}
-            regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
-            onClose={() => setCoreOpen(false)}
-            onAction={handleCoreAction}
-          />
-        </div>
-      )}
+      {/* TARO chat: floating and persistent across map actions (main 2c7eea1), shown in every version (D81). */}
+      <div
+        className={`pointer-events-none absolute top-[4.75rem] right-3 z-40 flex max-h-[min(28rem,calc(100dvh-10.5rem))] w-[min(25rem,calc(100vw-1.5rem))] flex-col sm:right-6 ${
+          inspectorOpen
+            ? workspaceMode === "energy"
+              ? "xl:right-[36.5rem]"
+              : "xl:right-[32.5rem]"
+            : ""
+        } ${coreOpen ? "" : "hidden"}`}
+      >
+        <AethraCorePanel
+          open={coreOpen}
+          regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
+          onClose={() => setCoreOpen(false)}
+          onAction={handleCoreAction}
+        />
+      </div>
 
       <div
         ref={bottomBarRef}
+        // Fixed in place whether or not a panel is open (D82): the side panels leave room for it instead.
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-4 pb-8 sm:px-6 ${
-          // Inspector = 30rem (energy 34rem) + 1.5rem right offset; keep a 1rem gap so buttons never sit under it.
-          inspectorOpen
-            ? workspaceMode === "energy"
-              ? "max-sm:hidden sm:pr-[min(36.5rem,calc(100vw-5.5rem))]"
-              : "max-sm:hidden sm:pr-[min(32.5rem,calc(100vw-5.5rem))]"
-            : ""
-        } ${proofStage ? "max-lg:hidden" : ""}`}
+          proofStage ? "max-lg:hidden" : ""
+        }`}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="sm:max-w-[20rem]">
@@ -1881,27 +1937,14 @@ export function ExploreView() {
               </CoordinateReadout>
             )}
           </div>
-          {/* With the inspector open below 1280 px there is no room beside it: the panel has its own close button. */}
-          <div className={`flex flex-wrap items-end justify-end gap-2 ${inspectorOpen ? "max-[1279px]:hidden" : ""}`}>
+          {/* Bottom menu: same place with or without open panels (D82); TARO at the end of the group (D81). */}
+          <div ref={menuRowRef} className="flex flex-wrap items-end justify-end gap-2">
             {activeDestination && activeDestination.id !== "spain" && (
               <p className="pointer-events-none mb-1 max-w-[16rem] text-[10px] leading-snug text-muted">
                 {activeDestination.protectedLandscape
                   ? m.explore.navOnly(activeDestination.name)
                   : m.explore.destSource(activeDestination.name, activeDestination.source.name)}
               </p>
-            )}
-            {/* Competition cut (D76): TARO is research-build only; the timed demo never depends on it. */}
-            {EXPLORATORY_FEATURES_ENABLED && (
-            <button
-              type="button"
-              onClick={() => setCoreOpen((o) => !o)}
-              aria-expanded={coreOpen}
-              aria-controls="taro"
-              aria-label="TARO"
-              className="focus-ring panel pointer-events-auto inline-flex size-11 items-center overflow-hidden !rounded-full p-0 text-xs text-ink transition-colors hover:bg-white/6 sm:mb-1"
-            >
-              <TaroPortrait className="size-11" />
-            </button>
             )}
             <ExploreSpain
               selectedId={destinationId}
@@ -1936,20 +1979,20 @@ export function ExploreView() {
                   ? m.explore.idealSites
                   : m.explore.trend}
             </button>
+            {renderTaroButton("inline-flex sm:mb-1")}
           </div>
         </div>
       </div>
 
+      {/* Floating TARO fallback (D81): only while Planet to Proof hides the bottom bar below lg, lifted above its sheet. */}
+      {renderTaroButton(
+        `absolute right-4 z-40 hidden sm:right-6 ${proofStage ? "max-lg:inline-flex bottom-[calc(46dvh+1.5rem)]" : ""}`,
+      )}
+
       {/* Imagery / terrain attribution (required by providers) */}
       <div
         ref={setCreditEl}
-        className={`globe-credits pointer-events-auto absolute inset-x-4 bottom-1.5 z-10 sm:inset-x-6 ${
-          inspectorOpen
-            ? workspaceMode === "energy"
-              ? "sm:pr-[min(36.5rem,calc(100vw-5.5rem))]"
-              : "sm:pr-[min(32.5rem,calc(100vw-5.5rem))]"
-            : ""
-        }`}
+        className="globe-credits pointer-events-auto absolute inset-x-4 bottom-1.5 z-10 sm:inset-x-6"
       />
     </main>
   );

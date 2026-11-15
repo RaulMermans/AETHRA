@@ -26,8 +26,10 @@ The globe is CesiumJS (ADR-001). Don't change engines and don't add map tools wh
    labelled, extrapolations (if ever shown) dashed and tagged *extrapolation, not a forecast*. No
    synthetic value is ever shown as an observation.
 6. **No false precision.** Hover values are the native grid cell, with no interpolation finer than
-   native support. Grid maps draw one flat colour per native cell; station-only maps draw point
-   symbols with nothing between gauges; basin boxes are labelled as boxes, not watersheds (D73).
+   native support. Grid maps may draw a display-only gradient between native cell centres (D84),
+   labelled as smoothed for display; clicks select and outline the native cell, cells without data
+   stay empty, and FDR stippling stays one dot per cell. Station-only maps draw point symbols with
+   nothing between gauges; basin boxes are labelled as boxes, not watersheds (D73).
 7. **Label the data type:** reanalysis, satellite–gauge estimate, land-surface model, station
    observation. GLDAS runoff is "modelled runoff", not river discharge.
 8. **Each EvidenceCard has a "do not conclude" line,** e.g. "Not energy production, not a forecast,

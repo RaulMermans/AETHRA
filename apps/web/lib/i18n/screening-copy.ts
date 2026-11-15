@@ -41,6 +41,18 @@ export interface ScreeningCopy {
   toggleMitecoHint: string;
   togglePlants: string;
   togglePlantsHint: string;
+  chronoHeading: string;
+  chronoAll: string;
+  chronoPlay: string;
+  chronoPause: string;
+  chronoSlider: string;
+  chronoShown: (shown: number, year: number) => string;
+  chronoAllShown: (total: number) => string;
+  chronoUndated: (n: number) => string;
+  chronoSpike: (n: number | null) => string;
+  chronoLimit: string;
+  chronoOfficial: (year: number, mw: string) => string;
+  chronoOfficialMissing: (year: number, lastYear: number) => string;
   legendGood: string;
   legendMixed: string;
   legendAvoid: string;
@@ -249,6 +261,18 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   toggleMitecoHint: "Spanish environment ministry map: green = few environmental constraints, red = not recommended",
   togglePlants: "Real plants",
   togglePlantsHint: "Operating (dot) and under construction (ring), sized by installed power (MW)",
+  chronoHeading: "Watch the plants appear, year by year",
+  chronoAll: "All",
+  chronoPlay: "Play the years",
+  chronoPause: "Pause",
+  chronoSlider: "Show solar plants that started up to year",
+  chronoShown: (shown, year) => `${shown.toLocaleString("en")} solar project ${shown === 1 ? "entry" : "entries"} on the map that started by ${year}.`,
+  chronoAllShown: (total) => `All ${total.toLocaleString("en")} solar project entries in the register, including those with no start year.`,
+  chronoUndated: (n) => `${n} entries have no start year in the register, so they stay hidden while a year is chosen.`,
+  chronoSpike: (n) => `Why the jump in 2017: the register dates ${n === null ? "many" : n.toLocaleString("en")} entries “probably solar panels (type not confirmed)” to 2017. Many are older plants catalogued that year, not plants built that year.`,
+  chronoLimit: "Source: Global Energy Monitor plant register (Global Solar Power Tracker), February 2026: plants of at least 1 MW. It lists today's plants by start year; it is not a yearly census and leaves out small systems such as rooftops. Installed power (MW) is not electricity produced.",
+  chronoOfficial: (year, mw) => `Official figure: Spain had ${mw} MW of solar panels installed at the end of ${year} (Eurostat). Use this number for how fast Spain is building, not the count of points.`,
+  chronoOfficialMissing: (year, lastYear) => `Eurostat has not published a figure for ${year} yet (latest: ${lastYear}).`,
   legendGood: "Promising: look here first",
   legendMixed: "Mixed: possible, with a weak point",
   legendAvoid: "Not a priority",
@@ -334,7 +358,7 @@ const EN: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   plantMitecoUnknown: "Not available",
   plantNote: "Real plant from the Global Energy Monitor plant register. Installed power (MW) is not electricity produced.",
   mitecoClass: (v) => `${v} · ${MITECO_EN[v] ?? "—"}`,
-  plantsInCell: (n, mw) => `${n} operating plants here today (${Math.round(mw)} MW).`,
+  plantsInCell: (n, mw) => `${n} operating solar project phases here (PV and solar thermal, GEM Feb 2026); ${Math.round(mw)} MW registered, adding mixed MWac/MWp ratings. Nameplate, not production.`,
 };
 
 const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
@@ -355,6 +379,18 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   toggleMitecoHint: "Mapa del Ministerio para la Transición Ecológica: verde = pocas restricciones ambientales, rojo = no recomendado",
   togglePlants: "Plantas reales",
   togglePlantsHint: "En operación (punto) y en construcción (anillo), tamaño según potencia instalada (MW)",
+  chronoHeading: "Mira cómo aparecen las plantas, año a año",
+  chronoAll: "Todas",
+  chronoPlay: "Reproducir los años",
+  chronoPause: "Pausa",
+  chronoSlider: "Mostrar plantas solares que empezaron hasta el año",
+  chronoShown: (shown, year) => `${shown.toLocaleString("es")} ${shown === 1 ? "entrada" : "entradas"} de proyectos solares en el mapa que empezaron hasta ${year}.`,
+  chronoAllShown: (total) => `Las ${total.toLocaleString("es")} entradas de proyectos solares del registro, incluidas las que no tienen año de inicio.`,
+  chronoUndated: (n) => `${n} entradas no tienen año de inicio en el registro, así que se ocultan mientras hay un año elegido.`,
+  chronoSpike: (n) => `Por qué el salto en 2017: el registro fecha en 2017 ${n === null ? "muchas" : n.toLocaleString("es")} entradas «probablemente paneles solares (tipo sin confirmar)». Muchas son plantas anteriores catalogadas ese año, no plantas construidas ese año.`,
+  chronoLimit: "Fuente: registro de plantas de Global Energy Monitor (Global Solar Power Tracker), febrero de 2026: plantas de al menos 1 MW. Lista las plantas de hoy por año de inicio; no es un censo anual y deja fuera instalaciones pequeñas como tejados. La potencia instalada (MW) no es electricidad producida.",
+  chronoOfficial: (year, mw) => `Dato oficial: España tenía ${mw} MW de paneles solares instalados a finales de ${year} (Eurostat). Usa este número para saber a qué ritmo construye España, no el número de puntos.`,
+  chronoOfficialMissing: (year, lastYear) => `Eurostat aún no ha publicado el dato de ${year} (último: ${lastYear}).`,
   legendGood: "Prometedora: mira aquí primero",
   legendMixed: "Mixta: posible, con un punto débil",
   legendAvoid: "No prioritaria",
@@ -440,7 +476,7 @@ const ES: Omit<ScreeningCopy, "bullets" | "detailRows"> = {
   plantMitecoUnknown: "No disponible",
   plantNote: "Planta real del registro de plantas de Global Energy Monitor. La potencia instalada (MW) no es electricidad producida.",
   mitecoClass: (v) => `${v} · ${MITECO_ES[v] ?? "—"}`,
-  plantsInCell: (n, mw) => `${n} plantas en operación aquí hoy (${Math.round(mw)} MW).`,
+  plantsInCell: (n, mw) => `${n} fases de proyectos solares operativas aquí (FV y termosolar, GEM feb. 2026); ${Math.round(mw)} MW registrados sumando potencias MWac/MWp mixtas. Potencia nominal, no producción.`,
 };
 
 export function screeningCopy(locale: Locale): ScreeningCopy {

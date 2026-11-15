@@ -741,7 +741,7 @@ export const messages: Record<Locale, Copy> = {
     mapKey: {
       aria: "How to read the map",
       title: "How to read the map",
-      cells: (resolution) => `Each square is one native cell (${resolution}). No smoothing between cells.`,
+      cells: (resolution) => `Colours are smoothed between native cell centres for display only. Values and clicks use the native cell (${resolution}); the clicked cell is outlined.`,
       cellsRobust: "Plain cell: trend holds after FDR across map cells",
       cellsDotted: "Dotted cell: no robust trend detected (FDR, q ≥ 0.05)",
       cellsNoFdr: "Slopes only: this bundle has no per-cell FDR label.",
@@ -1329,7 +1329,7 @@ export const messages: Record<Locale, Copy> = {
     mapKey: {
       aria: "Cómo leer el mapa",
       title: "Cómo leer el mapa",
-      cells: (resolution) => `Cada cuadrado es una celda nativa (${resolution}). Sin suavizado entre celdas.`,
+      cells: (resolution) => `Los colores se suavizan entre centros de celda solo para la visualización. Los valores y los clics usan la celda nativa (${resolution}); la celda seleccionada se resalta con un contorno.`,
       cellsRobust: "Celda lisa: la tendencia se mantiene tras FDR entre celdas",
       cellsDotted: "Celda punteada: no se detecta una tendencia robusta (FDR, q ≥ 0,05)",
       cellsNoFdr: "Solo pendientes: este bundle no trae la etiqueta FDR por celda.",

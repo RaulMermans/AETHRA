@@ -39,6 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "packages/science"))
 import trends as T  # noqa: E402
+from build_solar_plants import write_plants  # noqa: E402
 
 SWGDN_DIR = ROOT / "data/nasa_merra2_solar_spain_monthly/SWGDN"
 SWGDN_VAR = "M2TMNXRAD_5_12_4_SWGDN"
@@ -290,24 +291,7 @@ def write_miteco_overlays() -> dict:
     return meta
 
 
-def write_plants(gem: pd.DataFrame) -> int:
-    d = gem[gem["status"].isin(["operating", "construction"])].copy()
-    plants = []
-    for _, p in d.iterrows():
-        name = p["project_name"]
-        if isinstance(p["phase_name"], str) and p["phase_name"].strip() not in ("", "--"):
-            name = f"{name} (phase {p['phase_name']})"
-        mc = p["miteco_pv_sensitivity_class"]
-        plants.append({
-            "name": name, "mw": r(p["capacity_mw"], 1), "tech": p["tech"], "status": p["status"],
-            "lat": r(p["latitude"], 4), "lon": r(p["longitude"], 4), "accuracy": p["location_accuracy"],
-            "miteco_class": int(mc) if pd.notna(mc) and int(mc) != 255 else None,
-        })
-    plants.sort(key=lambda q: -(q["mw"] or 0))
-    out = {"schema": "solar-plants/v1", "source": f"{GEM_LABEL} (CC BY 4.0); utility-scale >= 1 MW; operating + construction",
-           "n": len(plants), "plants": plants}
-    (OUT / "solar-plants.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    return len(plants)
+# write_plants lives in build_solar_plants.py (D85) so the plant file rebuilds without rasterio.
 
 
 def regional_validation(ann_swgdn: np.ndarray, lats, lons) -> list[dict]:

@@ -1,0 +1,793 @@
+{
+  "schema": "pv-case/v1",
+  "status": "EXPLORATORY",
+  "generated_utc": "2026-11-15T14:29:29+00:00",
+  "cell_id": "r20c20",
+  "place": "Seville countryside (Carmona, Alcalá de Guadaíra, Lora del Río)",
+  "selection": "Post-hoc editorial case: the green screening cell with the most operating GEM PV phases; not an optimal-site ranking",
+  "bounds": [
+    -5.9375,
+    37.25,
+    -5.3125,
+    37.75
+  ],
+  "design": "docs/PV_SEVILLA_CASE.md §1 (pre-registered before the POWER download)",
+  "screening": {
+    "verdict": "good",
+    "irr_mean_kwh_m2_day": 5.294,
+    "irr_resource_percentile": 87,
+    "irr_trend_pct_decade": 0.09,
+    "irr_ci_pct_decade": [
+      -0.64,
+      0.9
+    ],
+    "irr_p_bh": 0.9853,
+    "t_trend_c_decade": 0.5,
+    "t_ci_c_decade": [
+      0.02,
+      0.96
+    ],
+    "t_p_bh": 0.05,
+    "t_significant": true,
+    "miteco_low_moderate_pct": 84.3
+  },
+  "climate": {
+    "source": {
+      "name": "NASA POWER daily point API (community RE)",
+      "api_version": "v2.10.3",
+      "sources": [
+        "MERRA2",
+        "SYN1DEG",
+        "POWER"
+      ],
+      "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN%2CT2M%2CT2M_MAX%2CAOD_55&community=RE&latitude=37.5&longitude=-5.625&start=20010101&end=20251231&format=JSON",
+      "retrieved_utc": "2026-11-15T14:26:52+00:00",
+      "raw_file": "data/raw/power_point/pv_case_sevilla_r20c20_2001-2025.json.gz",
+      "raw_sha256": "ec7b0b5dcca479a68b883c43da402a6f5c84de0589c8ccad03c3c73bfc7d6657",
+      "point": {
+        "lat": 37.5,
+        "lon": -5.625
+      },
+      "spatial_support": "POWER solar ~1 deg, meteorology/aerosol 0.5 x 0.625 deg (MERRA-2 lineage); regional context, not a parcel"
+    },
+    "method": "Theil-Sen slope, Gilbert 95% CI, Mann-Kendall (Hamed-Rao if lag-1 autocorrelation significant); BH-FDR across the 4 variables; supported = q < 0.05 and CI excludes 0",
+    "variables": [
+      {
+        "id": "ghi",
+        "label": "All-sky surface solar irradiance (GHI)",
+        "power_parameter": "ALLSKY_SFC_SW_DWN",
+        "units": "kWh m-2 day-1",
+        "statistic": "annual mean of daily values",
+        "period": [
+          2001,
+          2025
+        ],
+        "complete_years": 25,
+        "mean": 5.0248,
+        "slope_per_decade": 0.0467,
+        "ci95_per_decade": [
+          -0.0103,
+          0.1116
+        ],
+        "p": 0.0973,
+        "q_bh": 0.0973,
+        "hamed_rao_applied": false,
+        "outcome": "no_robust_trend",
+        "annual": [
+          {
+            "year": 2001,
+            "value": 4.9216
+          },
+          {
+            "year": 2002,
+            "value": 4.9106
+          },
+          {
+            "year": 2003,
+            "value": 4.9452
+          },
+          {
+            "year": 2004,
+            "value": 4.9843
+          },
+          {
+            "year": 2005,
+            "value": 5.1837
+          },
+          {
+            "year": 2006,
+            "value": 4.8952
+          },
+          {
+            "year": 2007,
+            "value": 4.989
+          },
+          {
+            "year": 2008,
+            "value": 4.995
+          },
+          {
+            "year": 2009,
+            "value": 5.0414
+          },
+          {
+            "year": 2010,
+            "value": 4.8599
+          },
+          {
+            "year": 2011,
+            "value": 5.027
+          },
+          {
+            "year": 2012,
+            "value": 5.1379
+          },
+          {
+            "year": 2013,
+            "value": 4.994
+          },
+          {
+            "year": 2014,
+            "value": 5.0576
+          },
+          {
+            "year": 2015,
+            "value": 5.0792
+          },
+          {
+            "year": 2016,
+            "value": 5.0308
+          },
+          {
+            "year": 2017,
+            "value": 5.2197
+          },
+          {
+            "year": 2018,
+            "value": 4.8975
+          },
+          {
+            "year": 2019,
+            "value": 5.262
+          },
+          {
+            "year": 2020,
+            "value": 5.0258
+          },
+          {
+            "year": 2021,
+            "value": 5.0509
+          },
+          {
+            "year": 2022,
+            "value": 5.0166
+          },
+          {
+            "year": 2023,
+            "value": 5.1716
+          },
+          {
+            "year": 2024,
+            "value": 4.9635
+          },
+          {
+            "year": 2025,
+            "value": 4.9596
+          }
+        ],
+        "slope_pct_per_decade": 0.929,
+        "ci95_pct_per_decade": [
+          -0.206,
+          2.22
+        ]
+      },
+      {
+        "id": "t_summer",
+        "label": "Summer (JJA) 2 m air temperature",
+        "power_parameter": "T2M",
+        "units": "degC",
+        "statistic": "mean of June-August daily values",
+        "period": [
+          2001,
+          2025
+        ],
+        "complete_years": 25,
+        "mean": 28.1037,
+        "slope_per_decade": 0.4881,
+        "ci95_per_decade": [
+          -0.0062,
+          0.9515
+        ],
+        "p": 0.0526,
+        "q_bh": 0.0962,
+        "hamed_rao_applied": false,
+        "outcome": "no_robust_trend",
+        "annual": [
+          {
+            "year": 2001,
+            "value": 27.4921
+          },
+          {
+            "year": 2002,
+            "value": 27.2775
+          },
+          {
+            "year": 2003,
+            "value": 28.7568
+          },
+          {
+            "year": 2004,
+            "value": 28.2554
+          },
+          {
+            "year": 2005,
+            "value": 28.7498
+          },
+          {
+            "year": 2006,
+            "value": 27.8282
+          },
+          {
+            "year": 2007,
+            "value": 26.8739
+          },
+          {
+            "year": 2008,
+            "value": 27.3686
+          },
+          {
+            "year": 2009,
+            "value": 28.6946
+          },
+          {
+            "year": 2010,
+            "value": 27.499
+          },
+          {
+            "year": 2011,
+            "value": 27.3816
+          },
+          {
+            "year": 2012,
+            "value": 28.6683
+          },
+          {
+            "year": 2013,
+            "value": 26.9023
+          },
+          {
+            "year": 2014,
+            "value": 26.9098
+          },
+          {
+            "year": 2015,
+            "value": 28.8246
+          },
+          {
+            "year": 2016,
+            "value": 28.2155
+          },
+          {
+            "year": 2017,
+            "value": 28.8041
+          },
+          {
+            "year": 2018,
+            "value": 26.9103
+          },
+          {
+            "year": 2019,
+            "value": 27.4011
+          },
+          {
+            "year": 2020,
+            "value": 28.5446
+          },
+          {
+            "year": 2021,
+            "value": 28.2443
+          },
+          {
+            "year": 2022,
+            "value": 29.3299
+          },
+          {
+            "year": 2023,
+            "value": 29.5674
+          },
+          {
+            "year": 2024,
+            "value": 28.7815
+          },
+          {
+            "year": 2025,
+            "value": 29.3121
+          }
+        ]
+      },
+      {
+        "id": "hot_days",
+        "label": "Days with maximum 2 m temperature > 35 degC",
+        "power_parameter": "T2M_MAX",
+        "units": "days per year",
+        "statistic": "count of days with T2M_MAX > 35 degC",
+        "period": [
+          2001,
+          2025
+        ],
+        "complete_years": 25,
+        "mean": 76.32,
+        "slope_per_decade": 5.6349,
+        "ci95_per_decade": [
+          0.0,
+          11.6667
+        ],
+        "p": 0.0418,
+        "q_bh": 0.0962,
+        "hamed_rao_applied": false,
+        "outcome": "no_robust_trend",
+        "annual": [
+          {
+            "year": 2001,
+            "value": 78.0
+          },
+          {
+            "year": 2002,
+            "value": 67.0
+          },
+          {
+            "year": 2003,
+            "value": 79.0
+          },
+          {
+            "year": 2004,
+            "value": 75.0
+          },
+          {
+            "year": 2005,
+            "value": 79.0
+          },
+          {
+            "year": 2006,
+            "value": 70.0
+          },
+          {
+            "year": 2007,
+            "value": 60.0
+          },
+          {
+            "year": 2008,
+            "value": 66.0
+          },
+          {
+            "year": 2009,
+            "value": 86.0
+          },
+          {
+            "year": 2010,
+            "value": 70.0
+          },
+          {
+            "year": 2011,
+            "value": 74.0
+          },
+          {
+            "year": 2012,
+            "value": 91.0
+          },
+          {
+            "year": 2013,
+            "value": 61.0
+          },
+          {
+            "year": 2014,
+            "value": 66.0
+          },
+          {
+            "year": 2015,
+            "value": 73.0
+          },
+          {
+            "year": 2016,
+            "value": 85.0
+          },
+          {
+            "year": 2017,
+            "value": 81.0
+          },
+          {
+            "year": 2018,
+            "value": 69.0
+          },
+          {
+            "year": 2019,
+            "value": 74.0
+          },
+          {
+            "year": 2020,
+            "value": 78.0
+          },
+          {
+            "year": 2021,
+            "value": 77.0
+          },
+          {
+            "year": 2022,
+            "value": 87.0
+          },
+          {
+            "year": 2023,
+            "value": 89.0
+          },
+          {
+            "year": 2024,
+            "value": 81.0
+          },
+          {
+            "year": 2025,
+            "value": 92.0
+          }
+        ]
+      },
+      {
+        "id": "aod",
+        "label": "Aerosol optical depth at 550 nm",
+        "power_parameter": "AOD_55",
+        "units": "dimensionless",
+        "statistic": "annual mean of daily values",
+        "period": [
+          2001,
+          2025
+        ],
+        "complete_years": 25,
+        "mean": 0.1655,
+        "slope_per_decade": -0.0089,
+        "ci95_per_decade": [
+          -0.0196,
+          0.0014
+        ],
+        "p": 0.0721,
+        "q_bh": 0.0962,
+        "hamed_rao_applied": false,
+        "outcome": "no_robust_trend",
+        "annual": [
+          {
+            "year": 2001,
+            "value": 0.1937
+          },
+          {
+            "year": 2002,
+            "value": 0.1755
+          },
+          {
+            "year": 2003,
+            "value": 0.1734
+          },
+          {
+            "year": 2004,
+            "value": 0.1749
+          },
+          {
+            "year": 2005,
+            "value": 0.1641
+          },
+          {
+            "year": 2006,
+            "value": 0.1883
+          },
+          {
+            "year": 2007,
+            "value": 0.1779
+          },
+          {
+            "year": 2008,
+            "value": 0.1687
+          },
+          {
+            "year": 2009,
+            "value": 0.1542
+          },
+          {
+            "year": 2010,
+            "value": 0.1705
+          },
+          {
+            "year": 2011,
+            "value": 0.1742
+          },
+          {
+            "year": 2012,
+            "value": 0.1538
+          },
+          {
+            "year": 2013,
+            "value": 0.138
+          },
+          {
+            "year": 2014,
+            "value": 0.1322
+          },
+          {
+            "year": 2015,
+            "value": 0.1661
+          },
+          {
+            "year": 2016,
+            "value": 0.1523
+          },
+          {
+            "year": 2017,
+            "value": 0.1579
+          },
+          {
+            "year": 2018,
+            "value": 0.1578
+          },
+          {
+            "year": 2019,
+            "value": 0.1346
+          },
+          {
+            "year": 2020,
+            "value": 0.1593
+          },
+          {
+            "year": 2021,
+            "value": 0.1808
+          },
+          {
+            "year": 2022,
+            "value": 0.2056
+          },
+          {
+            "year": 2023,
+            "value": 0.1474
+          },
+          {
+            "year": 2024,
+            "value": 0.1693
+          },
+          {
+            "year": 2025,
+            "value": 0.167
+          }
+        ]
+      }
+    ]
+  },
+  "development": {
+    "source": {
+      "name": "Global Energy Monitor, Global Solar Power Tracker",
+      "version": "February 2026 Spain utility-scale snapshot (projects >= 1 MW)",
+      "license": "CC BY 4.0",
+      "file": "data/gem_solar_spain/gem_solar_spain_utility_2026-02.csv",
+      "sha256": "33c7df0a190beb42505fb724ef33dc0f524c4125f4e6e9bee889617a51f89497"
+    },
+    "units": "registered project phases (count); MW listed per rating basis and never summed across bases",
+    "summary": {
+      "operating_pv_phases": 64,
+      "explicit_pv_phases": 26,
+      "assumed_pv_phases": 38,
+      "known_start_year_phases": 62,
+      "unknown_start_year_phases": 2,
+      "pre_2000_phases": 0
+    },
+    "operating_locations": 57,
+    "exact_location_phases": 51,
+    "operating_mw_by_rating": {
+      "MWac": 469.4,
+      "MWp/dc": 748.8,
+      "unknown": 507.7
+    },
+    "operating_miteco_class_phases": {
+      "0": 7,
+      "2": 2,
+      "3": 13,
+      "4": 42
+    },
+    "pipeline": {
+      "construction": 5,
+      "pre-construction": 9
+    },
+    "annual": [
+      {
+        "year": 2000,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2001,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2002,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2003,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2004,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2005,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2006,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2007,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 1,
+        "total_phases": 1,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2008,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2009,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2010,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2011,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2012,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2013,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2014,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2015,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2016,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 1
+      },
+      {
+        "year": 2017,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 20,
+        "total_phases": 20,
+        "cumulative_reported_phases": 21
+      },
+      {
+        "year": 2018,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 21
+      },
+      {
+        "year": 2019,
+        "explicit_pv_phases": 5,
+        "assumed_pv_phases": 2,
+        "total_phases": 7,
+        "cumulative_reported_phases": 28
+      },
+      {
+        "year": 2020,
+        "explicit_pv_phases": 7,
+        "assumed_pv_phases": 3,
+        "total_phases": 10,
+        "cumulative_reported_phases": 38
+      },
+      {
+        "year": 2021,
+        "explicit_pv_phases": 2,
+        "assumed_pv_phases": 0,
+        "total_phases": 2,
+        "cumulative_reported_phases": 40
+      },
+      {
+        "year": 2022,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 1,
+        "total_phases": 1,
+        "cumulative_reported_phases": 41
+      },
+      {
+        "year": 2023,
+        "explicit_pv_phases": 6,
+        "assumed_pv_phases": 2,
+        "total_phases": 8,
+        "cumulative_reported_phases": 49
+      },
+      {
+        "year": 2024,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 6,
+        "total_phases": 6,
+        "cumulative_reported_phases": 55
+      },
+      {
+        "year": 2025,
+        "explicit_pv_phases": 4,
+        "assumed_pv_phases": 3,
+        "total_phases": 7,
+        "cumulative_reported_phases": 62
+      }
+    ],
+    "trend_assessment": {
+      "outcome": "insufficient_evidence",
+      "label": "Insufficient evidence",
+      "method": "No trend fit: the GEM February 2026 snapshot is not an annual commissioning census",
+      "slope_per_year": null,
+      "ci95": null,
+      "p_value": null
+    }
+  },
+  "limitations": [
+    "Cell chosen after viewing the screening and GEM data; the four climate tests were fixed before download.",
+    "NASA POWER is satellite- and reanalysis-derived, not a station observation; one point represents a ~50-100 km area.",
+    "No window-sensitivity test was run; every outcome stays EXPLORATORY.",
+    "AOD is atmospheric aerosol, not panel soiling; temperature and heat days are not PV output.",
+    "GEM is a 2026 inventory, not a commissioning census: no installation trend is tested and MW bases are not summed.",
+    "Climate and development are shown side by side; nothing here shows that climate caused construction."
+  ]
+}

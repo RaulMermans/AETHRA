@@ -165,7 +165,7 @@ test.describe("S05 · Adversarial user (SIMULATED)", () => {
       const text = await bodyText(page);
       expect(text).not.toContain("Energy Lab");
       expect(text).not.toMatch(/suitability|ranking/i);
-      await expect(page.getByRole("button", { name: "TARO" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "TARO" })).toBeVisible(); // D81: always shown
       await expect(page.getByRole("button", { name: en.tools.relationships })).toHaveCount(0);
       if (c.expectText) expect(text).toMatch(c.expectText);
       expect(errors).toEqual([]);
