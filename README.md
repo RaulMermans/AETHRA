@@ -9,7 +9,7 @@
 
 **NASA Earth data for Spain, turned into trends you can defend.**
 
-[![CI](https://github.com/rorro6787/nasa-project-spain/actions/workflows/ci.yml/badge.svg)](https://github.com/rorro6787/nasa-project-spain/actions/workflows/ci.yml)
+[![CI](https://github.com/RaulMermans/AETHRA/actions/workflows/ci.yml/badge.svg)](https://github.com/RaulMermans/AETHRA/actions/workflows/ci.yml)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 ![NASA Space Apps 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026%20·%20Málaga-0b3d91)
 ![Challenge #02](https://img.shields.io/badge/Challenge%20%2302-Earth%20System%20Trend%20Detective-1f6feb)
@@ -33,6 +33,41 @@
 > All results are **EXPLORATORY until independent scientific review**
 > ([SCIENTIFIC_REVIEW.md](docs/SCIENTIFIC_REVIEW.md) §5). AETHRA does not forecast, rank investment
 > sites or estimate electricity production. When the data can't decide, it says **insufficient evidence**.
+
+## 🌍 Background
+
+AETHRA was built over one weekend at the **NASA International Space Apps Challenge 2026** local event
+in Málaga (14–15 November 2026), for Challenge #02, *Be An Earth System Trend Detective!* The
+challenge asks for a tool that takes NASA observations or models for a region, builds a time series
+over a meaningful period, and says whether there is a trend, how large it is, and whether it is
+statistically significant.
+
+**Why Spain and why energy.** Spain is one of Europe's largest solar markets, and new plants
+are being planned on land whose climate is itself changing. People hear two things: "the sun is
+plentiful" and "the climate is warming". Few can say what the satellite and reanalysis record
+actually supports for a specific place. We wanted a tool that answers that honestly, including when
+the answer is *we can't tell*.
+
+**What we chose not to build.** Climate dashboards that colour every map red and AI tools that sound
+sure of anything are easy to make. We decided early that AETHRA would be **evidence-first**:
+
+- every number comes from tested Python, not from the browser or a language model;
+- the regions, thresholds and verdict rules were written down before we looked at results;
+- every finding is an **EvidenceCard** that shows its source, method, uncertainty and limits;
+- "no robust trend" and "insufficient evidence" are shown as real answers, not hidden.
+
+**How the weekend went.**
+
+| When | What happened |
+|---|---|
+| Sat morning | Repo created; NOAA station data and a catalogue of 1,084 NASA Earthdata collections gathered for Spain |
+| Sat afternoon | NASA MERRA-2, GLDAS, SWOT and MODIS subsets downloaded; first 3D globe with CesiumJS |
+| Sat night | Statistics pipeline hardened (Theil–Sen, Mann–Kendall, FDR correction); first full evidence chain for air temperature, checked against 64 NOAA stations |
+| Sun morning | Judge mode, Spanish/English interface, TARO companion, solar PV screening use case |
+| Sun afternoon | Seville PV case study, accessibility mode, pitch deck, captioned 30 s videos, CI |
+| Sun evening | Final release validation and submission |
+
+The full reasoning behind each choice is logged in [DECISIONS.md](docs/DECISIONS.md) (D1–D87).
 
 ## 🔭 The question
 
@@ -146,13 +181,16 @@ Key docs: [PROJECT](docs/PROJECT.md) · [DECISIONS](docs/DECISIONS.md) · [DATAS
 
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/RaulMermans"><img src="https://github.com/RaulMermans.png" width="96" alt=""><br><b>Raúl Mermans</b></a><br><sub>@RaulMermans</sub></td>
-    <td align="center"><a href="https://github.com/rorro6787"><img src="https://github.com/rorro6787.png" width="96" alt=""><br><b>Emilio Rodrigo Carreira Villalta</b></a><br><sub>@rorro6787</sub></td>
-    <td align="center"><a href="https://github.com/LinceAzul"><img src="https://github.com/LinceAzul.png" width="96" alt=""><br><b>Ivan Iroslavov</b></a><br><sub>@LinceAzul</sub></td>
+    <td align="center" valign="top" width="33%"><a href="https://github.com/RaulMermans"><img src="https://github.com/RaulMermans.png" width="96" alt=""><br><b>Raúl Mermans</b></a><br><sub>@RaulMermans</sub><br><br><sub>Science pipeline and evidence chain, EvidenceCards and judge mode, globe and Earth layers, Spanish/English interface, release validation, CI and docs</sub></td>
+    <td align="center" valign="top" width="33%"><a href="https://github.com/rorro6787"><img src="https://github.com/rorro6787.png" width="96" alt=""><br><b>Emilio Rodrigo Carreira Villalta</b></a><br><sub>@rorro6787</sub><br><br><sub>Project setup, NOAA and NASA dataset catalogue, administrative scoping (CCAA, provinces), Energy Lab, TARO companion, logo and pitch deck</sub></td>
+    <td align="center" valign="top" width="33%"><a href="https://github.com/LinceAzul"><img src="https://github.com/LinceAzul.png" width="96" alt=""><br><b>Ivan Iroslavov</b></a><br><sub>@LinceAzul</sub><br><br><sub>NOAA GHCN-Daily, GLDAS and MERRA-2 wind data for Spain, solar PV screening and Seville/Jaén cases, plain-language findings, accessibility mode</sub></td>
   </tr>
 </table>
 
-Built during NASA International Space Apps Challenge 2026, Málaga (14–15 Nov 2026).
+Built during NASA International Space Apps Challenge 2026, Málaga (14–15 Nov 2026). Roles above are
+summarised from each person's commits. This repository is a copy of
+[rorro6787/nasa-project-spain](https://github.com/rorro6787/nasa-project-spain), with its full commit
+history and branches.
 
 ## 🤖 AI use
 
