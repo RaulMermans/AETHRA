@@ -1,122 +1,137 @@
-# AETHRA — Earth System Trend Detective for Spain
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="presentation/AETHRA_Logo_Kit/PNG/03_Full_Color_Transparent.png">
+  <img alt="AETHRA" src="presentation/AETHRA_Logo_Kit/PNG/04_Full_Color_Light.png" width="420">
+</picture>
+
+### Earth evidence, not answers you want.
+
+**NASA Earth data for Spain, turned into trends you can defend.**
 
 [![CI](https://github.com/rorro6787/nasa-project-spain/actions/workflows/ci.yml/badge.svg)](https://github.com/rorro6787/nasa-project-spain/actions/workflows/ci.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+![NASA Space Apps 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026%20·%20Málaga-0b3d91)
+![Challenge #02](https://img.shields.io/badge/Challenge%20%2302-Earth%20System%20Trend%20Detective-1f6feb)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![CesiumJS](https://img.shields.io/badge/CesiumJS-globe-6caddf)
 
-NASA International Space Apps Challenge 2026 (Málaga) · Challenge #02 *Be An Earth System Trend Detective!*
+[**Live app**](https://nasa-project-spain.vercel.app/explore) ·
+[**30 s videos**](docs/release/2026-11-15/video/) ·
+[**Pitch deck**](presentation/) ·
+[**Submission text**](docs/SUBMISSION_PACKAGE.md) ·
+[**Judge demo path**](docs/JUDGE_EXPERIENCE.md)
 
-**AETHRA turns NASA Earth data into traceable evidence about how Spain's environment has actually
-changed, region by region, with the uncertainty and the sources attached, starting with the conditions
-behind solar energy.** When the data support a trend, AETHRA shows it. When they don't, it says
-*insufficient evidence* instead of guessing.
+</div>
 
-> **Status:** all results are **EXPLORATORY until independent scientific review**
-> ([docs/SCIENTIFIC_REVIEW.md](docs/SCIENTIFIC_REVIEW.md) §5). AETHRA does not forecast, rank
-> investment sites or estimate electricity production.
+<p align="center">
+  <img src="presentation/assets/app_screenshot.png" alt="AETHRA /explore: Spain's 2025 MERRA-2 air temperature on a 3D globe, with the Study findings panel answering four solar PV questions" width="100%">
+</p>
 
-| | |
-|---|---|
-| 🎬 30 s videos (captioned, transcripts) | [docs/release/2026-11-15/video/](docs/release/2026-11-15/video/) |
-| 🖥️ 7-slide deck | [presentation/](presentation/) · [docs/release/2026-11-15/deck/](docs/release/2026-11-15/deck/) |
-| 📝 Project page text, data citations, AI disclosure | [docs/SUBMISSION_PACKAGE.md](docs/SUBMISSION_PACKAGE.md) |
-| 🧭 Live demo path for judges | [docs/JUDGE_EXPERIENCE.md](docs/JUDGE_EXPERIENCE.md) |
+> [!IMPORTANT]
+> All results are **EXPLORATORY until independent scientific review**
+> ([SCIENTIFIC_REVIEW.md](docs/SCIENTIFIC_REVIEW.md) §5). AETHRA does not forecast, rank investment
+> sites or estimate electricity production. When the data can't decide, it says **insufficient evidence**.
 
-## How it answers the challenge
+## 🔭 The question
 
-| The challenge asks the tool to… | AETHRA |
-|---|---|
-| Identify relevant Earth-science variables | NASA MERRA-2 air temperature, NASA POWER daily solar (CERES SYN1deg) and 50 m wind (MERRA-2), GPM IMERG precipitation, GLDAS runoff, with versions and DOIs |
-| Obtain data for a region | Spain, Autonomous Communities (NUTS-2) and provinces (NUTS-3), plus a native-cell PV screening grid |
-| Generate and visualize a time series | Annual series and trend maps on a CesiumJS globe (`/explore`) |
-| Determine direction and magnitude | Theil–Sen slope with a 95 % confidence interval |
-| Evaluate statistical significance | Mann–Kendall (ties, autocorrelation checked), Benjamini–Hochberg across regions, window sensitivity, comparison with 64 NOAA stations |
+A solar developer asks: **where in Spain should we look first for the next solar farm, and are the
+conditions those plants depend on changing?**
 
-Statistics are computed in tested Python ([packages/science](packages/science)); the browser only
-renders them. Every result is an **EvidenceCard**: variable, units, region, period, slope and interval,
-method, NASA source and a "do not conclude" line.
+AETHRA answers with NASA data and says how strong the evidence is. Every answer is an
+**EvidenceCard**: variable, units, region, period, slope with its 95 % interval, test, NASA source and a
+"do not conclude" line.
 
-## Results
+## 📊 What NASA's evidence says
 
-Wording approved in [docs/DEMO_AND_SUBMISSION.md](docs/DEMO_AND_SUBMISSION.md); each traces to a recorded file.
+| Question | Answer | Evidence |
+|---|---|---|
+| **Where to look first?** | 46 of 246 grid cells combine strong sun with mostly low/moderate environmental sensitivity (MITECO); 79 are *avoid*. 47.6 % of registered operating solar capacity already sits in the *look here first* cells | [`pv-screening.json`](apps/web/public/data/pv-screening.json), rule `pv-screening/v1` fixed before results |
+| **Is the sun fading?** | **No robust trend.** None of the 195 cells tested shows a supported irradiance trend after FDR correction (2000–2025) | NASA MERRA-2 SWGDN |
+| **Are summers warming?** | **Supported increase** in 120 of 195 cells (median +0.67 °C per decade) | NASA MERRA-2 T2M, June–August |
+| **Is Spain warming?** | **+0.60 °C per decade** (95 % CI 0.31–0.87), Peninsula + Balearics, 2000–2025; all 64 long-record NOAA stations compared show a positive trend | [`gate_a_temperature`](data/results/gate_a_temperature/analysis_bundle.json), [`noaa_validation`](data/results/noaa_validation/analysis_bundle.json) |
+| **Are low-sun + low-wind days more common?** | **Insufficient evidence** in all five pre-registered regions (Peninsula + Balearics: 0.0 days per decade, 95 % CI −1.8 to +2.2) | [`energy_gap`](data/results/energy_gap/analysis_bundle.json), NASA POWER |
 
-1. **Temperature (supported).** In NASA's MERRA-2 reanalysis, annual near-surface air temperature over
-   Peninsular Spain and the Balearics rose by about **0.6 °C per decade** from 2000 to 2025 (95 % CI
-   0.31–0.87 °C per decade; Theil–Sen with Mann–Kendall, p < 0.001; 26 complete years).
-   — [`data/results/gate_a_temperature/analysis_bundle.json`](data/results/gate_a_temperature/analysis_bundle.json)
-2. **External station comparison** (not claimed independent). All 64 long-record NOAA weather stations
-   we compared show a positive trend (significant at 57), and for 53 of them the station trend is within
-   0.2 °C per decade of the reanalysis cell around it.
-   — [`data/results/noaa_validation/analysis_bundle.json`](data/results/noaa_validation/analysis_bundle.json)
-3. **Solar + wind (honest null).** We found **no detectable change** in how often solar and wind
-   resources are low on the same day (Peninsula + Balearics, 2001–2025: 0.0 days per decade, 95 % CI
-   −1.8 to +2.2). The result is *insufficient evidence* in all five pre-registered regions.
-   — [`data/results/energy_gap/analysis_bundle.json`](data/results/energy_gap/analysis_bundle.json)
+**Case study, east of Seville (cell `r20c20`, chosen after seeing the map).** Sunshine in the 87th
+percentile of Spain, 84 % of the land rated low or moderate sensitivity, 64 operating PV phases in the
+register. Four NASA POWER tests pre-registered for 2001–2025 (sunlight, summer heat, hot days, aerosol):
+**no robust trend** in any of them. → [docs/PV_SEVILLA_CASE.md](docs/PV_SEVILLA_CASE.md)
 
-**Solar PV screening (EXPLORATORY).** A map of 246 grid cells that tells an analyst *where to look
-first* for utility-scale PV, using NASA irradiance, its trend, and MITECO environmental-sensitivity
-classes, with a verdict rule fixed before the results were seen (`pv-screening/v1`). Registered plants
-from the Global Energy Monitor tracker are shown for context only. It is screening, not investment
-advice. Details: [docs/EVIDENCE_SCREENING_PLAN.md](docs/EVIDENCE_SCREENING_PLAN.md),
-[docs/PV_SEVILLA_CASE.md](docs/PV_SEVILLA_CASE.md), [docs/PV_HISTORY.md](docs/PV_HISTORY.md).
+## ⚙️ How it works
 
-**TARO** is the in-app research companion. It is rule-based (no LLM in the judge build) and answers
-from published EvidenceCards and precomputed regional statistics; regional rain and runoff figures are
-labelled EXPLORATORY (D86, [docs/TARO_KNOWLEDGE_ARCHITECTURE.md](docs/TARO_KNOWLEDGE_ARCHITECTURE.md)).
+```mermaid
+flowchart LR
+    A["NASA data<br/>MERRA-2 · POWER · GPM IMERG · GLDAS"] --> B["Python pipeline<br/>scripts/"]
+    B --> C["Tested statistics<br/>packages/science<br/>Theil–Sen · Mann–Kendall · BH-FDR"]
+    C --> D["Analysis bundles<br/>data/results/ (provenance + hashes)"]
+    D --> E["EvidenceCards<br/>evidence-cards.json"]
+    E --> F["/explore<br/>CesiumJS globe + panels"]
+    E --> G["TARO<br/>rule-based companion"]
+```
 
-## Data
+- **The browser never computes statistics.** It renders numbers exported by tested Python.
+- **Honest outcome states:** *Supported increase/decrease*, *No robust trend detected*, *Insufficient
+  evidence*. A null result is a result.
+- **Pre-registration:** regions, thresholds and verdict rules are written in `docs/` before results are
+  computed; decisions are logged in [DECISIONS.md](docs/DECISIONS.md).
+- **TARO**, the in-app companion, is rule-based (no LLM in the judge build). It quotes EvidenceCards and
+  precomputed regional statistics; regional rain and runoff figures are labelled EXPLORATORY (D86).
+- **Accessible:** captions and transcripts for every video, colour-blind palettes, a text "map in
+  words" mode ([ACCESSIBILITY.md](docs/ACCESSIBILITY.md)).
+
+## 🛰️ Data
 
 | Product | Role |
 |---|---|
-| NASA MERRA-2 M2TMNXSLV v5.12.4, T2M ([doi:10.5067/AP1B0BA5PD2K](https://doi.org/10.5067/AP1B0BA5PD2K)) | Temperature trend |
-| NASA POWER daily v2.10.3 (ALLSKY_SFC_SW_DWN from CERES SYN1deg; WS50M from MERRA-2) | Daily solar and wind resource |
-| NASA GPM IMERG Final V07 monthly ([doi:10.5067/GPM/IMERG/3B-MONTH/07](https://doi.org/10.5067/GPM/IMERG/3B-MONTH/07)) | Rain context maps (EXPLORATORY) |
-| NASA GLDAS Noah v2.1 monthly ([doi:10.5067/SXAVCZFAQLNO](https://doi.org/10.5067/SXAVCZFAQLNO)) | Modelled runoff context (EXPLORATORY) |
+| NASA MERRA-2 M2TMNXSLV v5.12.4, T2M ([10.5067/AP1B0BA5PD2K](https://doi.org/10.5067/AP1B0BA5PD2K)) | Air temperature trends |
+| NASA MERRA-2 M2TMNXRAD v5.12.4, SWGDN ([10.5067/OU3HJDS973O0](https://doi.org/10.5067/OU3HJDS973O0)) | Solar resource per grid cell |
+| NASA POWER daily v2.10.3 (CERES SYN1deg solar, MERRA-2 wind and temperature) | Daily solar/wind resource, Seville case |
+| NASA GPM IMERG Final V07 ([10.5067/GPM/IMERG/3B-MONTH/07](https://doi.org/10.5067/GPM/IMERG/3B-MONTH/07)) | Rain context maps (EXPLORATORY) |
+| NASA GLDAS Noah v2.1 ([10.5067/SXAVCZFAQLNO](https://doi.org/10.5067/SXAVCZFAQLNO)) | Modelled runoff context (EXPLORATORY) |
 | NOAA GHCN-Daily | Station comparison for MERRA-2 temperature |
-| Eurostat GISCO NUTS 2021 · MITECO PV sensitivity 2024 · GEM Global Solar Power Tracker | Boundaries, environmental sensitivity, plant register |
+| MITECO PV zoning 2024 · GEM Global Solar Power Tracker (CC BY 4.0) · Eurostat GISCO NUTS 2021 | Environmental sensitivity, plant register, boundaries |
 
-Full inventory, readiness and provenance: [docs/DATASETS.md](docs/DATASETS.md). Globe imagery credits
-(NASA GIBS, EOX Sentinel-2 cloudless, Esri, Cesium) are shown in the app.
+Full inventory and provenance: [DATASETS.md](docs/DATASETS.md). Globe imagery credits (NASA GIBS, EOX
+Sentinel-2 cloudless, Esri, Cesium) are shown in the app.
 
-## Run it
-
-Requires Node 20+ (Node 22.6+ for the TARO policy test) and Python 3.11.
+## 🚀 Run it
 
 ```bash
 cd apps/web
 npm ci
-npm run dev        # http://localhost:3000/explore  (judge mode)
+npm run dev        # → http://localhost:3000/explore (judge mode)
 ```
 
-`.env` is optional for the app (copy `.env.example`; only data downloads need Earthdata credentials).
-The research build with the exploratory Energy Lab is `NEXT_PUBLIC_ENABLE_EXPLORATORY=1 npm run dev`;
-it is never used for judging. Rebuilding data: [scripts/README.md](scripts/README.md).
+Node 20+ (22.6+ for the TARO policy test) and Python 3.11. No secrets are needed to run the app; only
+data downloads need Earthdata credentials (see `.env.example`). The research build with the
+exploratory Energy Lab is `NEXT_PUBLIC_ENABLE_EXPLORATORY=1 npm run dev` and is never used for judging.
+Rebuilding data: [scripts/README.md](scripts/README.md).
 
-## Verify
+## ✅ Verify
 
 ```bash
 python3.11 -m venv .venv && .venv/bin/pip install -r requirements-test.txt
-.venv/bin/python -m pytest -q packages/science tests     # statistics kernels, evidence chain, demo safety, release guards
+.venv/bin/python -m pytest -q packages/science tests   # statistics, evidence chain, demo safety, release guards, a11y
 cd apps/web && npm run typecheck && npm run lint && npm run build
-npm run e2e                                              # Playwright: simulated use cases (docs/SCENARIO_VALIDATION.md)
+npm run e2e                                            # Playwright: simulated use cases
 ```
 
-[CI](.github/workflows/ci.yml) runs pytest and the web typecheck, lint and judge build on every push
-and PR. It skips two tests that need gitignored raw data (`test_miteco_cvd_pngs_match_rasters`,
-`test_numbers_reproducible_for_sample_cells`); run those locally after downloading the data. Ruff is
-advisory. Last full release validation: [docs/FINAL_RELEASE_VALIDATION.md](docs/FINAL_RELEASE_VALIDATION.md).
+[CI](.github/workflows/ci.yml) runs pytest and the web typecheck, lint and judge build on every push and
+PR. Two tests need gitignored raw data (`test_miteco_cvd_pngs_match_rasters`,
+`test_numbers_reproducible_for_sample_cells`) and run locally only. Last full release validation:
+[FINAL_RELEASE_VALIDATION.md](docs/FINAL_RELEASE_VALIDATION.md).
 
-On Windows use `.venv\Scripts\python.exe`. Line endings are pinned by `.gitattributes`, so data-file
-SHA-256 values match on every OS.
-
-## Repository
+## 🗂️ Repository
 
 ```text
-apps/web/          Next.js + TypeScript + CesiumJS globe, EvidenceCards, TARO (app)
+apps/web/          Next.js + TypeScript + CesiumJS globe, EvidenceCards, TARO
 packages/science/  NumPy trend statistics (Theil–Sen, Mann–Kendall, Hamed–Rao, BH) + tests
 scripts/           Data download, processing and export (every output records its provenance)
-data/              Processed Spain subsets, analysis bundles (data/results), provenance metadata
+data/              Processed Spain subsets, analysis bundles (data/results), metadata
 tests/             Evidence chain, demo safety, release guards, accessibility
-docs/              Project, decisions (DECISIONS.md), datasets, scientific review, submission
-docs/release/      Screenshots, deck, captioned videos and validation runs of 15 Nov 2026
+docs/              Project, decisions, datasets, scientific review, submission
+docs/release/      Screenshots, deck, captioned videos and validation runs (15 Nov 2026)
 presentation/      HTML pitch deck and logo kit
 experiments/taro/  TARO avatar experiments (not part of the app build)
 services/api/      Placeholder, not used (results are served as static files)
@@ -124,16 +139,29 @@ services/api/      Placeholder, not used (results are served as static files)
 
 Key docs: [PROJECT](docs/PROJECT.md) · [DECISIONS](docs/DECISIONS.md) · [DATASETS](docs/DATASETS.md) ·
 [SCIENTIFIC_REVIEW](docs/SCIENTIFIC_REVIEW.md) · [UX_UI_RULES](docs/UX_UI_RULES.md) ·
-[ACCESSIBILITY](docs/ACCESSIBILITY.md) · [TEAM_WORKFLOW](docs/TEAM_WORKFLOW.md) ·
-[AGENTS.md](AGENTS.md) (rules for AI coding agents). Event reference material: [docs/reference/event/](docs/reference/event/).
+[TEAM_WORKFLOW](docs/TEAM_WORKFLOW.md) · [AGENTS.md](AGENTS.md). Event material:
+[docs/reference/event/](docs/reference/event/).
 
-## AI use
+## 👥 Team
+
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/RaulMermans"><img src="https://github.com/RaulMermans.png" width="96" alt=""><br><b>Raúl Mermans</b></a><br><sub>@RaulMermans</sub></td>
+    <td align="center"><a href="https://github.com/rorro6787"><img src="https://github.com/rorro6787.png" width="96" alt=""><br><b>Emilio Rodrigo Carreira Villalta</b></a><br><sub>@rorro6787</sub></td>
+    <td align="center"><a href="https://github.com/LinceAzul"><img src="https://github.com/LinceAzul.png" width="96" alt=""><br><b>Ivan Iroslavov</b></a><br><sub>@LinceAzul</sub></td>
+  </tr>
+</table>
+
+Built during NASA International Space Apps Challenge 2026, Málaga (14–15 Nov 2026).
+
+## 🤖 AI use
 
 Code and documentation were written with an AI coding assistant (Anthropic Claude via Claude Code),
 directed and reviewed by the team. Scientific definitions were fixed in `docs/` before results were
 computed, and every number comes from tested Python, not from a model. The video voice-overs are
-synthetic (Kokoro-82M TTS). Full disclosure: [docs/SUBMISSION_PACKAGE.md](docs/SUBMISSION_PACKAGE.md) §4.
+synthetic (Kokoro-82M TTS). Full disclosure: [SUBMISSION_PACKAGE.md](docs/SUBMISSION_PACKAGE.md) §4.
 
-## License
+## 📄 License
 
-GPL-3.0, see [LICENSE](LICENSE). Third-party data keep their own licences (see [docs/DATASETS.md](docs/DATASETS.md)).
+GPL-3.0, see [LICENSE](LICENSE). Third-party data keep their own licences ([DATASETS.md](docs/DATASETS.md)).
+No NASA logos are used; NASA data are credited by product and DOI.
