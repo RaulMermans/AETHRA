@@ -8,3 +8,6 @@ netCDF4>=1.7
 h5netcdf>=1.4
 requests>=2.32
 python-dotenv>=1.0
+# Display-only context layers (scripts/build_hydrosheds_layers.py; no GDAL needed)
+pyshp>=2.3
+shapely>=2.0
