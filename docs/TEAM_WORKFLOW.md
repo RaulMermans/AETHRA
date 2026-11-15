@@ -46,6 +46,13 @@ git push origin main
 - If the rebase conflicts: fix the files, `git add <file>`, `git rebase --continue`
   (or `git rebase --abort` to go back).
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every PR: pytest
+(`packages/science` + `tests`) and `apps/web` typecheck, lint and build. Check the Actions tab after you
+push; a red run on `main` is everyone's problem, so fix or flag it in the team chat. What CI skips is
+listed in the README "Verify" section.
+
 ## Freeze
 
 Demo-path feature freeze **Sun 15 Nov 14:00**. After that, only bug fixes agreed in the team chat.

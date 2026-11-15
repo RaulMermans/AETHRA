@@ -1,0 +1,14 @@
+# Python test dependencies (pytest packages/science tests). Used by CI (.github/workflows/ci.yml).
+# Versions are the ones the suite was verified with on Python 3.11 (15 Nov 2026).
+# Raw-data download tools live in scripts/requirements.txt.
+pytest==9.2.0
+ruff==0.17.5
+numpy==2.4.6
+pandas==3.1.1
+xarray==2026.9.0
+netcdf4==1.7.5.1.post1
+rasterio==1.4.4
+geopandas==1.2.0
+shapely==2.2.0
+pillow==13.0.0
+requests==2.34.2

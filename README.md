@@ -82,6 +82,12 @@ cd ../.. && .venv/bin/python scripts/e2e_judge_path.py --base http://localhost:3
 cd apps/web && npm run e2e                                    # Playwright: 5 SIMULATED use cases + first screen (docs/SCENARIO_VALIDATION.md)
 ```
 
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs the pytest suite (Python 3.11, Node 22,
+deps in `requirements-test.txt`) and the web typecheck, lint and judge build (Node 20) on every push to
+`main` and every PR. It skips the two tests that need gitignored raw data
+(`test_miteco_cvd_pngs_match_rasters`, `test_numbers_reproducible_for_sample_cells`); run those locally.
+Ruff is advisory in CI until the existing findings are fixed. CI does not run Playwright or the e2e judge path.
+
 Last full validation: `docs/FINAL_RELEASE_VALIDATION.md` (15 Nov 2026). Submission text:
 `docs/SUBMISSION_PACKAGE.md`.
 
