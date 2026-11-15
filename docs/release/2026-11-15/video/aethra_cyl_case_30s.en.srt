@@ -1,0 +1,35 @@
+1
+00:00:00,300 --> 00:00:03,900
+On Spain's high northern plateau, in Castilla y León,
+
+2
+00:00:03,900 --> 00:00:07,700
+more than six hundred wind and solar installations share the same sky.
+
+3
+00:00:07,900 --> 00:00:10,600
+Their hardest days are the calm, grey ones,
+
+4
+00:00:10,600 --> 00:00:13,900
+when there is little wind and little sun at the same time.
+
+5
+00:00:14,100 --> 00:00:16,400
+Are those days becoming more common?
+
+6
+00:00:16,400 --> 00:00:20,400
+AETHRA puts the question to twenty-five years of NASA data.
+
+7
+00:00:20,600 --> 00:00:24,400
+The answer: no detectable change. Insufficient evidence.
+
+8
+00:00:24,400 --> 00:00:26,700
+Not proof that nothing is changing.
+
+9
+00:00:26,700 --> 00:00:29,000
+Just what the data can defend.

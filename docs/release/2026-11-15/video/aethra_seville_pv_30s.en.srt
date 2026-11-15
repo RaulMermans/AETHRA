@@ -1,0 +1,31 @@
+1
+00:00:00,300 --> 00:00:03,000
+Where should Spain's next solar farm go?
+
+2
+00:00:03,000 --> 00:00:06,600
+AETHRA screens the whole country with NASA Earth data.
+
+3
+00:00:06,900 --> 00:00:09,400
+East of Seville, around Carmona,
+
+4
+00:00:09,400 --> 00:00:12,200
+more than sixty solar projects are already running.
+
+5
+00:00:12,500 --> 00:00:16,700
+NASA's records place its sunshine in the top thirteen percent of Spain,
+
+6
+00:00:16,800 --> 00:00:21,400
+and most of its land is rated low or moderate for environmental sensitivity.
+
+7
+00:00:22,000 --> 00:00:24,600
+Green means: look here first.
+
+8
+00:00:24,600 --> 00:00:28,400
+AETHRA turns NASA data into a developer's shortlist.

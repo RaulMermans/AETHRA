@@ -81,6 +81,13 @@ Regional rain or runoff "Supported" labels are not presentable (D53).
 "AETHRA turns NASA Earth data into traceable evidence about how Spain's environment has actually
 changed — region by region, with the uncertainty and the sources attached — starting with the
 conditions behind clean energy."
+**Climate × PV industry framing (15 Nov).** "AETHRA puts NASA climate trends next to where Spain's
+solar industry actually stands, and asks whether the conditions those plants depend on are changing.
+Where the data can't say, we say so." Co-location, not correlation: we test climate trends where
+registered plants are (Gate B regions, PV screening case); we do **not** correlate climate trends with
+industry growth (D80/D85: plant chronology is not a census; two rising series correlate spuriously).
+Never say "climate trends drive / explain PV deployment".
+
 *(Visible product name is AETHRA, D56. GRIDSHIFT remains the internal energy-strategy working name,
 D34. Challenge title stays Be An Earth System Trend Detective!)*
 
@@ -92,6 +99,21 @@ D34. Challenge title stays Be An Earth System Trend Detective!)*
 > (15–25 s, Evidence cards → Solar + wind) "For clean energy we asked whether days with both low sun
 > and low wind are becoming more common. Honest answer: no detectable change."
 > (25–30 s, Sources) "Every number links back to its NASA source and its limits."
+
+### Video voice-over (AI-generated, must be declared)
+
+The 30 s videos in `docs/release/2026-11-15/video/` (`aethra_cyl_case_30s`, `aethra_seville_case_30s`,
+`aethra_seville_pv_30s`, `aethra_seville_pv_live_30s`) carry a **synthetic voice** generated from each
+video's own `.en.srt` with **Kokoro-82M** (open source, Apache-2.0, `hexgrad/Kokoro-82M`, voice
+`af_heart`, run locally). Each subtitle cue is voiced and placed at its start time, so voice and
+captions say exactly the same words. Picture is copied untouched; the previous audio track is replaced.
+
+```
+uv run --python 3.11 scripts/narrate_srt.py VIDEO.mp4 VIDEO.en.srt OUT.mp4 [--voice af_heart]
+```
+
+Changing the script means editing the `.srt` and re-running. Per the AI rule above, declare
+"voice-over: Kokoro-82M TTS" with the AI tools and mark it visibly in the video or its description.
 
 ## Two-minute pitch (~270 words)
 
