@@ -58,7 +58,7 @@ export function PlanetToProof({
     // Below lg the guide is a bottom sheet and the side panels are hidden, so nothing overlaps it.
     <aside
       aria-label={m.proof.title}
-      className="panel pointer-events-auto absolute inset-x-3 bottom-3 z-40 mx-auto max-h-[46dvh] max-w-xl overflow-y-auto p-4 lg:inset-x-auto lg:top-[4.75rem] lg:right-20 lg:bottom-auto lg:mx-0 lg:max-h-[calc(100dvh-9rem)] lg:w-[23rem]"
+      className="panel pointer-events-auto max-h-[46dvh] w-full overflow-y-auto p-4 lg:max-h-[calc(100dvh-9rem)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div>

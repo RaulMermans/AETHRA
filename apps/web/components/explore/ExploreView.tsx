@@ -93,6 +93,7 @@ import { MapMarkerLegend } from "./MapMarkerLegend";
 import { MapEncodingKey } from "./MapEncodingKey";
 import { CoordinateReadout } from "./CoordinateReadout";
 import { DimensionDock, dockTitle } from "./DimensionDock";
+import { DraggableWindow } from "./DraggableWindow";
 import { EnergyInfrastructurePanel } from "./EnergyInfrastructurePanel";
 import { EnergyTechControlsDock, EnergyTechInspectorPanel } from "./EnergyTechAdvisor";
 import { EvidencePanel } from "./EvidencePanel";
@@ -1469,30 +1470,36 @@ export function ExploreView() {
       />
 
       {proofStage && proofCard && (
-        <PlanetToProof
-          card={proofCard}
-          stage={proofStage}
-          scale={scaleMeta}
-          onRegion={() => {
-            setProofStage("extent");
-            // Below lg the guide is a bottom sheet: frame Spain in the free upper part of the screen.
-            const compact = typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
-            controller?.flyTo(compact ? PROOF_COMPACT_VIEW : SPAIN_VIEW);
-          }}
-          onTrend={() => {
-            updateClimateConfig({ dimension: "temperature", mode: "trend", year: LAST_COMPLETE_YEAR });
-            setLayerStates((states) => ({
-              ...states,
-              "climate-heatmap": { ...states["climate-heatmap"], visible: true },
-            }));
-            setProofStage("trend");
-          }}
-          onReveal={revealProof}
-          onExit={() => setProofStage(null)}
-        />
+        <DraggableWindow
+          windowId="planet-to-proof-panel"
+          className="pointer-events-none absolute inset-x-3 bottom-3 z-40 mx-auto max-w-xl lg:inset-x-auto lg:top-[4.75rem] lg:right-20 lg:bottom-auto lg:mx-0 lg:w-[23rem]"
+        >
+          <PlanetToProof
+            card={proofCard}
+            stage={proofStage}
+            scale={scaleMeta}
+            onRegion={() => {
+              setProofStage("extent");
+              // Below lg the guide is a bottom sheet: frame Spain in the free upper part of the screen.
+              const compact = typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
+              controller?.flyTo(compact ? PROOF_COMPACT_VIEW : SPAIN_VIEW);
+            }}
+            onTrend={() => {
+              updateClimateConfig({ dimension: "temperature", mode: "trend", year: LAST_COMPLETE_YEAR });
+              setLayerStates((states) => ({
+                ...states,
+                "climate-heatmap": { ...states["climate-heatmap"], visible: true },
+              }));
+              setProofStage("trend");
+            }}
+            onReveal={revealProof}
+            onExit={() => setProofStage(null)}
+          />
+        </DraggableWindow>
       )}
 
-      <div
+      <DraggableWindow
+        windowId="left-controls-dock"
         // Ends above the measured bottom bar (buttons + point readout), so the two never overlap.
         style={{ maxHeight: `calc(100dvh - 4.75rem - ${bottomBarHeight}px - 0.75rem)` }}
         className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 [&>*]:shrink-0 [&>.contents>*]:shrink-0 ${
@@ -1658,7 +1665,7 @@ export function ExploreView() {
             )}
           </>
         )}
-      </div>
+      </DraggableWindow>
 
       <div
         // Ends above the bottom menu so the menu never moves when a panel opens (D82). Phones: the whole bar
@@ -1673,7 +1680,10 @@ export function ExploreView() {
           proofStage ? "max-lg:hidden" : ""
         }`}
       >
-        <div className="flex shrink-0 flex-col justify-center gap-2">
+        <DraggableWindow
+          windowId="right-tools-bar"
+          className="flex shrink-0 flex-col justify-center gap-2"
+        >
           <ToolsBar
             active={activeTool}
             onToggle={toggleTool}
@@ -1681,7 +1691,7 @@ export function ExploreView() {
             disabled={!controller}
           />
           <CameraControls controller={controller} flat={dim === "2d"} onReset={() => controller?.flyTo(homeView)} />
-        </div>
+        </DraggableWindow>
         {inspectorOpen && (
           <div
             className={`flex min-h-0 min-w-0 flex-col gap-2 ${
@@ -1691,7 +1701,10 @@ export function ExploreView() {
             }`}
           >
             {secondaryPanel !== null && (
-              <div className={`min-h-0 overflow-hidden ${evidenceOpen ? "max-h-[min(42%,22rem)] shrink-0" : "flex-1"}`}>
+              <DraggableWindow
+                windowId="secondary-inspector-panel"
+                className={`flex min-h-0 flex-col overflow-hidden ${evidenceOpen ? "max-h-[min(42%,22rem)] shrink-0" : "flex-1"}`}
+              >
                 {activeTool === "stations" && (
                   <StationCatalogPanel
                     bundle={bundle}
@@ -1799,10 +1812,13 @@ export function ExploreView() {
                     }}
                   />
                 )}
-              </div>
+              </DraggableWindow>
             )}
             {evidenceOpen && (
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <DraggableWindow
+                windowId="primary-evidence-panel"
+                className="flex min-h-0 flex-1 flex-col overflow-hidden"
+              >
                 {workspaceMode === "energy" ? (
                   <EnergyTechInspectorPanel
                     conceptId={energyConcept}
@@ -1811,6 +1827,14 @@ export function ExploreView() {
                     sites={evaluatedEnergySites}
                     selectedSiteId={selectedEnergySiteId}
                     onSelectSite={handleSelectEnergySite}
+                    onChangeGoal={(g) => {
+                      setEnergyGoal(g);
+                      setSelectedEnergySiteId(null);
+                    }}
+                    onChangeScope={(s) => {
+                      setEnergyScope(s);
+                      setSelectedEnergySiteId(null);
+                    }}
                     onClose={() => setEvidenceOpen(false)}
                   />
                 ) : (
@@ -1869,7 +1893,7 @@ export function ExploreView() {
                     </div>
                   </div>
                 )}
-              </div>
+              </DraggableWindow>
             )}
           </div>
         )}
@@ -1887,8 +1911,9 @@ export function ExploreView() {
         </p>
       )}
 
-      {/* TARO chat: floating and persistent across map actions (main 2c7eea1), shown in every version (D81). */}
-      <div
+      {/* TARO chat: floating and persistent across map actions (main 2c7eea1), draggable window (D81). */}
+      <DraggableWindow
+        windowId="taro-window"
         className={`pointer-events-none absolute top-[4.75rem] right-3 z-40 flex max-h-[min(28rem,calc(100dvh-10.5rem))] w-[min(25rem,calc(100vw-1.5rem))] flex-col sm:right-6 ${
           inspectorOpen
             ? workspaceMode === "energy"
@@ -1900,10 +1925,23 @@ export function ExploreView() {
         <AethraCorePanel
           open={coreOpen}
           regionScope={resolvedScope ? (resolvedScope.level === "age" ? "age" : `${resolvedScope.level}:${resolvedScope.id}`) : "age"}
+          viewContext={{
+            dimension: climateConfig.dimension,
+            year: climateConfig.year,
+            mode: climateConfig.mode,
+            workspaceMode,
+            activeTool,
+            screeningOpen,
+            selectedCoord: selected ? { lat: selected.latitude, lon: selected.longitude } : undefined,
+            selectedCellId: screeningCellId ?? undefined,
+            selectedPlantName: screeningPlant?.name,
+            selectedInstallationId: selectedInstallationId ?? undefined,
+            energyConcept: workspaceMode === "energy" ? energyConcept : undefined,
+          }}
           onClose={() => setCoreOpen(false)}
           onAction={handleCoreAction}
         />
-      </div>
+      </DraggableWindow>
 
       <div
         ref={bottomBarRef}
@@ -1915,24 +1953,26 @@ export function ExploreView() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="sm:max-w-[20rem]">
             {(selected || overlayHover) && (
-              <CoordinateReadout
-                hover={hover}
-                selected={selected}
-                overlay={overlayHover}
-                onClear={() => {
-                  setSelected(null);
-                  setSelectedHydro(null);
-                  setHydroSelectionStatus("idle");
-                  setLayerErrors((prev) => ({ ...prev, "ign-rivers": "", "ign-waterbodies": "" }));
-                }}
-              >
-                {selected && (
-                  <HydroFeatureCard
-                    feature={selectedHydro}
-                    unavailable={hydroSelectionStatus === "error" || Boolean(layerErrors["ign-rivers"] || layerErrors["ign-waterbodies"])}
-                  />
-                )}
-              </CoordinateReadout>
+              <DraggableWindow windowId="coordinate-readout-panel">
+                <CoordinateReadout
+                  hover={hover}
+                  selected={selected}
+                  overlay={overlayHover}
+                  onClear={() => {
+                    setSelected(null);
+                    setSelectedHydro(null);
+                    setHydroSelectionStatus("idle");
+                    setLayerErrors((prev) => ({ ...prev, "ign-rivers": "", "ign-waterbodies": "" }));
+                  }}
+                >
+                  {selected && (
+                    <HydroFeatureCard
+                      feature={selectedHydro}
+                      unavailable={hydroSelectionStatus === "error" || Boolean(layerErrors["ign-rivers"] || layerErrors["ign-waterbodies"])}
+                    />
+                  )}
+                </CoordinateReadout>
+              </DraggableWindow>
             )}
           </div>
           {/* Bottom menu: same place with or without open panels (D82); TARO at the end of the group (D81). */}

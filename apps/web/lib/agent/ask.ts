@@ -12,9 +12,11 @@ import type {
   AgentLanguage,
   AgentSession,
   AgentStatus,
+  AgentViewContext,
   AskRequest,
   ConversationTurn,
 } from "./types.ts";
+import { buildVisualizationContext } from "./visualization-context.ts";
 
 export const MAX_QUESTION_CHARS = 800;
 export const MAX_CONVERSATION_TURNS = 12;
@@ -84,7 +86,14 @@ export function findMapPinById(id: string): { id: string; name: string; latitude
 
 function matchNamedPlace(text: string): NamedPlace | undefined {
   const f = fold(text);
-  const hits = NAMED_PLACES.filter((p) => f.includes(fold(p.name)));
+  // Avoid matching the hydrological term "cuenca del <río>" / "cuencas" as the city of Cuenca
+  const cleaned = f
+    .replace(/\bcuencas\b/g, " ")
+    .replace(/\bcuenca\s+(del|de\s+la|hidrografica|hidraulica|fluvial)\b/g, " ");
+  const hits = NAMED_PLACES.filter((p) => {
+    const pn = fold(p.name);
+    return pn === "cuenca" ? cleaned.includes("cuenca") : f.includes(pn);
+  });
   if (hits.length === 0) return undefined;
   return [...hits].sort((a, b) => {
     const la = fold(a.name).length;
@@ -122,6 +131,28 @@ export function parseAskBody(raw: unknown): AskRequest {
   }
   if (isRecord(raw.session) && typeof raw.session.sessionId === "string" && raw.session.sessionId.length < 80) {
     session.sessionId = raw.session.sessionId;
+  }
+  if (isRecord(raw.session) && isRecord(raw.session.viewContext)) {
+    const vc = raw.session.viewContext;
+    const viewContext: AgentViewContext = {};
+    if (typeof vc.dimension === "string") viewContext.dimension = vc.dimension;
+    if (typeof vc.year === "number" && Number.isFinite(vc.year)) viewContext.year = vc.year;
+    if (vc.mode === "value" || vc.mode === "trend") viewContext.mode = vc.mode;
+    if (vc.workspaceMode === "climate" || vc.workspaceMode === "energy") viewContext.workspaceMode = vc.workspaceMode;
+    if (typeof vc.activeTool === "string" || vc.activeTool === null) viewContext.activeTool = vc.activeTool;
+    if (typeof vc.screeningOpen === "boolean") viewContext.screeningOpen = vc.screeningOpen;
+    if (
+      isRecord(vc.selectedCoord) &&
+      typeof vc.selectedCoord.lat === "number" &&
+      typeof vc.selectedCoord.lon === "number"
+    ) {
+      viewContext.selectedCoord = { lat: vc.selectedCoord.lat, lon: vc.selectedCoord.lon };
+    }
+    if (typeof vc.selectedCellId === "string") viewContext.selectedCellId = vc.selectedCellId;
+    if (typeof vc.selectedPlantName === "string") viewContext.selectedPlantName = vc.selectedPlantName;
+    if (typeof vc.selectedInstallationId === "string") viewContext.selectedInstallationId = vc.selectedInstallationId;
+    if (typeof vc.energyConcept === "string") viewContext.energyConcept = vc.energyConcept;
+    session.viewContext = viewContext;
   }
   const conversation: ConversationTurn[] = [];
   if (Array.isArray(raw.conversation)) {
@@ -251,7 +282,7 @@ export function classifyIntent(q: string): AgentIntent {
   if (/\b(trend|tendencia|changed|cambio)\b/.test(f)) return "nasa_evidence";
   if (matchesCurriculum(q)) return "explain_mechanism";
   if (
-    /\b(hola|hello|hi\b|buenos dias|buenas|quien eres|who are you|que eres|what are you|que puedes hacer|what can you do|ayuda|help|taro|aethra|espana|spain|clima|climate|tierra|earth|energia|energy|nasa|satelit|mapa|globe|globo|explica|explain|resumen|summary|nota|markdown)\b/.test(
+    /\b(hola|hello|hi\b|buenos dias|buenas|quien eres|who are you|que eres|what are you|que puedes hacer|what can you do|ayuda|help|taro|aethra|espana|spain|clima|climate|tierra|earth|energia|energy|nasa|satelit|mapa|globe|globo|explica|explain|resumen|summary|nota|markdown|estacion\w*|station\w*|noaa|ghcn|embalse\w*|reservoir\w*|swot|screening|cribado|miteco|eurostat|polvo|dust|calima|aerosol\w*|relacion\w*|relationship\w*|correlaci\w*|spearman|pearson|noches tropicales|tropical nights|dias calurosos|hot days|racha seca|dry spell|evapotranspir\w*|humedad del suelo|soil moisture|nieve|snow|swe|visualizaci\w*|viendo|datos)\b/.test(
       f,
     )
   ) {
@@ -417,10 +448,157 @@ function placeBriefing(question: string, language: AgentLanguage, intent: AgentI
   };
 }
 
-function explainBriefing(question: string, language: AgentLanguage): AgentAnswer {
+function formatSupplementalVizText(
+  question: string,
+  language: AgentLanguage,
+  regionScope?: string,
+  viewContext?: AgentViewContext,
+): string {
+  const f = fold(question);
+  const ctx = buildVisualizationContext({ question, regionScope, viewContext });
+  const parts: string[] = [];
+
+  if (ctx.stationDigest) {
+    const st = ctx.stationDigest;
+    const tavg = st.metrics.tavg;
+    const tr = st.metrics.tropical_nights;
+    const hd = st.metrics.hot_days_35;
+    if (language === "es") {
+      parts.push(
+        `En la estación NOAA ${st.name} (${st.id}, ${st.elevationM} m):${tavg ? ` temperatura media ${signed(tavg.slopePerDecade)} °C/década (p = ${tavg.pValue}${tavg.series ? `, último año ${tavg.series.lastYear}: ${tavg.series.lastValue} °C` : ""})` : ""}${tr ? `; noches tropicales ${signed(tr.slopePerDecade)} noches/década` : ""}${hd ? `; días > 35 °C ${signed(hd.slopePerDecade)} días/década` : ""}.`,
+      );
+    } else {
+      parts.push(
+        `At NOAA station ${st.name} (${st.id}, ${st.elevationM} m):${tavg ? ` mean temperature ${signed(tavg.slopePerDecade)} °C/decade (p = ${tavg.pValue}${tavg.series ? `, latest year ${tavg.series.lastYear}: ${tavg.series.lastValue} °C` : ""})` : ""}${tr ? `; tropical nights ${signed(tr.slopePerDecade)} nights/decade` : ""}${hd ? `; hot days > 35 °C ${signed(hd.slopePerDecade)} days/decade` : ""}.`,
+      );
+    }
+  }
+
+  if (ctx.basinDigests && ctx.basinDigests.length > 0 && /\b(cuenca\w*|basin\w*|ebro|duero|tajo|guadiana|guadalquivir|jucar|segura|mino|sil)\b/.test(f)) {
+    const b = ctx.basinDigests[0]!;
+    if (b.rain || b.runoff) {
+      if (language === "es") {
+        parts.push(
+          `En las series precalculadas de ${b.name} (EXPLORATORY):${b.rain ? ` lluvia GPM ${signed(b.rain.slopePerDecade)} mm/década (IC 95% ${signed(b.rain.ci95[0])} a ${signed(b.rain.ci95[1])}; p = ${b.rain.pValue})` : ""}${b.runoff ? `; escorrentía modelada GLDAS ${signed(b.runoff.slopePerDecade)} mm/década (p = ${b.runoff.pValue})` : ""}.`,
+        );
+      } else {
+        parts.push(
+          `In the precomputed series for ${b.name} (EXPLORATORY):${b.rain ? ` GPM rainfall ${signed(b.rain.slopePerDecade)} mm/decade (95% CI ${signed(b.rain.ci95[0])} to ${signed(b.rain.ci95[1])}; p = ${b.rain.pValue})` : ""}${b.runoff ? `; GLDAS modelled runoff ${signed(b.runoff.slopePerDecade)} mm/decade (p = ${b.runoff.pValue})` : ""}.`,
+        );
+      }
+    }
+  }
+
+  if (ctx.reservoirDigests && ctx.reservoirDigests.length > 0 && /\b(embalse\w*|reservoir\w*|swot|solar flotante|floating solar|fpv|mediano|alcantara|buendia|serena|cijara|almendra|ricobayo)\b/.test(f)) {
+    const r = ctx.reservoirDigests[0]!;
+    if (language === "es") {
+      parts.push(
+        `Datos satelitales NASA/CNES SWOT (2023–2026, EXPLORATORY) para ${r.name} (${r.provinceName}): ${r.nObs} pases, área media ${r.areaMeanKm2} km² (${r.areaMinKm2}–${r.areaMaxKm2} km², CV = ${r.areaCv}), cota media WSE ${r.wseMeanM} m (±${r.wseStdM} m).`,
+      );
+    } else {
+      parts.push(
+        `NASA/CNES SWOT satellite data (2023–2026, EXPLORATORY) for ${r.name} (${r.provinceName}): ${r.nObs} passes, mean area ${r.areaMeanKm2} km² (${r.areaMinKm2}–${r.areaMaxKm2} km², CV = ${r.areaCv}), mean WSE ${r.wseMeanM} m (±${r.wseStdM} m).`,
+      );
+    }
+  }
+
+  if (ctx.solarScreening) {
+    const s = ctx.solarScreening.summary;
+    const fc = ctx.solarScreening.featuredCase;
+    const lm = ctx.solarScreening.matchedLandmark;
+    if (language === "es") {
+      parts.push(
+        `En la visualización de cribado solar FV (pv-screening.json, EXPLORATORY, 2000–2025): de ${s.cellsTested} celdas MERRA-2 analizadas, ${s.cellsGood} son compatibles, ${s.cellsMixed} mixtas y ${s.cellsAvoid} de alta sensibilidad ambiental MITECO; 0/195 celdas tienen tendencia significativa de irradiancia tras FDR (mediana ${signed(s.irrTrendMedianPctDecade)} %/década), mientras ${s.tempCellsSignificantUp}/195 presentan calentamiento estival significativo (penalización térmica mediana ${signed(s.heatPenaltyMedianPctDecade)} %/década).${fc ? ` Caso destacado ${fc.place} (${fc.cellId}): ${fc.irrMeanKwhM2Day} kWh/m²/día, ${fc.mitecoLowModeratePct}% suelo de baja/moderada sensibilidad, ${fc.plantsOperatingN} plantas (${fc.plantsOperatingMw} MW).` : ""}${lm ? ` Planta de referencia ${lm.name}: ${lm.mw} MW en celda ${lm.cellId} (${lm.verdict}).` : ""}`,
+      );
+    } else {
+      parts.push(
+        `In the solar PV screening visualization (pv-screening.json, EXPLORATORY, 2000–2025): of ${s.cellsTested} MERRA-2 cells tested, ${s.cellsGood} are compatible, ${s.cellsMixed} mixed and ${s.cellsAvoid} high MITECO sensitivity; 0/195 cells show a significant irradiance trend after FDR (median ${signed(s.irrTrendMedianPctDecade)} %/decade), while ${s.tempCellsSignificantUp}/195 show significant summer warming (median heat penalty ${signed(s.heatPenaltyMedianPctDecade)} %/decade).${fc ? ` Featured case ${fc.place} (${fc.cellId}): ${fc.irrMeanKwhM2Day} kWh/m²/day, ${fc.mitecoLowModeratePct}% low/moderate sensitivity land, ${fc.plantsOperatingN} plants (${fc.plantsOperatingMw} MW).` : ""}${lm ? ` Landmark plant ${lm.name}: ${lm.mw} MW in cell ${lm.cellId} (${lm.verdict}).` : ""}`,
+      );
+    }
+  }
+
+  if (ctx.solarCapacity) {
+    const sc = ctx.solarCapacity;
+    if (language === "es") {
+      parts.push(
+        `Según estadísticas oficiales Eurostat (nrg_inf_epcrw), España alcanzó ${sc.latestMw} MW de potencia solar fotovoltaica en ${sc.latestYear} (+${sc.added2024Mw} MW en 2024), siendo #${sc.euRank} de la UE-27 (${sc.euSharePct}% del total tras Alemania con ${sc.germanyMw} MW), con pendiente Theil–Sen 2015–2024 de +${sc.senSlope2015_2024MwYr} MW/año (IC 95% +${sc.ci95_2015_2024[0]} a +${sc.ci95_2015_2024[1]}; p = ${sc.pValue2015_2024}) y CAGR 2019–2024 del ${sc.cagr2019_2024Pct}%.`,
+      );
+    } else {
+      parts.push(
+        `According to official Eurostat statistics (nrg_inf_epcrw), Spain reached ${sc.latestMw} MW of installed solar PV capacity in ${sc.latestYear} (+${sc.added2024Mw} MW in 2024), ranking #${sc.euRank} in the EU-27 (${sc.euSharePct}% share after Germany's ${sc.germanyMw} MW), with a 2015–2024 Theil–Sen slope of +${sc.senSlope2015_2024MwYr} MW/yr (95% CI +${sc.ci95_2015_2024[0]} to +${sc.ci95_2015_2024[1]}; p = ${sc.pValue2015_2024}) and 2019–2024 CAGR of ${sc.cagr2019_2024Pct}%.`,
+      );
+    }
+  }
+
+  if (ctx.relationships) {
+    const r1 = ctx.relationships.r1Validation;
+    const r2 = ctx.relationships.r2WarmDry;
+    const r3 = ctx.relationships.r3HeatDrought;
+    if (language === "es") {
+      parts.push(
+        `En los mapas de relaciones (relationship-maps.json): R1 (validación MERRA-2 vs ${r1.nStations} estaciones NOAA) muestra acuerdo de signo en ${r1.signAgreement}/${r1.nStations} estaciones y correlación mediana r = ${r1.pearsonRMedian}; R2 (años cálidos × secos, EXPLORATORY) tiene rho mediano = ${r2.rhoMedian} en ${r2.nTested} celdas pero ${r2.nRobustFdr} superan FDR q < 0,05 (q mín = ${r2.qMin}); R3 (días > 35 °C × racha seca, EXPLORATORY) tiene rho mediano = +${r3.rhoMedian} en ${r3.nTested} estaciones (${r3.nRobustFdr} superan FDR).`,
+      );
+    } else {
+      parts.push(
+        `In the relationship maps (relationship-maps.json): R1 (MERRA-2 vs ${r1.nStations} NOAA stations validation) shows sign agreement in ${r1.signAgreement}/${r1.nStations} stations and median Pearson r = ${r1.pearsonRMedian}; R2 (warm × dry years, EXPLORATORY) has median Spearman rho = ${r2.rhoMedian} across ${r2.nTested} cells with ${r2.nRobustFdr} passing FDR q < 0.05 (min q = ${r2.qMin}); R3 (hot days > 35 °C × dry spell, EXPLORATORY) has median rho = +${r3.rhoMedian} across ${r3.nTested} stations (${r3.nRobustFdr} passing FDR).`,
+      );
+    }
+  }
+
+  if (ctx.dust) {
+    const d = ctx.dust;
+    if (language === "es") {
+      parts.push(
+        `En la serie de polvo sahariano NASA Giovanni (${d.dataset}, DUEXTTAU en celda ${d.cellId}, ${d.period}, EXPLORATORY): el espesor óptico medio es ${d.meanAot2000_2025}, con máximo anual en ${d.peakYear} (${d.peakAot}) y mínimo en ${d.minYear} (${d.minAot}).`,
+      );
+    } else {
+      parts.push(
+        `In the NASA Giovanni Saharan dust series (${d.dataset}, DUEXTTAU in cell ${d.cellId}, ${d.period}, EXPLORATORY): mean aerosol optical thickness is ${d.meanAot2000_2025}, peaking in ${d.peakYear} (${d.peakAot}) with a minimum in ${d.minYear} (${d.minAot}).`,
+      );
+    }
+  }
+
+  if (
+    parts.length === 0 &&
+    ctx.scopeDigest &&
+    (/\b(visualizaci\w*|viendo|datos|serie\w*|ano|year|200\d|201\d|202[0-5]|noches tropicales|tropical nights|dias calurosos|hot days|racha seca|dry spell|evapotranspir\w*|humedad del suelo|soil moisture|nieve|snow|swe|verano|summer)\b/.test(f))
+  ) {
+    const sd = ctx.scopeDigest;
+    const t = sd.metrics.temperature;
+    const st = sd.metrics.summer_temp_c;
+    const hd = sd.metrics.hot_days_35;
+    const tn = sd.metrics.tropical_nights;
+    const ds = sd.metrics.max_dry_spell;
+    if (language === "es") {
+      parts.push(
+        `Datos precalculados de visualización en ${sd.name}:${t ? ` temperatura anual MERRA-2 ${signed(t.slopePerDecade)} °C/década${t.series ? ` (${t.series.firstYear}: ${t.series.firstValue} °C → ${t.series.lastYear}: ${t.series.lastValue} °C; máx ${t.series.maxYear}: ${t.series.maxValue} °C${t.series.queriedYear !== undefined ? `, en ${t.series.queriedYear}: ${t.series.queriedValue} °C` : ""})` : ""}` : ""}${st ? `; verano (JJA, EXPLORATORY) ${signed(st.slopePerDecade)} °C/década` : ""}${hd ? `; días > 35 °C (NOAA) ${signed(hd.slopePerDecade)} días/década` : ""}${tn ? `; noches tropicales (NOAA) ${signed(tn.slopePerDecade)} noches/década` : ""}${ds ? `; racha seca máxima ${signed(ds.slopePerDecade)} días/década` : ""}.`,
+      );
+    } else {
+      parts.push(
+        `Precomputed visualization data in ${sd.name}:${t ? ` annual MERRA-2 temperature ${signed(t.slopePerDecade)} °C/decade${t.series ? ` (${t.series.firstYear}: ${t.series.firstValue} °C → ${t.series.lastYear}: ${t.series.lastValue} °C; max ${t.series.maxYear}: ${t.series.maxValue} °C${t.series.queriedYear !== undefined ? `, in ${t.series.queriedYear}: ${t.series.queriedValue} °C` : ""})` : ""}` : ""}${st ? `; summer (JJA, EXPLORATORY) ${signed(st.slopePerDecade)} °C/decade` : ""}${hd ? `; hot days > 35 °C (NOAA) ${signed(hd.slopePerDecade)} days/decade` : ""}${tn ? `; tropical nights (NOAA) ${signed(tn.slopePerDecade)} nights/decade` : ""}${ds ? `; max dry spell ${signed(ds.slopePerDecade)} days/decade` : ""}.`,
+      );
+    }
+  }
+
+  return parts.join(" ");
+}
+
+function explainBriefing(question: string, language: AgentLanguage, session?: AgentSession): AgentAnswer {
   const claims = selectClaims(question);
   const limitations = claims.flatMap((c) => [...c.limitations]);
+  const vizExtra = formatSupplementalVizText(question, language, session?.regionScope, session?.viewContext);
   if (claims.length === 0) {
+    if (vizExtra) {
+      const responseText = canned(
+        language,
+        `I'm TARO, AETHRA's research companion. ${vizExtra} Precomputed visualization data — not a new calculation in this session.`,
+        `Soy TARO, el compañero de investigación de AETHRA. ${vizExtra} Datos precalculados de las visualizaciones — no un cálculo nuevo en esta sesión.`,
+      );
+      return {
+        ...base(question, "explain_mechanism", language, "DESCRIPTIVE", responseText),
+        limitations: ["Precomputed pipeline visualization data; not a newly computed statistic."],
+      };
+    }
     return {
       ...base(
         question,
@@ -441,8 +619,8 @@ function explainBriefing(question: string, language: AgentLanguage): AgentAnswer
   const introducesItself = /^(I am TARO|I'm TARO|Soy TARO)\b/.test(body);
   const responseText = canned(
     language,
-    `${introducesItself ? "" : "I'm TARO, AETHRA's research companion. "}${body} Documented knowledge — not a new AETHRA measurement.`,
-    `${introducesItself ? "" : "Soy TARO, el compañero de investigación de AETHRA. "}${body} Conocimiento documentado — no una medición nueva de AETHRA.`,
+    `${introducesItself ? "" : "I'm TARO, AETHRA's research companion. "}${body}${vizExtra ? ` ${vizExtra}` : ""} Documented knowledge — not a new AETHRA measurement.`,
+    `${introducesItself ? "" : "Soy TARO, el compañero de investigación de AETHRA. "}${body}${vizExtra ? ` ${vizExtra}` : ""} Conocimiento documentado — no una medición nueva de AETHRA.`,
   );
   return {
     ...base(question, "explain_mechanism", language, "DESCRIPTIVE", responseText),
@@ -499,12 +677,13 @@ function researchCaseBriefing(question: string, language: AgentLanguage, catalog
   };
 }
 
-function precipitationBriefing(question: string, language: AgentLanguage): AgentAnswer {
+function precipitationBriefing(question: string, language: AgentLanguage, session?: AgentSession): AgentAnswer {
   const pin = matchNamedPlace(question);
   const wantsCustomWindow = /\b(2020|2021|2022|2023|2024|2025)\b/.test(question);
   const coord = pin ? formatLonLat(pin.latitude, pin.longitude) : "";
   const place = pin?.name ?? (language === "es" ? "esa zona" : "that place");
   const scopeDigest = pin ? findRegionalScope(pin.name) : undefined;
+  const vizExtra = formatSupplementalVizText(question, language, session?.regionScope, session?.viewContext);
   const rainInfo = scopeDigest?.precipitation
     ? language === "es"
       ? ` En el bundle completo 2000–2024 (GPM IMERG, EXPLORATORY sin ajuste BH), la pendiente en ${scopeDigest.name} es ${signed(scopeDigest.precipitation.slopePerDecade)} mm/década (IC 95% ${signed(scopeDigest.precipitation.ci95[0])} a ${signed(scopeDigest.precipitation.ci95[1])}; p = ${scopeDigest.precipitation.pValue}).`
@@ -512,8 +691,8 @@ function precipitationBriefing(question: string, language: AgentLanguage): Agent
     : "";
   const responseText = canned(
     language,
-    `I do not have a published precipitation EvidenceCard for ${place}${wantsCustomWindow ? " over 2020–2025" : ""}, so I cannot draw hydraulic-basin conclusions from a custom window.${rainInfo} On the globe, Rain shows NASA GPM IMERG rainfall and Rivers shows basin boxes of that rainfall — not river discharge. ${pin ? `Here is ${pin.name} (${coord}).` : "Open Rain or Rivers to look around."}`,
-    `No tengo una EvidenceCard de precipitación publicada para ${place}${wantsCustomWindow ? " en 2020–2025" : ""}, así que no puedo sacar conclusiones de cuencas a partir de una ventana a medida.${rainInfo} En el globo, Rain muestra la lluvia NASA GPM IMERG y Rivers las cajas de cuenca de esa lluvia — no el caudal del río. ${pin ? `Aquí tienes ${pin.name} (${coord}).` : "Abre Rain o Rivers para mirar."}`,
+    `I do not have a published precipitation EvidenceCard for ${place}${wantsCustomWindow ? " over 2020–2025" : ""}, so I cannot draw hydraulic-basin conclusions from a custom window.${rainInfo}${vizExtra ? ` ${vizExtra}` : ""} On the globe, Rain shows NASA GPM IMERG rainfall and Rivers shows basin boxes of that rainfall — not river discharge. ${pin ? `Here is ${pin.name} (${coord}).` : "Open Rain or Rivers to look around."}`,
+    `No tengo una EvidenceCard de precipitación publicada para ${place}${wantsCustomWindow ? " en 2020–2025" : ""}, así que no puedo sacar conclusiones de cuencas a partir de una ventana a medida.${rainInfo}${vizExtra ? ` ${vizExtra}` : ""} En el globo, Rain muestra la lluvia NASA GPM IMERG y Rivers las cajas de cuenca de esa lluvia — no el caudal del río. ${pin ? `Aquí tienes ${pin.name} (${coord}).` : "Abre Rain o Rivers para mirar."}`,
   );
   const fly = pin
     ? {
@@ -633,7 +812,7 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
   }
 
   if (intent === "explain_mechanism") {
-    return explainBriefing(request.question, language);
+    return explainBriefing(request.question, language, request.session);
   }
   if (intent === "mixed_warming_pv") {
     return mixedWarmingPvBriefing(request.question, language, catalog);
@@ -643,6 +822,20 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
   }
 
   if (intent === "infrastructure_metadata") {
+    const infraExtra = formatSupplementalVizText(request.question, language, request.session.regionScope, request.session.viewContext);
+    const infraCtx = buildVisualizationContext({
+      question: request.question,
+      regionScope: request.session.regionScope,
+      viewContext: request.session.viewContext,
+    }).infrastructure;
+    const matchedTextEs =
+      infraCtx && infraCtx.matchedInstallations.length > 0
+        ? ` En el registro PRETOR de Castilla y León (${infraCtx.totalInstallations} plantas: ${infraCtx.solarPvCount} solares FV y ${infraCtx.windOnshoreCount} eólicas) figura: ${infraCtx.matchedInstallations.map((i) => `${i.name} (${i.capacityMw} MW, ${i.technology}, ${i.municipality}, ${i.provinceName})`).join("; ")}.`
+        : "";
+    const matchedTextEn =
+      infraCtx && infraCtx.matchedInstallations.length > 0
+        ? ` In the Castilla y León PRETOR register (${infraCtx.totalInstallations} plants: ${infraCtx.solarPvCount} solar PV and ${infraCtx.windOnshoreCount} wind) matched: ${infraCtx.matchedInstallations.map((i) => `${i.name} (${i.capacityMw} MW, ${i.technology}, ${i.municipality}, ${i.provinceName})`).join("; ")}.`
+        : "";
     return {
       ...base(
         request.question,
@@ -651,8 +844,8 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
         "NOT_AVAILABLE",
         canned(
           language,
-          "No validated generation time series is available for that installation. Registered CyL plant metadata is an exploratory overlay, not on the judge path. I can quote regional NASA evidence instead.",
-          "No hay una serie de generación validada para esa instalación. Los metadatos de plantas de CyL son una capa exploratoria, no el camino del jurado. Puedo citar evidencia NASA regional.",
+          `No validated generation time series is available for that installation. Registered CyL plant metadata is an exploratory overlay, not on the judge path.${matchedTextEn}${infraExtra ? ` ${infraExtra}` : ""} I can quote regional NASA evidence instead.`,
+          `No hay una serie de generación validada para esa instalación. Los metadatos de plantas de CyL son una capa exploratoria, no el camino del jurado.${matchedTextEs}${infraExtra ? ` ${infraExtra}` : ""} Puedo citar evidencia NASA regional.`,
         ),
       ),
       limitations: ["Registered capacity (MW) is not actual generation (MWh).", "Plant coordinates are not NASA grid-cell measurements."],
@@ -660,7 +853,7 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
   }
 
   const namedPlace = matchNamedPlace(request.question);
-  if (namedPlace && !matchScope(request.question)) {
+  if (namedPlace && !matchScope(request.question) && intent !== "precipitation_trend") {
     return placeBriefing(request.question, language, intent, namedPlace);
   }
 
@@ -733,7 +926,7 @@ export function answerQuestion(request: AskRequest, catalog: EvidenceCatalog): A
   }
 
   if (intent === "precipitation_trend") {
-    return precipitationBriefing(request.question, language);
+    return precipitationBriefing(request.question, language, request.session);
   }
 
   if (intent === "joint_low_trend") {

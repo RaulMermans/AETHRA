@@ -106,9 +106,24 @@ export type ConversationTurn = {
   text: string;
 };
 
+export type AgentViewContext = {
+  dimension?: string;
+  year?: number;
+  mode?: "value" | "trend";
+  workspaceMode?: "climate" | "energy";
+  activeTool?: string | null;
+  screeningOpen?: boolean;
+  selectedCoord?: { lat: number; lon: number };
+  selectedCellId?: string;
+  selectedPlantName?: string;
+  selectedInstallationId?: string;
+  energyConcept?: string;
+};
+
 export type AgentSession = {
   sessionId?: string;
   regionScope?: string;
+  viewContext?: AgentViewContext;
 };
 
 export type AskRequest = {

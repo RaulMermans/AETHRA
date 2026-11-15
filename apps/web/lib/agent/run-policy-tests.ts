@@ -143,6 +143,61 @@ async function main(): Promise<void> {
     console.log("PASS exam-theil-sen-text");
   }
 
+  const vizScreening = await orchestrateAsk(
+    {
+      question: "Que datos tenemos en la visualizacion de cribado solar PV y cuantas celdas son compatibles?",
+      session: {
+        sessionId: "viz-screening",
+        viewContext: { screeningOpen: true, dimension: "temperature", year: 2025, mode: "trend" },
+      },
+    },
+    catalog,
+  );
+  if (
+    !vizScreening.responseText.includes("195") ||
+    !vizScreening.responseText.includes("46") ||
+    !(vizScreening.toolsInvoked ?? []).includes("query_visualization_data")
+  ) {
+    fails += 1;
+    console.log("FAIL viz-screening-digest", vizScreening.responseText);
+  } else {
+    console.log("PASS viz-screening-digest");
+  }
+
+  const vizStation = await orchestrateAsk(
+    {
+      question: "Que datos tiene la estacion de Madrid Retiro en NOAA?",
+      session: { sessionId: "viz-station" },
+    },
+    catalog,
+  );
+  if (
+    !vizStation.responseText.includes("SP000003195") ||
+    !(vizStation.toolsInvoked ?? []).includes("query_visualization_data")
+  ) {
+    fails += 1;
+    console.log("FAIL viz-station-digest", vizStation.responseText);
+  } else {
+    console.log("PASS viz-station-digest");
+  }
+
+  const vizBasin = await orchestrateAsk(
+    {
+      question: "Como evolucionan la lluvia y la escorrentia en la cuenca del Ebro?",
+      session: { sessionId: "viz-basin", viewContext: { dimension: "water_rivers" } },
+    },
+    catalog,
+  );
+  if (
+    !vizBasin.responseText.includes("Cuenca del Ebro") ||
+    !(vizBasin.toolsInvoked ?? []).includes("query_visualization_data")
+  ) {
+    fails += 1;
+    console.log("FAIL viz-basin-digest", vizBasin.responseText);
+  } else {
+    console.log("PASS viz-basin-digest");
+  }
+
   if (fails) process.exit(1);
 }
 

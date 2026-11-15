@@ -17,12 +17,17 @@ import {
   type AgentTraceStep,
   type ConversationTurn,
 } from "./types.ts";
+import { buildVisualizationContext, type VisualizationContextDigest } from "./visualization-context.ts";
 
 function isIntent(v: unknown): v is AgentIntent {
   return typeof v === "string" && (AGENT_INTENTS as readonly string[]).includes(v);
 }
 
-function toolsForIntent(intent: AgentIntent, hasRegionalScope: boolean): string[] {
+function toolsForIntent(
+  intent: AgentIntent,
+  hasRegionalScope: boolean,
+  hasVisualizationContext: boolean,
+): string[] {
   const base: string[] = ["read_markdown_brain"];
   if (intent === "temperature_trend" || intent === "nasa_evidence") base.push("retrieve_evidence");
   if (intent === "joint_low_trend") base.push("retrieve_evidence", "list_study_regions", "get_map_focus");
@@ -34,6 +39,7 @@ function toolsForIntent(intent: AgentIntent, hasRegionalScope: boolean): string[
   if (intent === "mixed_warming_pv") base.push("retrieve_evidence", "lookup_knowledge");
   if (intent === "precipitation_trend") base.push("get_map_focus");
   if (hasRegionalScope) base.push("query_regional_climate");
+  if (hasVisualizationContext) base.push("query_visualization_data");
   return base;
 }
 
@@ -59,6 +65,7 @@ async function maybeReasonAndSynthesize(opts: {
   truth: AgentAnswer;
   conversation: readonly ConversationTurn[];
   regionalScope?: RegionalScopeDigest;
+  visualizationContext?: VisualizationContextDigest;
   llm: LlmProvider;
   enabled: boolean;
 }): Promise<{
@@ -73,7 +80,11 @@ async function maybeReasonAndSynthesize(opts: {
   }
   try {
     const json = await opts.llm.completeJson({
-      system: agenticReasoningPrompt({ truth: opts.truth, regionalScope: opts.regionalScope }),
+      system: agenticReasoningPrompt({
+        truth: opts.truth,
+        regionalScope: opts.regionalScope,
+        visualizationContext: opts.visualizationContext,
+      }),
       user: JSON.stringify({
         question: opts.truth.question,
         language: opts.truth.language,
@@ -92,7 +103,12 @@ async function maybeReasonAndSynthesize(opts: {
     const text = typeof json.responseText === "string" ? json.responseText.trim() : "";
     const thought = typeof json.thought === "string" ? json.thought.trim() : undefined;
     const noteToSave = typeof json.noteToSave === "string" ? json.noteToSave.trim() : undefined;
-    const extraText = opts.regionalScope ? JSON.stringify(opts.regionalScope) : undefined;
+    const extraParts: string[] = [];
+    if (opts.regionalScope) extraParts.push(JSON.stringify(opts.regionalScope));
+    if (opts.visualizationContext) {
+      extraParts.push(opts.visualizationContext.summaryEs, opts.visualizationContext.summaryEn);
+    }
+    const extraText = extraParts.length > 0 ? extraParts.join(" ") : undefined;
     if (!paraphraseIsFaithful(opts.truth, text, extraText)) {
       return {
         text: opts.truth.responseText,
@@ -154,6 +170,15 @@ export async function orchestrateAsk(
     (truth.scope.regionId ? findRegionalScope(truth.scope.regionId) : undefined) ??
     (truth.scope.regionName ? findRegionalScope(truth.scope.regionName) : undefined);
 
+  const visualizationContext =
+    truth.status !== "OUT_OF_DOMAIN"
+      ? buildVisualizationContext({
+          question: request.question,
+          regionScope: truth.scope.regionId ?? request.session.regionScope,
+          viewContext: request.session.viewContext,
+        })
+      : undefined;
+
   const toolsInvoked: string[] = [];
   const trace: AgentTraceStep[] = [];
   const recordTool = (result: ToolResult, detail: string) => {
@@ -165,7 +190,11 @@ export async function orchestrateAsk(
     }
   };
 
-  for (const name of toolsForIntent(truth.intent, Boolean(regionalScope))) {
+  for (const name of toolsForIntent(
+    truth.intent,
+    Boolean(regionalScope),
+    Boolean(visualizationContext),
+  )) {
     if (name === "read_markdown_brain") {
       recordTool(
         runAgentTool(name, { file: "KNOWLEDGE.md" }, catalog),
@@ -196,6 +225,24 @@ export async function orchestrateAsk(
         runAgentTool(name, { query: regionalScope.scopeKey }, catalog),
         `Loaded precomputed Python scope ${regionalScope.name} (${regionalScope.scopeKey})`,
       );
+    } else if (name === "query_visualization_data" && visualizationContext) {
+      const sources: string[] = ["climate-bundle.json"];
+      if (visualizationContext.solarScreening) sources.push("pv-screening.json");
+      if (visualizationContext.solarCapacity) sources.push("solar-capacity-trend.json");
+      if (visualizationContext.relationships) sources.push("relationship-maps.json");
+      if (visualizationContext.dust) sources.push("giovanni-dust.json");
+      if (visualizationContext.infrastructure) sources.push("energy-infrastructure.json");
+      recordTool(
+        runAgentTool(
+          name,
+          {
+            question: request.question,
+            regionScope: truth.scope.regionId ?? request.session.regionScope,
+          },
+          catalog,
+        ),
+        `Transformed visualization data from ${sources.join(", ")}`,
+      );
     } else {
       recordTool(runAgentTool(name, {}, catalog), `Ran ${name}`);
     }
@@ -205,6 +252,7 @@ export async function orchestrateAsk(
     truth,
     conversation: mergedConversation,
     regionalScope,
+    visualizationContext,
     llm,
     enabled: flags.paraphrase,
   });
@@ -269,7 +317,7 @@ export async function orchestrateAsk(
     evals: scoreRuntimeEval(
       answered,
       catalog,
-       `${truth.responseText} ${regionalScope ? JSON.stringify(regionalScope) : ""}`,
+      `${truth.responseText} ${regionalScope ? JSON.stringify(regionalScope) : ""} ${visualizationContext ? `${visualizationContext.summaryEs} ${visualizationContext.summaryEn}` : ""}`,
     ),
   };
 }

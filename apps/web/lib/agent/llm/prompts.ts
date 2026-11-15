@@ -2,6 +2,7 @@ import { readRecentResearchNotes, readTaroMarkdown, type RegionalScopeDigest } f
 import { skillPromptBlock } from "../skills/catalog.ts";
 import { AGENT_TOOL_NAMES } from "../tools/catalog.ts";
 import { AGENT_INTENTS, type AgentAnswer } from "../types.ts";
+import type { VisualizationContextDigest } from "../visualization-context.ts";
 
 export function intentSystemPrompt(): string {
   return [
@@ -25,12 +26,22 @@ export function paraphraseSystemPrompt(): string {
 export function agenticReasoningPrompt(opts: {
   truth: AgentAnswer;
   regionalScope?: RegionalScopeDigest;
+  visualizationContext?: VisualizationContextDigest;
 }): string {
   const soul = readTaroMarkdown("SOUL.md");
   const knowledge = readTaroMarkdown("KNOWLEDGE.md");
   const recentNotes = readRecentResearchNotes(8);
   const scopeBlock = opts.regionalScope
     ? `\n## Precomputed Regional Climate Scope (climate-bundle.json)\n${JSON.stringify(opts.regionalScope)}`
+    : "";
+  const vizSummary =
+    opts.visualizationContext
+      ? opts.truth.language === "es"
+        ? opts.visualizationContext.summaryEs
+        : opts.visualizationContext.summaryEn
+      : "";
+  const vizBlock = vizSummary
+    ? `\n## Transformed Visualization Data Context (Real Precomputed Bundle Data)\n${vizSummary}`
     : "";
   return [
     soul,
@@ -39,11 +50,12 @@ export function agenticReasoningPrompt(opts: {
     "## Recent Research Notes (RESEARCH_NOTES.md)",
     recentNotes || "(No notes recorded yet)",
     scopeBlock,
+    vizBlock,
     "## Output Contract (Strict JSON)",
     "Think like TARO and return a single JSON object with keys:",
-    '- "thought": 1 short sentence describing your reasoning and which Markdown/bundle sources you consulted.',
-    '- "responseText": Write an intelligent, natural, conversational answer in "' + opts.truth.language + '" directly addressing the user\'s question using your Knowledge Base and the Baseline Evidence Payload. Do NOT copy-paste the baseline responseText verbatim—synthesize and explain clearly like an expert field scientist.',
-    '  CRITICAL NUMERICAL RULE: If the Baseline Evidence Payload has findings (findings.length > 0), you MUST include every exact number from findings[].claim verbatim in your responseText, and you MUST NOT introduce any new digits that do not appear in the Baseline Evidence Payload or question. If findings is empty, do not invent any AETHRA numbers.',
+    '- "thought": 1 short sentence describing your reasoning and which Markdown/bundle/visualization sources you consulted.',
+    '- "responseText": Write an intelligent, natural, conversational answer in "' + opts.truth.language + '" directly addressing the user\'s question using your Knowledge Base, the Baseline Evidence Payload, and the Transformed Visualization Data Context. Do NOT copy-paste the baseline responseText verbatim—synthesize and explain clearly like an expert field scientist.',
+    '  CRITICAL NUMERICAL RULE: If the Baseline Evidence Payload has findings (findings.length > 0), you MUST include every exact number from findings[].claim verbatim in your responseText, and you MUST NOT introduce any new digits that do not appear in the Baseline Evidence Payload, the Transformed Visualization Data Context, or the question. Keep strict provenance and EXPLORATORY labels where indicated.',
     '- "noteToSave": A concise 1-sentence research note to append to data/taro/RESEARCH_NOTES.md summarizing what the user asked and what was concluded (or "" if trivial).',
   ].join("\n\n");
 }

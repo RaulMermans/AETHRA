@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { parseAgentAnswer } from "@/lib/agent/parse-answer";
-import type { AgentAnswer, AgentSuggestedAction, ConversationTurn } from "@/lib/agent/types";
+import type { AgentAnswer, AgentSuggestedAction, AgentViewContext, ConversationTurn } from "@/lib/agent/types";
 import { useLocale } from "@/lib/i18n/locale";
 import type { Messages } from "@/lib/i18n/messages";
 import { AethraCoreFace } from "./AethraCoreFace";
@@ -73,7 +73,9 @@ function visualState(loading: boolean, error: string | null, last?: AgentAnswer)
   if (
     last.status === "SUPPORTED" ||
     last.status === "DESCRIPTIVE" ||
-    (last.status === "NOT_AVAILABLE" && (last.toolsInvoked ?? []).includes("query_regional_climate"))
+    (last.status === "NOT_AVAILABLE" &&
+      ((last.toolsInvoked ?? []).includes("query_regional_climate") ||
+        (last.toolsInvoked ?? []).includes("query_visualization_data")))
   ) {
     return "ready";
   }
@@ -115,11 +117,13 @@ function actionLabel(type: AgentSuggestedAction["type"], t: Messages["taro"]): s
 export function AethraCorePanel({
   open,
   regionScope,
+  viewContext,
   onClose,
   onAction,
 }: {
   open: boolean;
   regionScope: string | undefined;
+  viewContext?: AgentViewContext;
   onClose: () => void;
   onAction: (action: AgentSuggestedAction) => void;
 }) {
@@ -216,7 +220,7 @@ export function AethraCorePanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           question: q,
-          session: { regionScope, sessionId: sessionRef.current },
+          session: { regionScope, sessionId: sessionRef.current, viewContext },
           conversation,
           language: locale,
         }),

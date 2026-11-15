@@ -7,6 +7,7 @@ import {
   readRecentResearchNotes,
   readTaroMarkdown,
 } from "../markdown-brain.ts";
+import { buildVisualizationContext } from "../visualization-context.ts";
 
 export const AGENT_TOOL_NAMES = [
   "retrieve_evidence",
@@ -15,6 +16,7 @@ export const AGENT_TOOL_NAMES = [
   "get_map_focus",
   "lookup_knowledge",
   "query_regional_climate",
+  "query_visualization_data",
   "read_markdown_brain",
   "append_research_note",
 ] as const;
@@ -102,6 +104,28 @@ export function runAgentTool(name: unknown, args: unknown, catalog: EvidenceCata
       const hit = findRegionalScope(query);
       if (!hit) return { ok: false, tool: name, data: { error: "No regional scope matched" } };
       return { ok: true, tool: name, data: { ...hit } };
+    }
+    case "query_visualization_data": {
+      const question = typeof a.question === "string" ? a.question : "";
+      const regionScope = typeof a.regionScope === "string" ? a.regionScope : undefined;
+      const digest = buildVisualizationContext({ question, regionScope });
+      return {
+        ok: true,
+        tool: name,
+        data: {
+          scopeKey: digest.scopeDigest?.scopeKey ?? "age",
+          scopeName: digest.scopeDigest?.name ?? "Peninsula + Balearics",
+          metricsCount: Object.keys(digest.scopeDigest?.metrics ?? {}).length,
+          hasStation: Boolean(digest.stationDigest),
+          hasBasins: Boolean(digest.basinDigests?.length),
+          hasReservoirs: Boolean(digest.reservoirDigests?.length),
+          hasSolarScreening: Boolean(digest.solarScreening),
+          hasSolarCapacity: Boolean(digest.solarCapacity),
+          hasRelationships: Boolean(digest.relationships),
+          hasDust: Boolean(digest.dust),
+          hasInfrastructure: Boolean(digest.infrastructure),
+        },
+      };
     }
     case "read_markdown_brain": {
       const file =
