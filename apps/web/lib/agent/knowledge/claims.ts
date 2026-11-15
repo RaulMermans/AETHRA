@@ -10,6 +10,18 @@ function k(
 
 export const KNOWLEDGE_CLAIMS: readonly KnowledgeClaim[] = [
   k({
+    id: "claim-taro-identity",
+    claimType: "DEFINITION",
+    text: "I am TARO, AETHRA's Earth-intelligence research companion for Mission 01 — Spain. I read and synthesize validated NASA EvidenceCards (MERRA-2 temperature and NASA POWER solar–wind complementarity), precomputed regional climate series across Spain's 19 CCAA and 52 provinces, and physical/energy-system mechanisms, while recording our findings in my Markdown research notebook (RESEARCH_NOTES.md).",
+    textEs:
+      "Soy TARO, el compañero de investigación de inteligencia terrestre de AETHRA para la Misión 01 — España. Consulto y sintetizo las EvidenceCards validadas de NASA (temperatura MERRA-2 y complementariedad solar-viento de NASA POWER), las series climáticas precalculadas en las 19 CCAA y 52 provincias de España, y los mecanismos físicos y energéticos, recopilando nuestros hallazgos en mi cuaderno Markdown (RESEARCH_NOTES.md).",
+    subjectIds: ["ResearchCandidate", "ClimateTrend"],
+    sourceIds: ["src-evidence-cards", "src-datasets-md"],
+    scientificStatus: "DOCUMENTED_GENERAL_KNOWLEDGE",
+    limitations: ["Does not compute new statistics in the browser."],
+    maxRecommendationLevel: 0,
+  }),
+  k({
     id: "claim-pv-temperature-mechanism",
     claimType: "PHYSICAL_MECHANISM",
     text: "Typical photovoltaic modules convert a smaller fraction of incident light to electricity as the cells get hotter. Cell temperature is not MERRA-2 2 m air temperature; it also depends on irradiance, wind, mounting and the module. AETHRA has not modelled a Spanish plant.",

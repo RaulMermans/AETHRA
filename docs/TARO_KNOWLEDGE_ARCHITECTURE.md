@@ -10,14 +10,15 @@ Do not fine-tune an LLM on NASA arrays, plant registers, or citations. Numerical
 
 Stack in force:
 
-1. Curated sources (`lib/agent/knowledge/sources.ts`)
-2. Immutable scientific artifacts (bundles + cards)
-3. Versioned concepts and relations (`concepts.ts`)
-4. Deterministic tools (allowlist)
-5. Intent resolution (`classifyIntent`)
-6. Evidence-backed synthesis (`answerQuestion`)
-7. Domain/evidence gates (status enum)
-8. Offline + runtime evals
+1. Markdown Brain (`data/taro/SOUL.md`, `KNOWLEDGE.md`, and live `RESEARCH_NOTES.md` via `lib/agent/markdown-brain.ts`)
+2. Curated sources (`lib/agent/knowledge/sources.ts`)
+3. Immutable scientific artifacts (bundles + cards + 72 precomputed scopes in `climate-bundle.json`)
+4. Versioned concepts and relations (`concepts.ts`)
+5. Deterministic tools (`read_markdown_brain`, `query_regional_climate`, `append_research_note`, `retrieve_evidence`, `get_evidence_card`, `list_study_regions`, `get_map_focus`, `lookup_knowledge`)
+6. Intent resolution (`classifyIntent` + LLM rescue for open-ended domain questions)
+7. Evidence-backed synthesis (`answerQuestion` + LLM reasoning & synthesis)
+8. Domain/evidence gates (status enum + faithfulness validator)
+9. Offline + runtime evals (`run-policy-tests.ts` + `run-agent-benchmark.ts`)
 
 ## What already exists (audit 14 Nov 2026)
 

@@ -1,6 +1,12 @@
 import { findMapPinById, STUDY_REGIONS } from "../ask.ts";
 import { cardById, cardFor, type EvidenceCatalog } from "../cards.ts";
 import { lookupKnowledge } from "../knowledge/catalog.ts";
+import {
+  appendResearchNote,
+  findRegionalScope,
+  readRecentResearchNotes,
+  readTaroMarkdown,
+} from "../markdown-brain.ts";
 
 export const AGENT_TOOL_NAMES = [
   "retrieve_evidence",
@@ -8,6 +14,9 @@ export const AGENT_TOOL_NAMES = [
   "get_evidence_card",
   "get_map_focus",
   "lookup_knowledge",
+  "query_regional_climate",
+  "read_markdown_brain",
+  "append_research_note",
 ] as const;
 export type AgentToolName = (typeof AGENT_TOOL_NAMES)[number];
 
@@ -87,6 +96,27 @@ export function runAgentTool(name: unknown, args: unknown, catalog: EvidenceCata
       const card = cardFor(catalog, topic, scope);
       if (!card) return { ok: false, tool: name, data: { error: "No card for that topic and scope" } };
       return { ok: true, tool: name, data: { id: card.id, scope: card.region.scope, outcome: card.outcome } };
+    }
+    case "query_regional_climate": {
+      const query = typeof a.query === "string" ? a.query : "";
+      const hit = findRegionalScope(query);
+      if (!hit) return { ok: false, tool: name, data: { error: "No regional scope matched" } };
+      return { ok: true, tool: name, data: { ...hit } };
+    }
+    case "read_markdown_brain": {
+      const file =
+        a.file === "SOUL.md" || a.file === "KNOWLEDGE.md" || a.file === "RESEARCH_NOTES.md"
+          ? a.file
+          : "KNOWLEDGE.md";
+      const content = file === "RESEARCH_NOTES.md" ? readRecentResearchNotes(15) : readTaroMarkdown(file).slice(0, 1200);
+      return { ok: true, tool: name, data: { file, excerptLength: content.length } };
+    }
+    case "append_research_note": {
+      const scope = typeof a.scope === "string" ? a.scope : "general";
+      const question = typeof a.question === "string" ? a.question : "";
+      const summary = typeof a.summary === "string" ? a.summary : "";
+      const saved = appendResearchNote({ scope, question, summary });
+      return { ok: true, tool: name, data: { saved, file: "data/taro/RESEARCH_NOTES.md" } };
     }
     default: {
       const exhaustive: never = name;

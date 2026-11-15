@@ -20,7 +20,9 @@ function visualState(loading: boolean, error: string | null, last?: AgentAnswer)
   if (loading) return "investigating";
   if (error) return "insufficient";
   if (!last) return "idle";
-  if (last.status === "SUPPORTED" || last.status === "DESCRIPTIVE") return "ready";
+  if (last.status === "SUPPORTED" || last.status === "DESCRIPTIVE" || (last.status === "NOT_AVAILABLE" && (last.toolsInvoked ?? []).includes("query_regional_climate"))) {
+    return "ready";
+  }
   return "insufficient";
 }
 
@@ -175,6 +177,20 @@ export function AethraCorePanel({
           <article key={item.id} className={item.role === "user" ? "ml-6 rounded-md bg-white/8 px-2 py-1.5" : "mr-2 rounded-md bg-black/25 px-2 py-1.5"}>
             <p className="text-[10px] tracking-[0.12em] text-faint uppercase">{item.role === "user" ? t.you : "TARO"}</p>
             <p className="mt-1 text-[12px] leading-relaxed text-ink">{item.text}</p>
+            {item.answer?.trace?.length ? (
+              <details className="mt-1.5 rounded border border-line/60 bg-black/30 px-2 py-1 text-[10px] text-muted">
+                <summary className="cursor-pointer font-mono uppercase tracking-wider text-faint select-none">
+                  TARO Brain · {item.answer.toolsInvoked?.length ?? 0} tools · {item.answer.llm?.usedFor === "paraphrase" ? "LLM active" : "Markdown Core"}
+                </summary>
+                <ul className="mt-1 space-y-0.5 text-[10px] leading-snug">
+                  {item.answer.trace.map((step, idx) => (
+                    <li key={`${item.id}-trace-${idx}`}>
+                      <span className="font-mono text-ink/90">[{step.kind}] {step.title}:</span> {step.detail}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
             {item.answer?.suggestedActions.length ? (
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.answer.suggestedActions.map((action) => (
