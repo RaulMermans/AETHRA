@@ -137,7 +137,6 @@ export function buildLayerCatalog(): LayerDescriptor[] {
     ...([
       ["ign-rivers", "Rivers", "HY.Network", "Official Spanish hydrographic network; cartographic context, not river-discharge measurements."],
       ["ign-waterbodies", "Lakes and reservoirs", "HY.PhysicalWaters.Waterbodies", "Official Spanish water-body map; polygon area is not current water storage."],
-      ["ign-catchments", "Watersheds", "HY.PhysicalWaters.Catchments", "Official Spanish catchment map; boundaries are geographic context, not an analysed basin result."],
     ] as const).map(([id, title, layers, description]) => ({
       id,
       kind: "wms" as const,
@@ -150,19 +149,6 @@ export function buildLayerCatalog(): LayerDescriptor[] {
       bounds: { west: -18.5, south: 27, east: 5, north: 44.5 },
       credit: "Hydrography © Instituto Geográfico Nacional (Spain) · WMS INSPIRE",
     })),
-    {
-      id: "nasa-modis-truecolor",
-      kind: "wms",
-      group: "reference",
-      title: "MODIS Terra true color",
-      description: "NASA GIBS satellite visualization for 1 August 2024. Imagery only; it is not a trend result.",
-      source: { name: "NASA GIBS", product: "MODIS_Terra_CorrectedReflectance_TrueColor", url: "https://nasa-gibs.github.io/gibs-api-docs/" },
-      url: "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi",
-      layers: "MODIS_Terra_CorrectedReflectance_TrueColor",
-      bounds: { west: -180, south: -85, east: 180, north: 85 },
-      time: { default: "2024-08-01", step: "P1D", locked: true },
-      credit: "MODIS Terra true color · 2024-08-01 · NASA GIBS",
-    },
     {
       id: "spain-boundary",
       kind: "geojson",
@@ -181,12 +167,15 @@ export function buildLayerCatalog(): LayerDescriptor[] {
   ];
 }
 
+const ALWAYS_ON_LAYERS: ReadonlySet<string> = new Set(["spain-boundary", "ign-rivers", "ign-waterbodies"]);
+
 export function initialLayerStates(layers: LayerDescriptor[]): LayerStateMap {
   return Object.fromEntries(
     layers.map((l) => [
       l.id,
       {
-        visible: l.id === "spain-boundary",
+        // D79: Spain outline plus IGN rivers and lakes are fixed context, not user toggles.
+        visible: ALWAYS_ON_LAYERS.has(l.id),
         opacity: l.kind === "wms" ? 0.7 : l.kind === "imagery" ? 0.9 : 1,
         time: l.kind === "imagery" || l.kind === "wms" ? l.time?.default : undefined,
       },

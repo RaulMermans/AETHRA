@@ -63,10 +63,14 @@ export function FindingsBriefPanel({
   onClose,
   onOpenCard,
   onOpenCase,
+  onStartProof,
+  canStartProof,
 }: {
   onClose: () => void;
   onOpenCard: () => void;
   onOpenCase: (caseId: string) => void;
+  onStartProof: (card: EvidenceCard) => void;
+  canStartProof: boolean;
 }) {
   const [temp, setTemp] = useState<EvidenceCard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +155,17 @@ export function FindingsBriefPanel({
         <Icon name="globe" className="mt-0.5 size-3 shrink-0" />
         <span>{f.mapNote}</span>
       </p>
+      {temp && (
+        <button
+          type="button"
+          onClick={() => onStartProof(temp)}
+          disabled={!canStartProof}
+          title={!canStartProof ? m.explore.preparing : undefined}
+          className="focus-ring mx-3 mb-2 rounded-md border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-left text-[13px] font-medium text-amber-100 hover:bg-amber-400/15 disabled:cursor-wait disabled:opacity-50"
+        >
+          {m.proof.start}
+        </button>
+      )}
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3">
         {error ? (
           <p role="alert" className="text-[14px] text-amber-100">

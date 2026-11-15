@@ -180,6 +180,9 @@ function CardBody({ card }: { card: EvidenceCard }) {
   const external = parseExternalCheck(card.external_check);
   return (
     <article className="mt-3 space-y-2.5 text-xs text-muted" aria-label={m.cards.receipt}>
+      <p className="rounded-md border border-amber-300/30 bg-amber-400/10 px-2 py-1.5 text-[12px] text-amber-100">
+        {face.status}
+      </p>
       <ReceiptSection label={m.cards.sClaim}>
         <p className="text-[13px] leading-snug text-ink">{face.question}</p>
       </ReceiptSection>

@@ -31,6 +31,21 @@ below exists in the judge build today. Labels are quoted exactly as they appear 
 **Step 1-fallback (narrow window or panel closed):** click **Trend** (bottom right) → tab
 **Study findings**. Everything else is identical.
 
+### Optional Planet to Proof route (temperature)
+
+From **Study findings**, choose **Planet to Proof · air temperature**. The guide starts on the
+existing 3D globe with the Gate A question from `evidence-cards.json`, then uses two Cesium camera
+views: Earth and the Peninsula + Balearics. **Show study region** draws the included GISCO NUTS-2
+outlines (excluding Canarias, Ceuta and Melilla); **Show trend layer** selects the existing
+precomputed MERRA-2 temperature slope map. **Reveal the Evidence** opens the national temperature
+EvidenceCard with its series, CI, source, limitations and visible **EXPLORATORY** review status.
+**Skip to evidence**, **Exit guide** and Esc leave normal exploration available. Cesium suppresses
+camera animation when reduced motion is requested. The original Gate B demo route above is unchanged.
+
+This route is a presentation aid, not a new finding. The outline is geographic context and the map
+shows cell slopes; the EvidenceCard is the regional estimate. Independent human review in
+`SCIENTIFIC_REVIEW.md` §5 is still pending. Do not call this result validated on stage.
+
 ## 2. Scientific values shown (all from artifacts; do not round differently on stage)
 
 | Value | Artifact |

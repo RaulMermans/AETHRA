@@ -14,6 +14,8 @@ export const SHOTS_DIR = join(ROOT, "e2e-results", "screenshots");
 
 interface CardJson {
   id: string;
+  question: string;
+  status: string;
   topic: "temperature" | "joint_low";
   region: { scope: string; name: string };
   outcome: string;

@@ -53,6 +53,30 @@ type Copy = {
     linkCopied: string;
     linkInBar: string;
   };
+  hydro: {
+    label: string;
+    unnamed: string;
+    note: string;
+    unavailable: string;
+    close: string;
+  };
+  proof: {
+    start: string;
+    title: string;
+    planet: string;
+    extent: string;
+    trend: string;
+    studyRegion: string;
+    extentNote: string;
+    trendMapNote: string;
+    why: string;
+    whyBody: string;
+    goToRegion: string;
+    showTrend: string;
+    reveal: string;
+    skip: string;
+    exit: string;
+  };
   tools: {
     mapTools: string;
     stations: string;
@@ -539,6 +563,30 @@ export const messages: Record<Locale, Copy> = {
       screenshotSaved: "Screenshot saved",
       linkCopied: "Link to this view copied",
       linkInBar: "Link is in the address bar",
+    },
+    hydro: {
+      label: "River or lake (IGN)",
+      unnamed: "Unnamed mapped feature",
+      note: "Geographic context from the Instituto Geográfico Nacional. No NASA basin result is implied.",
+      unavailable: "IGN river and lake information is unavailable right now. The map may still show them.",
+      close: "Close",
+    },
+    proof: {
+      start: "Planet to Proof · air temperature",
+      title: "Planet to Proof",
+      planet: "1 · The question",
+      extent: "2 · The study region",
+      trend: "3 · The trend map",
+      studyRegion: "Peninsula + Balearics",
+      extentNote: "Gold outlines mark the GISCO regions included in this analysis. Canarias, Ceuta and Melilla are excluded.",
+      trendMapNote: "Cell colours show the precomputed temperature slope, not a forecast. The EvidenceCard holds the regional estimate and uncertainty.",
+      why: "Potential use",
+      whyBody: "This evidence can help a regional analyst decide whether to investigate the temperature signal further. User impact has not been validated.",
+      goToRegion: "Show study region",
+      showTrend: "Show trend layer",
+      reveal: "Reveal the Evidence",
+      skip: "Skip to evidence",
+      exit: "Exit guide",
     },
     tools: {
       mapTools: "Map tools",
@@ -1089,6 +1137,30 @@ export const messages: Record<Locale, Copy> = {
       screenshotSaved: "Captura guardada",
       linkCopied: "Enlace de esta vista copiado",
       linkInBar: "El enlace está en la barra de direcciones",
+    },
+    hydro: {
+      label: "Río o lago (IGN)",
+      unnamed: "Elemento sin nombre",
+      note: "Contexto geográfico del Instituto Geográfico Nacional. No implica ningún resultado NASA por cuenca.",
+      unavailable: "La información de ríos y lagos del IGN no está disponible ahora. El mapa puede seguir mostrándolos.",
+      close: "Cerrar",
+    },
+    proof: {
+      start: "Del planeta a la evidencia · temperatura",
+      title: "Del planeta a la evidencia",
+      planet: "1 · La pregunta",
+      extent: "2 · La región de estudio",
+      trend: "3 · El mapa de tendencia",
+      studyRegion: "Península y Baleares",
+      extentNote: "Los contornos dorados marcan las regiones GISCO incluidas en este análisis. Se excluyen Canarias, Ceuta y Melilla.",
+      trendMapNote: "Los colores de las celdas muestran la pendiente de temperatura precalculada, no una predicción. La ficha contiene la estimación regional y su incertidumbre.",
+      why: "Uso potencial",
+      whyBody: "Esta evidencia puede ayudar a un analista regional a decidir si conviene estudiar más la señal de temperatura. El impacto en usuarios no se ha validado.",
+      goToRegion: "Mostrar región de estudio",
+      showTrend: "Mostrar capa de tendencia",
+      reveal: "Mostrar la evidencia",
+      skip: "Ir a la evidencia",
+      exit: "Salir de la guía",
     },
     tools: {
       mapTools: "Herramientas del mapa",

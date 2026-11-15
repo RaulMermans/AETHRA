@@ -269,6 +269,23 @@ function pushOuterRings(
   }
 }
 
+/** Gate A analysis extent (D5/D36): GISCO NUTS-2 Peninsula + Balearics, without Canarias, Ceuta or Melilla. */
+export function buildGateAExtentOverlayGeoJson(admin: AdminBundle): {
+  type: "FeatureCollection";
+  features: AdminOverlayFeature[];
+} {
+  const features: AdminOverlayFeature[] = [];
+  for (const region of admin.ccaa) {
+    if (region.id === "ES70" || region.id === "ES63" || region.id === "ES64") continue;
+    pushOuterRings(features, region.coordinates, {
+      kind: "admin-active-outline",
+      name: "Gate A analysis extent: Peninsula + Balearics",
+      color: "#fbbf24",
+    });
+  }
+  return { type: "FeatureCollection", features };
+}
+
 /**
  * Builds the GeoJSON overlay: official GISCO province borders (atlas-style) plus the
  * active jurisdiction in gold. Parent CCAA is drawn when a province is selected.
