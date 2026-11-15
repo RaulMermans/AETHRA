@@ -5,6 +5,7 @@ import GlobeClient from "@/components/globe/GlobeClient";
 import { EarthLayersPanel } from "@/components/explore/EarthLayersPanel";
 import {
   DEFAULT_ADMIN_SCOPE,
+  buildGateAExtentOverlayGeoJson,
   loadAdminBundle,
   resolveAdminScope,
   type AdminBundle,
@@ -12,7 +13,7 @@ import {
   type AdminScopeSelection,
 } from "@/lib/globe/admin-scope";
 import { EXPLORATORY_FEATURES_ENABLED } from "@/lib/demo-mode";
-import { buildLayerCatalog, HOME_VIEW, initialLayerStates } from "@/lib/globe/catalog";
+import { buildLayerCatalog, HOME_VIEW, SPAIN_VIEW, WORLD_VIEW, initialLayerStates } from "@/lib/globe/catalog";
 import { IGN_HYDRO_LAYERS, queryIgnHydroFeature, type IgnHydroFeature } from "@/lib/globe/ign-hydro";
 import type { IllustrativeAssetView } from "@/lib/globe/cesium/illustrative-model";
 import {
@@ -100,6 +101,7 @@ import { StationCatalogPanel } from "./StationCatalogPanel";
 import { AethraCorePanel } from "./AethraCorePanel";
 import { TaroPortrait } from "./TaroPortrait";
 import { EvidenceCardPanel, type EvidenceTopic } from "./EvidenceCardPanel";
+import { PlanetToProof, type ProofStage } from "./PlanetToProof";
 import { RelationshipPanel } from "./RelationshipPanel";
 import {
   buildRelationOverlay,
@@ -109,6 +111,7 @@ import {
   type RelationshipsFile,
 } from "@/lib/globe/relationships";
 import type { AgentSuggestedAction } from "@/lib/agent/types";
+import type { EvidenceCard } from "@/lib/agent/cards";
 import { useLocale } from "@/lib/i18n/locale";
 import type { Messages } from "@/lib/i18n/messages";
 import { ToolsBar, type ToolAction } from "./ToolsBar";
@@ -169,6 +172,8 @@ export function ExploreView() {
   const [controller, setController] = useState<GlobeController | null>(null);
   const [creditEl, setCreditEl] = useState<HTMLDivElement | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [proofStage, setProofStage] = useState<ProofStage | null>(null);
+  const [proofCard, setProofCard] = useState<EvidenceCard | null>(null);
   // First view leads with the research question and its answer (Study findings), not a bare globe.
   const [trendTab, setTrendTab] = useState<"series" | "findings">("findings");
   useEffect(() => {
@@ -511,6 +516,7 @@ export function ExploreView() {
 
   const handleChangeAdminScope = useCallback(
     (next: AdminScopeSelection, fly = true) => {
+      setProofStage(null);
       setAdminScope(next);
       setSelected(null);
       setTrendTab("series");
@@ -831,8 +837,21 @@ export function ExploreView() {
       active = false;
     };
   }, [relationFile, relationUrl]);
+  const proofExtentLayer = useMemo<LayerDescriptor | null>(() => {
+    if (!adminBundle || (proofStage !== "extent" && proofStage !== "trend")) return null;
+    return {
+      id: "gate-a-study-extent",
+      kind: "geojson",
+      group: "reference",
+      title: "Gate A study extent: Peninsula + Balearics",
+      description: "GISCO NUTS-2 regions used for the temperature analysis; excludes Canarias, Ceuta and Melilla.",
+      source: { name: "Eurostat GISCO NUTS 2021", url: "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units" },
+      data: buildGateAExtentOverlayGeoJson(adminBundle),
+      style: { stroke: "#fbbf24", strokeWidth: 3 },
+    };
+  }, [adminBundle, proofStage]);
   const displayLayers = useMemo<LayerDescriptor[]>(() => {
-    if (!relationsOpen || !relationFile) return globeLayers;
+    if (!relationsOpen || !relationFile) return proofExtentLayer ? [...globeLayers, proofExtentLayer] : globeLayers;
     const overlay = buildRelationOverlay(relationFile, relationMap, {
       robust: m.relations.robustPoint,
       notRobust: m.relations.notRobustPoint,
@@ -841,7 +860,7 @@ export function ExploreView() {
       trendGap: m.relations.trendGapPoint,
     });
     const title = m.relations.maps[relationMap].title;
-    return globeLayers.map((l): LayerDescriptor => {
+    const relationshipLayers = globeLayers.map((l): LayerDescriptor => {
       if (l.kind === "raster-field" && l.id === "climate-heatmap") {
         return { ...l, title, url: relationMap === "temp-precip" ? relationUrl : "" };
       }
@@ -849,30 +868,57 @@ export function ExploreView() {
       if (l.kind === "point-values" && l.id === "climate-overlay") return { ...l, title, data: overlay };
       return l;
     });
-  }, [globeLayers, relationsOpen, relationFile, relationMap, relationUrl, m]);
+    return proofExtentLayer ? [...relationshipLayers, proofExtentLayer] : relationshipLayers;
+  }, [globeLayers, proofExtentLayer, relationsOpen, relationFile, relationMap, relationUrl, m]);
   const displayLayerStates = useMemo<LayerStateMap>(() => {
-    if (!relationsOpen) return globeLayerStates;
+    if (!relationsOpen) return { ...globeLayerStates, "gate-a-study-extent": { visible: proofExtentLayer !== null, opacity: 1 } };
     return {
       ...globeLayerStates,
+      "gate-a-study-extent": { visible: proofExtentLayer !== null, opacity: 1 },
       "climate-heatmap": { visible: true, opacity: 0.85 },
       "climate-heatmap-blend": { visible: false, opacity: 0 },
       "climate-overlay": { visible: true, opacity: 0.95 },
     };
-  }, [globeLayerStates, relationsOpen]);
+  }, [globeLayerStates, proofExtentLayer, relationsOpen]);
   const toggleTool = useCallback((tool: ToolId) => {
+    setProofStage(null);
     setActiveTool((t) => (t === tool ? null : tool));
     setCoreOpen(false);
   }, []);
+  const startProof = (card: EvidenceCard) => {
+    if (!controller || !adminBundle) return;
+    setProofCard(card);
+    setProofStage("planet");
+    setWorkspaceMode("climate");
+    setActiveTool(null);
+    setCasePanelOpen(false);
+    setCoreOpen(false);
+    setEvidenceOpen(false);
+    setAdminScope((scope) => ({ ...scope, level: "age" }));
+    setSelected(null);
+    setDim("3d");
+    controller.setDimension("3d", 0);
+    updateClimateConfig({ dimension: "temperature", mode: "value", year: LAST_COMPLETE_YEAR });
+    controller.flyTo(WORLD_VIEW);
+  };
+  const revealProof = () => {
+    setProofStage(null);
+    setProofCard(null);
+    setEvidenceTopic("temperature");
+    setActiveTool("evidence");
+    setEvidenceOpen(false);
+  };
   useEffect(() => {
-    if (!activeTool && !casePanelOpen) return;
+    if (!activeTool && !casePanelOpen && !proofStage) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (activeTool) closeTool();
+      if (proofStage) setProofStage(null);
+      else if (activeTool) closeTool();
       else setCasePanelOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeTool, casePanelOpen, closeTool]);
+  }, [activeTool, casePanelOpen, proofStage, closeTool]);
 
   const selectInstallation = useCallback(
     (inst: Installation | null) => {
@@ -1232,6 +1278,27 @@ export function ExploreView() {
 
       <EarthLayersPanel layers={baseLayers} states={layerStates} onChange={updateLayer} selectedFeature={selectedHydro} selectionStatus={hydroSelectionStatus} errors={layerErrors} />
 
+      {proofStage && proofCard && (
+        <PlanetToProof
+          card={proofCard}
+          stage={proofStage}
+          onRegion={() => {
+            setProofStage("extent");
+            controller?.flyTo(SPAIN_VIEW);
+          }}
+          onTrend={() => {
+            updateClimateConfig({ dimension: "temperature", mode: "trend", year: LAST_COMPLETE_YEAR });
+            setLayerStates((states) => ({
+              ...states,
+              "climate-heatmap": { ...states["climate-heatmap"], visible: true },
+            }));
+            setProofStage("trend");
+          }}
+          onReveal={revealProof}
+          onExit={() => setProofStage(null)}
+        />
+      )}
+
       <div
         className={`pointer-events-none absolute top-[4.75rem] left-4 z-10 flex max-h-[calc(100dvh-9rem)] w-[min(19.5rem,calc(100vw-2rem))] flex-col gap-2 overflow-x-hidden overflow-y-auto sm:left-6 ${
           inspectorOpen ? "max-[1199px]:hidden" : ""
@@ -1317,7 +1384,10 @@ export function ExploreView() {
               stationsVisible={layerStates["climate-overlay"]?.visible ?? true}
               playing={playing}
               timelineReady={timelineReady}
-              onChange={updateClimateConfig}
+              onChange={(patch) => {
+                setProofStage(null);
+                updateClimateConfig(patch);
+              }}
               onToggleHeatmap={() =>
                 updateLayer("climate-heatmap", { visible: !(layerStates["climate-heatmap"]?.visible ?? true) })
               }
@@ -1528,6 +1598,8 @@ export function ExploreView() {
                       ) : (
                         <FindingsBriefPanel
                           onClose={() => setEvidenceOpen(false)}
+                          onStartProof={startProof}
+                          canStartProof={ready && adminBundle !== null}
                           onOpenCard={() => {
                             setEvidenceOpen(false);
                             setEvidenceTopic("temperature");
