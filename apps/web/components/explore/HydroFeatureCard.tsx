@@ -3,32 +3,21 @@
 import type { IgnHydroFeature } from "@/lib/globe/ign-hydro";
 import { useLocale } from "@/lib/i18n/locale";
 
-interface Props {
-  feature: IgnHydroFeature | null;
-  unavailable: boolean;
-  onClose: () => void;
-}
-
 /**
- * IGN rivers and lakes are fixed map context (D79). This card only appears when a click finds a
- * mapped feature or the IGN service fails; it lives in the left column flow so it never overlaps.
+ * IGN rivers and lakes are fixed map context (D79). Shown inside the clicked-point readout, only
+ * when the click hits a mapped feature or the IGN service fails, so it adds no floating panel.
  */
-export function HydroFeatureCard({ feature, unavailable, onClose }: Props) {
+export function HydroFeatureCard({ feature, unavailable }: { feature: IgnHydroFeature | null; unavailable: boolean }) {
   const { m } = useLocale();
   if (!feature && !unavailable) return null;
   return (
-    <section aria-label={m.hydro.label} className="panel pointer-events-auto p-3 text-xs text-muted" aria-live="polite">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">{m.hydro.label}</p>
-        <button type="button" onClick={onClose} aria-label={m.hydro.close} className="focus-ring -mt-1 -mr-1 rounded-md px-1.5 text-sm leading-none text-muted hover:text-ink">
-          ×
-        </button>
-      </div>
+    <div aria-label={m.hydro.label} role="group" aria-live="polite" className="mt-1.5 rounded-md border border-cyan-300/25 bg-cyan-400/5 px-2 py-1.5 text-[11px] text-muted">
+      <p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200">{m.hydro.label}</p>
       {feature ? (
         <>
-          <p className="mt-1 text-sm font-medium text-ink">{feature.name ?? m.hydro.unnamed}</p>
-          <details className="mt-1">
-            <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">{feature.id}</summary>
+          <p className="mt-0.5 text-xs font-medium text-ink">{feature.name ?? m.hydro.unnamed}</p>
+          <details className="mt-0.5">
+            <summary className="cursor-pointer break-all hover:text-ink">{feature.id}</summary>
             <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               {Object.entries(feature.attributes).map(([key, value]) => (
                 <div key={key} className="col-span-2 grid grid-cols-subgrid">
@@ -38,11 +27,11 @@ export function HydroFeatureCard({ feature, unavailable, onClose }: Props) {
               ))}
             </dl>
           </details>
-          <p className="mt-2 leading-snug">{m.hydro.note}</p>
+          <p className="mt-1 leading-snug">{m.hydro.note}</p>
         </>
       ) : (
-        <p role="alert" className="mt-1 leading-snug text-amber-100">{m.hydro.unavailable}</p>
+        <p role="alert" className="mt-0.5 leading-snug text-amber-100">{m.hydro.unavailable}</p>
       )}
-    </section>
+    </div>
   );
 }
