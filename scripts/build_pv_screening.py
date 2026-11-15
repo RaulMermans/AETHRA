@@ -61,6 +61,7 @@ ALPHA = 0.05
 MIN_LAND = 0.2
 DLAT, DLON = 0.5, 0.625
 GEM_LABEL = "GEM Global Solar Power Tracker, Feb 2026"
+FEATURED_CELL_ID = "r20c23"  # Editorial case near Jaén; selected after screening, never a siting verdict.
 
 VERDICT_RULE = (
     "no_data: land_fraction < 0.2 or no data. "
@@ -446,6 +447,25 @@ def main() -> None:
         "heat_penalty_pct_decade_median": r(np.median([c["heat_penalty_pct_decade"] for c in tv])) if tv else None,
     }
 
+    good_cells = [c for c in cells if c["verdict"] == "good"]
+    featured = by_id[FEATURED_CELL_ID]
+    if featured["verdict"] != "good":
+        raise ValueError(f"Featured case {FEATURED_CELL_ID} no longer passes the frozen screening rule")
+    featured_case = {
+        "cell_id": FEATURED_CELL_ID,
+        "place": "Jaén–Granada grid cell (centre in Jaén)",
+        "selection": "Post-hoc editorial example among green screening cells; not an optimal-site ranking",
+        "green_cells_compared": len(good_cells),
+        "green_cells_with_more_irradiance": sum(c["irr_mean_kwh_m2_day"] > featured["irr_mean_kwh_m2_day"] for c in good_cells),
+        "green_cells_with_more_low_moderate_land": sum(c["miteco_low_moderate_pct"] > featured["miteco_low_moderate_pct"] for c in good_cells),
+        "green_cells_better_on_both": sum(
+            c["id"] != FEATURED_CELL_ID
+            and c["irr_mean_kwh_m2_day"] >= featured["irr_mean_kwh_m2_day"]
+            and c["miteco_low_moderate_pct"] >= featured["miteco_low_moderate_pct"]
+            for c in good_cells
+        ),
+    }
+
     bundle = {
         "schema": "pv-screening/v1",
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -467,6 +487,7 @@ def main() -> None:
         "regions_validation": regional_validation(ann, lats, lons),
         "landmarks": landmarks,
         "summary": summary,
+        "featured_case": featured_case,
     }
     (OUT / "pv-screening.json").write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     n_pl = write_plants(gem)

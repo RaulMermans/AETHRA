@@ -1,5 +1,9 @@
 # Datasets
 
+## Giovanni dust subset ingested 15 Nov 2026
+
+The external Giovanni export for NASA MERRA-2 `M2TMNXAER` v5.12.4 `DUEXTTAU` is catalogued in [`data/nasa_merra2_dust_giovanni/`](../data/nasa_merra2_dust_giovanni/README.md). It has 321 monthly URLs (2000-01–2026-09); **312 NetCDFs for complete years 2000–2025 were downloaded and validated**. `DUEXTTAU` is dimensionless dust extinction aerosol optical thickness at 550 nm on the MERRA-2 0.5° × 0.625° reanalysis grid; DOI [10.5067/FH9A0MLJPC7N](https://doi.org/10.5067/FH9A0MLJPC7N). Status **INGESTED; EXPLORATORY result**, not gate-validated. The featured-cell annual series and mean are in [`giovanni-dust.json`](../apps/web/public/data/giovanni-dust.json); each raw file has a SHA-256 in the [download manifest](../data/nasa_merra2_dust_giovanni/download_manifest.json). It does not enter the PV verdict or justify a soiling or production claim.
+
 ## Readiness classification (audit 14 Nov 2026)
 
 Classes: **VERIFIED / READY** (passed Gate 1 + Gate 2, recorded) · **INGESTED, NOT VALIDATED**

@@ -1,0 +1,433 @@
+{
+  "schema": "pv-history/v1",
+  "status": "EXPLORATORY",
+  "period": [
+    2000,
+    2025
+  ],
+  "source": {
+    "name": "Global Energy Monitor, Global Solar Power Tracker",
+    "version": "February 2026 Spain utility-scale snapshot (projects >= 1 MW)",
+    "license": "CC BY 4.0",
+    "file": "data/gem_solar_spain/gem_solar_spain_utility_2026-02.csv",
+    "sha256": "7bad769602dd5095eba0447a8ec5f4b8fe57f9256115d2c6833a829ec246c272"
+  },
+  "measure": "Number of operating GEM solar PV project phases by reported start_year; PV and Assumed PV shown separately",
+  "units": "registered project phases (count)",
+  "method": "Filter operating rows with PV or Assumed PV; count unique GEM phase IDs by reported start_year; no trend test",
+  "summary": {
+    "operating_pv_phases": 2538,
+    "explicit_pv_phases": 415,
+    "assumed_pv_phases": 2123,
+    "known_start_year_phases": 2470,
+    "unknown_start_year_phases": 68,
+    "pre_2000_phases": 1
+  },
+  "annual": [
+    {
+      "year": 2000,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2001,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2002,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2003,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2004,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2005,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 0
+    },
+    {
+      "year": 2006,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 2,
+      "total_phases": 2,
+      "cumulative_reported_phases": 2
+    },
+    {
+      "year": 2007,
+      "explicit_pv_phases": 4,
+      "assumed_pv_phases": 2,
+      "total_phases": 6,
+      "cumulative_reported_phases": 8
+    },
+    {
+      "year": 2008,
+      "explicit_pv_phases": 15,
+      "assumed_pv_phases": 40,
+      "total_phases": 55,
+      "cumulative_reported_phases": 63
+    },
+    {
+      "year": 2009,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 4,
+      "total_phases": 4,
+      "cumulative_reported_phases": 67
+    },
+    {
+      "year": 2010,
+      "explicit_pv_phases": 1,
+      "assumed_pv_phases": 7,
+      "total_phases": 8,
+      "cumulative_reported_phases": 75
+    },
+    {
+      "year": 2011,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 1,
+      "total_phases": 1,
+      "cumulative_reported_phases": 76
+    },
+    {
+      "year": 2012,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 76
+    },
+    {
+      "year": 2013,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 1,
+      "total_phases": 1,
+      "cumulative_reported_phases": 77
+    },
+    {
+      "year": 2014,
+      "explicit_pv_phases": 2,
+      "assumed_pv_phases": 0,
+      "total_phases": 2,
+      "cumulative_reported_phases": 79
+    },
+    {
+      "year": 2015,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 2,
+      "total_phases": 2,
+      "cumulative_reported_phases": 81
+    },
+    {
+      "year": 2016,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 0,
+      "total_phases": 0,
+      "cumulative_reported_phases": 81
+    },
+    {
+      "year": 2017,
+      "explicit_pv_phases": 0,
+      "assumed_pv_phases": 792,
+      "total_phases": 792,
+      "cumulative_reported_phases": 873
+    },
+    {
+      "year": 2018,
+      "explicit_pv_phases": 1,
+      "assumed_pv_phases": 32,
+      "total_phases": 33,
+      "cumulative_reported_phases": 906
+    },
+    {
+      "year": 2019,
+      "explicit_pv_phases": 50,
+      "assumed_pv_phases": 49,
+      "total_phases": 99,
+      "cumulative_reported_phases": 1005
+    },
+    {
+      "year": 2020,
+      "explicit_pv_phases": 32,
+      "assumed_pv_phases": 75,
+      "total_phases": 107,
+      "cumulative_reported_phases": 1112
+    },
+    {
+      "year": 2021,
+      "explicit_pv_phases": 48,
+      "assumed_pv_phases": 105,
+      "total_phases": 153,
+      "cumulative_reported_phases": 1265
+    },
+    {
+      "year": 2022,
+      "explicit_pv_phases": 67,
+      "assumed_pv_phases": 133,
+      "total_phases": 200,
+      "cumulative_reported_phases": 1465
+    },
+    {
+      "year": 2023,
+      "explicit_pv_phases": 62,
+      "assumed_pv_phases": 500,
+      "total_phases": 562,
+      "cumulative_reported_phases": 2027
+    },
+    {
+      "year": 2024,
+      "explicit_pv_phases": 38,
+      "assumed_pv_phases": 209,
+      "total_phases": 247,
+      "cumulative_reported_phases": 2274
+    },
+    {
+      "year": 2025,
+      "explicit_pv_phases": 28,
+      "assumed_pv_phases": 167,
+      "total_phases": 195,
+      "cumulative_reported_phases": 2469
+    }
+  ],
+  "featured_cell": {
+    "id": "r20c23",
+    "bounds": [
+      -4.0625,
+      37.25,
+      -3.4375,
+      37.75
+    ],
+    "summary": {
+      "operating_pv_phases": 14,
+      "explicit_pv_phases": 1,
+      "assumed_pv_phases": 13,
+      "known_start_year_phases": 14,
+      "unknown_start_year_phases": 0,
+      "pre_2000_phases": 0
+    },
+    "annual": [
+      {
+        "year": 2000,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2001,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2002,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2003,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2004,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2005,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2006,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2007,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2008,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2009,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2010,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2011,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2012,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2013,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2014,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2015,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2016,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 0
+      },
+      {
+        "year": 2017,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 4,
+        "total_phases": 4,
+        "cumulative_reported_phases": 4
+      },
+      {
+        "year": 2018,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 4
+      },
+      {
+        "year": 2019,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 4
+      },
+      {
+        "year": 2020,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 0,
+        "total_phases": 0,
+        "cumulative_reported_phases": 4
+      },
+      {
+        "year": 2021,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 1,
+        "total_phases": 1,
+        "cumulative_reported_phases": 5
+      },
+      {
+        "year": 2022,
+        "explicit_pv_phases": 1,
+        "assumed_pv_phases": 1,
+        "total_phases": 2,
+        "cumulative_reported_phases": 7
+      },
+      {
+        "year": 2023,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 5,
+        "total_phases": 5,
+        "cumulative_reported_phases": 12
+      },
+      {
+        "year": 2024,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 1,
+        "total_phases": 1,
+        "cumulative_reported_phases": 13
+      },
+      {
+        "year": 2025,
+        "explicit_pv_phases": 0,
+        "assumed_pv_phases": 1,
+        "total_phases": 1,
+        "cumulative_reported_phases": 14
+      }
+    ],
+    "trend_assessment": {
+      "outcome": "insufficient_evidence",
+      "label": "Insufficient evidence",
+      "method": "No trend fit: the GEM February 2026 snapshot is not an annual commissioning census",
+      "n_phases": 14,
+      "slope_per_year": null,
+      "ci95": null,
+      "p_value": null,
+      "reasons": [
+        "Only 14 currently listed phases, concentrated in six reported start years.",
+        "13 of 14 phases have Assumed PV technology; year-specific registry completeness is unknown.",
+        "A cumulative count of a fixed snapshot increases by construction and is not a statistical trend test.",
+        "The grid cell spans Jaén and Granada and cannot establish parcel suitability."
+      ]
+    }
+  },
+  "limitations": [
+    "GEM is a February 2026 inventory, not a complete national annual commissioning census; zeros mean no registered phases with that year.",
+    "The 2017 entry spike consists entirely of Assumed PV phases and should not be read as a documented national installation boom.",
+    "Start year is missing for some phases; technology is inferred for Assumed PV. Location points may be approximate.",
+    "MW capacity values mix MWac, MWp/dc and unknown ratings, so this chronology does not aggregate them or estimate electricity generation.",
+    "A project phase in this cell is context for investigation, not evidence the cell or any parcel is suitable for a new plant."
+  ]
+}

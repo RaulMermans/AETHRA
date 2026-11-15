@@ -87,6 +87,16 @@ export interface PvRegionValidation {
   merra2_p: number | null;
 }
 
+export interface FeaturedPvCase {
+  cell_id: string;
+  place: string;
+  selection: string;
+  green_cells_compared: number;
+  green_cells_with_more_irradiance: number;
+  green_cells_with_more_low_moderate_land: number;
+  green_cells_better_on_both: number;
+}
+
 export interface PvScreeningFile {
   schema: string;
   generated_utc?: string;
@@ -101,6 +111,7 @@ export interface PvScreeningFile {
   regions_validation?: PvRegionValidation[];
   landmarks?: PvLandmark[];
   summary: PvSummary;
+  featured_case?: FeaturedPvCase;
 }
 
 export interface SolarPlant {
@@ -136,16 +147,73 @@ export interface MitecoSensitivityFile {
   classes: MitecoClass[];
 }
 
+export interface GiovanniDustFile {
+  schema: "giovanni-dust/v1";
+  status: "EXPLORATORY";
+  period: [number, number];
+  featured_cell: {
+    id: string;
+    lat: number;
+    lon: number;
+    mean_aot_2000_2025: number;
+    annual: { year: number; mean_aot: number; months_valid: number }[];
+  };
+}
+
+export interface PvHistoryYear {
+  year: number;
+  explicit_pv_phases: number;
+  assumed_pv_phases: number;
+  total_phases: number;
+  cumulative_reported_phases: number;
+}
+
+export interface PvHistoryFile {
+  schema: "pv-history/v1";
+  period: [number, number];
+  annual: PvHistoryYear[];
+  summary: {
+    operating_pv_phases: number;
+    known_start_year_phases: number;
+    unknown_start_year_phases: number;
+    pre_2000_phases: number;
+  };
+  featured_cell: {
+    id: string;
+    trend_assessment: {
+      outcome: "insufficient_evidence";
+      label: string;
+      method: string;
+      n_phases: number;
+      slope_per_year: null;
+      ci95: null;
+      p_value: null;
+      reasons: string[];
+    };
+    summary: {
+      operating_pv_phases: number;
+      explicit_pv_phases: number;
+      assumed_pv_phases: number;
+      known_start_year_phases: number;
+    };
+    annual: PvHistoryYear[];
+  };
+}
+
 /** Each file loads independently: a missing optional file must not hide the others. */
 export interface PvScreeningData {
   screening: PvScreeningFile | null;
   plants: SolarPlantsFile | null;
   miteco: MitecoSensitivityFile | null;
+  dust: GiovanniDustFile | null;
+  history: PvHistoryFile | null;
 }
 
 export const PV_SCREENING_URL = "/data/pv-screening.json";
 export const SOLAR_PLANTS_URL = "/data/solar-plants.json";
 export const MITECO_SENSITIVITY_URL = "/data/miteco-pv-sensitivity.json";
+export const GIOVANNI_DUST_URL = "/data/giovanni-dust.json";
+export const PV_HISTORY_URL = "/data/pv-history.json";
 
 async function fetchJsonOrNull<T>(url: string, valid: (x: unknown) => boolean): Promise<T | null> {
   try {
@@ -160,13 +228,70 @@ async function fetchJsonOrNull<T>(url: string, valid: (x: unknown) => boolean): 
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null;
 
+function isGiovanniDustFile(x: unknown): x is GiovanniDustFile {
+  if (!isObj(x) || x.schema !== "giovanni-dust/v1" || x.status !== "EXPLORATORY") return false;
+  if (!Array.isArray(x.period) || x.period.length !== 2 || !x.period.every((v) => typeof v === "number")) return false;
+  const cell = x.featured_cell;
+  if (!isObj(cell) || typeof cell.id !== "string" || typeof cell.lat !== "number" || typeof cell.lon !== "number" ||
+      typeof cell.mean_aot_2000_2025 !== "number" || !Number.isFinite(cell.mean_aot_2000_2025) || !Array.isArray(cell.annual)) return false;
+  return cell.annual.every((item: unknown) => isObj(item) && typeof item.year === "number" &&
+    typeof item.mean_aot === "number" && Number.isFinite(item.mean_aot) && typeof item.months_valid === "number");
+}
+
+async function fetchDust(): Promise<GiovanniDustFile | null> {
+  try {
+    const response = await fetch(GIOVANNI_DUST_URL, { cache: "no-cache" });
+    if (!response.ok) return null;
+    const raw: unknown = await response.json();
+    return isGiovanniDustFile(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+function isPvHistoryFile(x: unknown): x is PvHistoryFile {
+  if (!isObj(x) || x.schema !== "pv-history/v1" || !Array.isArray(x.period) || x.period.length !== 2 ||
+      !x.period.every((v) => typeof v === "number") || !Array.isArray(x.annual) || !isObj(x.summary) || !isObj(x.featured_cell)) return false;
+  const rowValid = (row: unknown): row is PvHistoryYear => isObj(row) &&
+    typeof row.year === "number" && typeof row.explicit_pv_phases === "number" &&
+    typeof row.assumed_pv_phases === "number" && typeof row.total_phases === "number" &&
+    typeof row.cumulative_reported_phases === "number";
+  const summary = x.summary;
+  const cell = x.featured_cell;
+  const cellSummary = cell.summary;
+  const assessment = cell.trend_assessment;
+  return x.annual.every(rowValid) &&
+    ["operating_pv_phases", "known_start_year_phases", "unknown_start_year_phases", "pre_2000_phases"].every((key) => typeof summary[key] === "number") &&
+    typeof cell.id === "string" &&
+    isObj(cellSummary) &&
+    ["operating_pv_phases", "explicit_pv_phases", "assumed_pv_phases", "known_start_year_phases"].every((key) => typeof cellSummary[key] === "number") &&
+    isObj(assessment) && assessment.outcome === "insufficient_evidence" && typeof assessment.label === "string" &&
+    typeof assessment.method === "string" && typeof assessment.n_phases === "number" &&
+    Array.isArray(assessment.reasons) && assessment.reasons.every((reason: unknown) => typeof reason === "string") &&
+    assessment.slope_per_year === null && assessment.ci95 === null && assessment.p_value === null &&
+    Array.isArray(cell.annual) && cell.annual.every(rowValid);
+}
+
+async function fetchHistory(): Promise<PvHistoryFile | null> {
+  try {
+    const response = await fetch(PV_HISTORY_URL, { cache: "no-cache" });
+    if (!response.ok) return null;
+    const raw: unknown = await response.json();
+    return isPvHistoryFile(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadPvScreeningData(): Promise<PvScreeningData> {
-  const [screening, plants, miteco] = await Promise.all([
+  const [screening, plants, miteco, dust, history] = await Promise.all([
     fetchJsonOrNull<PvScreeningFile>(PV_SCREENING_URL, (x) => isObj(x) && Array.isArray(x.cells) && isObj(x.summary)),
     fetchJsonOrNull<SolarPlantsFile>(SOLAR_PLANTS_URL, (x) => isObj(x) && Array.isArray(x.plants)),
     fetchJsonOrNull<MitecoSensitivityFile>(MITECO_SENSITIVITY_URL, (x) => isObj(x) && Array.isArray(x.images)),
+    fetchDust(),
+    fetchHistory(),
   ]);
-  return { screening, plants, miteco };
+  return { screening, plants, miteco, dust, history };
 }
 
 /** MITECO PNGs are referenced by file name next to the JSON in /data. */

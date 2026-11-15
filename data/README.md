@@ -14,6 +14,7 @@ All data covers **Spain, 2000 → 2026**. This page is the quick overview; each 
 | [`processed/spain/swot/`](processed/spain/README.md) | 🏞️ River reaches + lakes: water-surface height from SWOT (not gauges) | lines/polygons, ~days | 2023 → |
 | [`nasa_gldas_spain_monthly/`](nasa_gldas_spain_monthly/README.md) | 💧 **Where the water goes** (evaporation, rivers, soil, snow), from NASA GLDAS, a land model fed with satellite data | **One number per month for all of Spain** (an average, no map) | 2000 → 2026-07 |
 | [`nasa_merra2_solar_spain_monthly/`](nasa_merra2_solar_spain_monthly/README.md) | ☀️ **Sunlight reaching the ground** (NASA MERRA-2 `SWGDN`), the fuel of solar panels | A **map** in ~50 km squares, one per **month** | 2000 → 2026-09 |
+| [`nasa_merra2_dust_giovanni/`](nasa_merra2_dust_giovanni/README.md) | MERRA-2 `DUEXTTAU` dust optical thickness via Giovanni; **312 real months validated**, exploratory Jaén–Granada cell series in the app | 321 source URLs, local NetCDFs, SHA manifest and compact JSON result | 2000–2025 complete years |
 | [`miteco_pv_sensitivity_2024/`](miteco_pv_sensitivity_2024/README.md) | 🚫 Official MITECO map of **where large solar farms are environmentally sensitive** (5 classes) | A **map** in ~1 km pixels (one snapshot) | 2024 |
 | [`gem_solar_spain/`](gem_solar_spain/README.md) | 🏭 **Real solar plants** ≥ 1 MW in Spain (Global Energy Monitor): location, MW, status | One row per **plant** | Feb 2026 |
 | [`raw/`](raw/README.md) | Original NASA files, before cutting them to Spain | Don't use directly | — |

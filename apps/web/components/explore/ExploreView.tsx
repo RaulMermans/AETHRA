@@ -769,7 +769,8 @@ export function ExploreView() {
   // --- Solar PV evidence screening: loaded on first open; missing files = "not available yet" ---
   const [screeningOpen, setScreeningOpen] = useState(false);
   const [screeningData, setScreeningData] = useState<PvScreeningData | null>(null);
-  const [screeningToggles, setScreeningToggles] = useState<ScreeningToggles>({ cells: true, miteco: false, plants: true });
+  const screeningAutoFocusRef = useRef(false);
+  const [screeningToggles, setScreeningToggles] = useState<ScreeningToggles>({ cells: true, miteco: false, plants: false });
   const [screeningCellId, setScreeningCellId] = useState<string | null>(null);
   const [screeningPlant, setScreeningPlant] = useState<SolarPlant | null>(null);
   useEffect(() => {
@@ -782,6 +783,21 @@ export function ExploreView() {
       active = false;
     };
   }, [screeningOpen, screeningData]);
+  useEffect(() => {
+    if (!screeningOpen || !screeningData?.screening || !controller || screeningAutoFocusRef.current) return;
+    const { featured_case: featuredCase, cells } = screeningData.screening;
+    const cell = cells.find((candidate) => candidate.id === featuredCase?.cell_id);
+    if (!cell) return;
+    screeningAutoFocusRef.current = true;
+    controller.flyTo({
+      target: { latitude: cell.lat, longitude: cell.lon },
+      heading: 0,
+      pitch: -60,
+      range: 180_000,
+      durationSeconds: 1.7,
+      terrainAware: false,
+    });
+  }, [screeningOpen, screeningData, controller]);
   const screeningCell = useMemo(
     () => screeningData?.screening?.cells.find((c) => c.id === screeningCellId) ?? null,
     [screeningData, screeningCellId],
@@ -1292,6 +1308,9 @@ export function ExploreView() {
     const hideClimate = screeningToggles.cells || screeningToggles.miteco;
     return {
       ...displayLayerStates,
+      // Station and infrastructure symbols have unrelated colour meanings; keep the solar view legible.
+      "climate-overlay": { ...(displayLayerStates["climate-overlay"] ?? { opacity: 1 }), visible: false },
+      "energy-infrastructure": { visible: false, opacity: 0 },
       ...(hideClimate
         ? {
             "climate-heatmap": { ...(displayLayerStates["climate-heatmap"] ?? { opacity: 0.62 }), visible: false },
@@ -1305,6 +1324,7 @@ export function ExploreView() {
   const toggleScreening = () => {
     if (screeningOpen) {
       setScreeningOpen(false);
+      screeningAutoFocusRef.current = false;
       setScreeningCellId(null);
       setScreeningPlant(null);
       return;
@@ -1314,8 +1334,8 @@ export function ExploreView() {
     setCasePanelOpen(false);
     setEvidenceOpen(false);
     setPlaying(false);
+    screeningAutoFocusRef.current = false;
     setScreeningOpen(true);
-    controller?.flyTo(homeView);
   };
 
   return (
@@ -1621,6 +1641,21 @@ export function ExploreView() {
                     onClearSelection={() => {
                       setScreeningCellId(null);
                       setScreeningPlant(null);
+                    }}
+                    onSelectFeatured={(cellId) => {
+                      const cell = screeningData?.screening?.cells.find((item) => item.id === cellId);
+                      if (!cell) return;
+                      setScreeningToggles((current) => ({ ...current, cells: true }));
+                      setScreeningCellId(cell.id);
+                      setScreeningPlant(null);
+                      controller?.flyTo({
+                        target: { latitude: cell.lat, longitude: cell.lon },
+                        heading: 0,
+                        pitch: -60,
+                        range: 180_000,
+                        durationSeconds: 1.7,
+                        terrainAware: false,
+                      });
                     }}
                     onClose={toggleScreening}
                   />

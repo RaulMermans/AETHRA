@@ -146,6 +146,26 @@ def test_side_files():
     assert total < 2_000_000
 
 
+def test_featured_case_uses_published_cells() -> None:
+    featured = DATA["featured_case"]
+    cell = next(c for c in CELLS if c["id"] == featured["cell_id"])
+    good = [c for c in CELLS if c["verdict"] == "good"]
+    assert cell["verdict"] == "good"
+    assert featured["green_cells_compared"] == len(good)
+    assert featured["green_cells_with_more_irradiance"] == sum(
+        c["irr_mean_kwh_m2_day"] > cell["irr_mean_kwh_m2_day"] for c in good
+    )
+    assert featured["green_cells_with_more_low_moderate_land"] == sum(
+        c["miteco_low_moderate_pct"] > cell["miteco_low_moderate_pct"] for c in good
+    )
+    assert featured["green_cells_better_on_both"] == sum(
+        c["id"] != cell["id"]
+        and c["irr_mean_kwh_m2_day"] >= cell["irr_mean_kwh_m2_day"]
+        and c["miteco_low_moderate_pct"] >= cell["miteco_low_moderate_pct"]
+        for c in good
+    )
+
+
 if __name__ == "__main__":
     tests = [v for k, v in dict(globals()).items() if k.startswith("test_")]
     for t in tests:

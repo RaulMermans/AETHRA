@@ -2,9 +2,17 @@
 
 import type { ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale";
-import { screeningCopy, type Bullet } from "@/lib/i18n/screening-copy";
+import { formatScreeningNumber, screeningCopy, type Bullet } from "@/lib/i18n/screening-copy";
 import type { ScreeningToggles } from "@/lib/globe/cesium/screening-layers";
-import { MITECO_FALLBACK_COLORS, VERDICT_COLORS, type PvCell, type PvScreeningData, type PvVerdict, type SolarPlant } from "@/lib/globe/pv-screening";
+import { MITECO_FALLBACK_COLORS, VERDICT_COLORS, type GiovanniDustFile, type PvCell, type PvHistoryFile, type PvHistoryYear, type PvScreeningData, type PvVerdict, type SolarPlant } from "@/lib/globe/pv-screening";
+
+// IGN ETRS89 geodetic vertices inside r20c23; geographic references, not PV candidate parcels.
+const CASE_PLACES = [
+  { name: "Jabalcuz", province: "Jaén", lat: 37.737413, lon: -3.843343, source: "https://datos-geodesia.ign.es/Red_Geodesica/Hoja0947/094704.pdf" },
+  { name: "Cerro La Torre", province: "Jaén", lat: 37.443090, lon: -3.972519, source: "https://datos-geodesia.ign.es/Red_Geodesica/Hoja0990/099066.pdf" },
+  { name: "Cerro Cazuela", province: "Granada", lat: 37.356590, lon: -3.970614, source: "https://datos-geodesia.ign.es/Red_Geodesica/Hoja0990/099061.pdf" },
+  { name: "Monte Ágreda", province: "Granada", lat: 37.379291, lon: -3.894583, source: "https://datos-geodesia.ign.es/Red_Geodesica/Hoja0990/099082.pdf" },
+] as const;
 
 /** Sun glyph (the shared Icon set has none). */
 export function SunGlyph({ className = "size-4" }: { className?: string }) {
@@ -81,6 +89,7 @@ export function SolarScreeningPanel({
   selectedCell,
   selectedPlant,
   onClearSelection,
+  onSelectFeatured,
   onClose,
 }: {
   data: PvScreeningData | null;
@@ -90,11 +99,14 @@ export function SolarScreeningPanel({
   selectedCell: PvCell | null;
   selectedPlant: SolarPlant | null;
   onClearSelection: () => void;
+  onSelectFeatured: (cellId: string) => void;
   onClose: () => void;
 }) {
   const { locale } = useLocale();
   const t = screeningCopy(locale);
   const s = data?.screening ?? null;
+  const featuredCase = s?.featured_case;
+  const featuredCell = s?.cells.find((cell) => cell.id === featuredCase?.cell_id);
   const period: [number, number] = s?.period ?? [2000, 2025];
   const mitecoColor = (v: number) => data?.miteco?.classes.find((c) => c.value === v)?.color ?? MITECO_FALLBACK_COLORS[v] ?? "#64748b";
 
@@ -149,9 +161,54 @@ export function SolarScreeningPanel({
         ) : selectedPlant ? (
           <PlantCard plant={selectedPlant} t={t} mitecoColor={mitecoColor} onBack={onClearSelection} />
         ) : selectedCell && s ? (
-          <CellCard cell={selectedCell} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
+          <CellCard cell={selectedCell} featuredCaseId={featuredCase?.cell_id} dust={data?.dust ?? null} locale={locale} t={t} period={period} method={s.method} sources={s.sources ?? []} onBack={onClearSelection} />
         ) : s ? (
           <div className="space-y-1.5 text-[13px] leading-snug text-ink">
+            {featuredCase && featuredCell && (
+              <div className="mb-3 rounded-lg border border-emerald-400/45 bg-emerald-400/10 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-200">{t.featuredHeading}</p>
+                <p className="mt-1 text-[11px] text-faint">{t.cellLabel(featuredCell)} · {t.featuredCenter}</p>
+                <dl className="mt-2 grid grid-cols-2 gap-2">
+                  <div><dt className="text-[10px] leading-tight text-faint">{t.featuredSunLabel}</dt><dd className="mt-1 font-mono text-base tabular-nums text-ink">{featuredCell.irr_mean_kwh_m2_day === null ? "—" : `${formatScreeningNumber(locale, featuredCell.irr_mean_kwh_m2_day, 2)} ${t.featuredSunUnit}`}</dd></div>
+                  <div><dt className="text-[10px] leading-tight text-faint">{t.featuredEnvLabel}</dt><dd className="mt-1 font-mono text-base tabular-nums text-ink">{featuredCell.miteco_low_moderate_pct === null ? "—" : `${formatScreeningNumber(locale, featuredCell.miteco_low_moderate_pct, 1)}%`}</dd></div>
+                </dl>
+                <p className="mt-1 text-xs leading-relaxed text-ink">
+                  {t.featuredNarrative(
+                    featuredCase.place,
+                    featuredCase.green_cells_with_more_irradiance,
+                    featuredCase.green_cells_with_more_low_moderate_land,
+                    featuredCase.green_cells_better_on_both,
+                    featuredCase.green_cells_compared,
+                  )}
+                </p>
+                <ul className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-muted">
+                  {t.bullets(featuredCell).filter((bullet) => bullet.icon === "trend" || bullet.icon === "heat").map((bullet) => (
+                    <li key={bullet.icon} className="flex gap-2"><BulletIcon icon={bullet.icon} /><span>{bullet.text}</span></li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted">{t.environmentalMeaning}</p>
+                <div className="mt-3 rounded-md border border-line px-2.5 py-2">
+                  <p className="text-[11px] font-semibold text-ink">{t.placeReferenceHeading}</p>
+                  <ul className="mt-1.5 space-y-1 text-[11px] leading-snug text-muted">
+                    {CASE_PLACES.map((place) => (
+                      <li key={place.name}>{place.name} ({place.province}) · {place.lat.toFixed(6)}°, {place.lon.toFixed(6)}° · <a className="underline hover:text-ink" href={place.source} target="_blank" rel="noreferrer">{t.placeSource}</a></li>
+                    ))}
+                  </ul>
+                  <p className="mt-1.5 text-[10px] leading-snug text-faint">{t.placeReferenceNote}</p>
+                </div>
+                <button type="button" onClick={() => onSelectFeatured(featuredCase.cell_id)} className="focus-ring mt-2 rounded-md bg-emerald-400/20 px-2.5 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-400/30">
+                  {t.featuredAction}
+                </button>
+                <p className="mt-2 text-[11px] text-faint">{t.featuredLimit}</p>
+                {data?.dust?.featured_cell.id === featuredCase.cell_id && (
+                  <DustContext dust={data.dust} locale={locale} t={t} />
+                )}
+                {!data?.dust && <p className="mt-2 text-[11px] text-amber-200" role="status">{t.dustUnavailable}</p>}
+                {data?.history && data.history.featured_cell.id === featuredCase.cell_id && (
+                  <HistoryContext history={data.history} t={t} />
+                )}
+              </div>
+            )}
             <p>
               <VerdictInline verdict="good" /> {t.summaryGood(s.summary.cells_good, s.summary.good_regions?.slice(0, 3).join(", "))}
             </p>
@@ -186,6 +243,15 @@ export function SolarScreeningPanel({
           ))}
           <li className="pt-1 text-[10px] leading-snug text-faint">{t.legendNote}</li>
         </ul>
+        <details className="mt-3 border-t border-line pt-3 text-xs text-ink">
+          <summary className="focus-ring cursor-pointer text-muted hover:text-ink">{t.markerHeading}</summary>
+          <ul className="mt-2 space-y-1.5 text-[11px] leading-snug text-muted">
+            <li>● {t.markerOperating}</li>
+            <li>○ {t.markerConstruction}</li>
+            <li><span className="text-amber-300">●</span> {t.markerLandmark}</li>
+            <li>{t.markerOther}</li>
+          </ul>
+        </details>
       </div>
     </section>
   );
@@ -200,6 +266,82 @@ function VerdictInline({ verdict }: { verdict: PvVerdict }) {
 }
 
 type Copy = ReturnType<typeof screeningCopy>;
+type Language = "en" | "es";
+
+function DustContext({ dust, locale, t }: { dust: GiovanniDustFile; locale: Language; t: Copy }) {
+  const years = dust.featured_cell.annual.length;
+  return (
+    <div className="mt-3 rounded-md border border-sky-400/25 bg-sky-400/5 px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-sky-200">{t.dustHeading}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted">{t.dustMeaning(formatScreeningNumber(locale, dust.featured_cell.mean_aot_2000_2025, 3), years)}</p>
+      <p className="mt-1 text-[10px] text-faint">{dust.period[0]}–{dust.period[1]} · {t.dustSource} <a className="underline hover:text-ink" href="https://doi.org/10.5067/FH9A0MLJPC7N" target="_blank" rel="noreferrer">10.5067/FH9A0MLJPC7N</a></p>
+    </div>
+  );
+}
+
+function HistoryBars({ rows, period, label, t }: { rows: readonly PvHistoryYear[]; period: readonly [number, number]; label: string; t: Copy }) {
+  const maxCount = Math.max(1, ...rows.map((row) => row.total_phases));
+  return (
+    <>
+      <div className="mt-3 flex h-24 items-end gap-px" role="img" aria-label={label}>
+        {rows.map((row) => (
+          <div key={row.year} className="flex min-w-0 flex-1 flex-col justify-end" style={{ height: `${(row.total_phases / maxCount) * 100}%` }} title={`${row.year}: ${row.explicit_pv_phases} ${t.historyExplicit}, ${row.assumed_pv_phases} ${t.historyAssumed}`}>
+            <span className="block bg-sky-300" style={{ height: row.total_phases ? `${(row.explicit_pv_phases / row.total_phases) * 100}%` : 0 }} />
+            <span className="block bg-amber-400/80" style={{ height: row.total_phases ? `${(row.assumed_pv_phases / row.total_phases) * 100}%` : 0 }} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-faint"><span>{period[0]}</span><span>{period[1]}</span></div>
+      <p className="mt-2 text-[10px] text-muted"><span className="text-sky-300">■</span> {t.historyExplicit} <span className="ml-2 text-amber-300">■</span> {t.historyAssumed}</p>
+    </>
+  );
+}
+
+function FeaturedHistoryChart({ rows, label, t }: { rows: readonly PvHistoryYear[]; label: string; t: Copy }) {
+  const maxCount = Math.max(1, ...rows.map((row) => row.cumulative_reported_phases));
+  return (
+    <div className="mt-3 grid gap-1" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }} role="img" aria-label={label}>
+      {rows.map((row) => (
+        <div key={row.year} className="flex min-w-0 flex-col items-center text-center tabular-nums" title={`${row.year}: ${row.total_phases} ${t.historyTableAdded.toLowerCase()}, ${row.cumulative_reported_phases} ${t.historyTableCumulative.toLowerCase()}`}>
+          <span className="text-[10px] font-semibold text-ink">{row.cumulative_reported_phases}</span>
+          <div className="mt-1 flex h-24 w-full items-end rounded-sm bg-white/5">
+            <div className="w-full rounded-t-sm bg-sky-300" style={{ height: `${(row.cumulative_reported_phases / maxCount) * 100}%` }} />
+          </div>
+          <span className="mt-1 text-[10px] text-muted">{row.year}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HistoryContext({ history, t }: { history: PvHistoryFile; t: Copy }) {
+  const firstDated = history.featured_cell.annual.find((row) => row.total_phases > 0);
+  const chartRows = firstDated ? history.featured_cell.annual.filter((row) => row.year >= firstDated.year) : [];
+  const lastDated = chartRows[chartRows.length - 1];
+  return (
+    <section className="mt-3 rounded-lg border border-line bg-white/3 p-3" aria-label={t.historyHeading}>
+      <h3 className="text-xs font-semibold text-ink">{t.historyHeading}</h3>
+      {firstDated && lastDated && <p className="mt-2 text-sm font-semibold leading-relaxed text-sky-200">{t.historyFinding(firstDated.year, firstDated.cumulative_reported_phases, lastDated.year, lastDated.cumulative_reported_phases)}</p>}
+      <p className="mt-2 text-[11px] leading-relaxed text-muted">{t.historyHowToRead}</p>
+      {chartRows.length > 0 && <FeaturedHistoryChart rows={chartRows} label={t.historyHeading} t={t} />}
+      <p className="mt-2 text-[11px] leading-relaxed text-muted">{t.historyFeatured(history.featured_cell.summary.operating_pv_phases, history.featured_cell.summary.assumed_pv_phases)}</p>
+      <details className="mt-2 text-[11px]"><summary className="focus-ring cursor-pointer text-muted hover:text-ink">{t.details}</summary>
+        <table className="mt-2 w-full text-left tabular-nums"><thead><tr><th>{t.historyTableYear}</th><th>{t.historyTableAdded}</th><th>{t.historyTableCumulative}</th></tr></thead><tbody>
+          {chartRows.map((row) => <tr key={row.year}><td>{row.year}</td><td>{row.total_phases}</td><td>{row.cumulative_reported_phases}</td></tr>)}
+        </tbody></table>
+      </details>
+      <p className="mt-2 text-[10px] leading-relaxed text-faint">{t.historyLimit}</p>
+      <div className="mt-2 rounded-md border border-amber-400/35 bg-amber-400/5 px-2 py-1.5" role="status">
+        <p className="text-[11px] font-semibold text-amber-200">◇ {t.historyOutcome}</p>
+        <p className="mt-0.5 text-[10px] leading-relaxed text-muted">{t.historyOutcomeMeaning}</p>
+      </div>
+      <details className="mt-3 border-t border-line pt-2 text-[11px]"><summary className="focus-ring cursor-pointer text-muted hover:text-ink">{t.historyNationalHeading}</summary>
+        <p className="mt-2 leading-relaxed text-muted">{t.historyIntro(history.summary.operating_pv_phases, history.summary.known_start_year_phases, history.summary.unknown_start_year_phases)}</p>
+        <HistoryBars rows={history.annual} period={history.period} label={t.historyNationalHeading} t={t} />
+      </details>
+    </section>
+  );
+}
 
 function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -214,6 +356,9 @@ function BackButton({ label, onClick }: { label: string; onClick: () => void }) 
 
 function CellCard({
   cell,
+  featuredCaseId,
+  dust,
+  locale,
   t,
   period,
   method,
@@ -221,6 +366,9 @@ function CellCard({
   onBack,
 }: {
   cell: PvCell;
+  featuredCaseId?: string;
+  dust: GiovanniDustFile | null;
+  locale: Language;
   t: Copy;
   period: [number, number];
   method?: string;
@@ -253,6 +401,12 @@ function CellCard({
       {typeof cell.plants_operating_n === "number" && cell.plants_operating_n > 0 && (
         <p className="mt-2 text-[11px] text-muted">{t.plantsInCell(cell.plants_operating_n, cell.plants_operating_mw ?? 0)}</p>
       )}
+
+      {cell.miteco_low_moderate_pct !== null && (
+        <p className="mt-3 rounded-md border border-emerald-400/25 bg-emerald-400/5 px-2.5 py-2 text-xs leading-relaxed text-muted">{t.environmentalMeaning}</p>
+      )}
+      {dust?.featured_cell.id === cell.id && <DustContext dust={dust} locale={locale} t={t} />}
+      {!dust && cell.id === featuredCaseId && <p className="mt-3 text-[11px] text-amber-200" role="status">{t.dustUnavailable}</p>}
 
       <div className="mt-3 space-y-2">
         <div className="rounded-md bg-white/5 px-2.5 py-2">
