@@ -192,6 +192,16 @@ summarised from each person's commits. This repository is a copy of
 [rorro6787/nasa-project-spain](https://github.com/rorro6787/nasa-project-spain), with its full commit
 history and branches.
 
+### 🏅 Recognition
+
+Raúl Mermans received the **Galactic Problem Solver** certificate from the 2026 NASA Space Apps
+Challenge for taking part in the Málaga event (14–15 Nov 2026). It is a participation certificate, not
+a judged award.
+
+<p align="center">
+  <a href="docs/certificates/raul-mermans-galactic-problem-solver-2026.pdf"><img src="docs/certificates/raul-mermans-galactic-problem-solver-2026.png" alt="NASA Space Apps Challenge 2026 Galactic Problem Solver certificate for Raul Mermans Garcia" width="520"></a>
+</p>
+
 ## 🤖 AI use
 
 Code and documentation were written with an AI coding assistant (Anthropic Claude via Claude Code),
